@@ -1426,6 +1426,832 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   }
 }
 
+class $RecurringRulesTable extends RecurringRules
+    with TableInfo<$RecurringRulesTable, RecurringRule> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecurringRulesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<TxType, String> tipe =
+      GeneratedColumn<String>(
+        'tipe',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<TxType>($RecurringRulesTable.$convertertipe);
+  static const VerificationMeta _nominalMeta = const VerificationMeta(
+    'nominal',
+  );
+  @override
+  late final GeneratedColumn<int> nominal = GeneratedColumn<int>(
+    'nominal',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kategoriIdMeta = const VerificationMeta(
+    'kategoriId',
+  );
+  @override
+  late final GeneratedColumn<String> kategoriId = GeneratedColumn<String>(
+    'kategori_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES categories (id)',
+    ),
+  );
+  static const VerificationMeta _akunIdMeta = const VerificationMeta('akunId');
+  @override
+  late final GeneratedColumn<String> akunId = GeneratedColumn<String>(
+    'akun_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _catatanMeta = const VerificationMeta(
+    'catatan',
+  );
+  @override
+  late final GeneratedColumn<String> catatan = GeneratedColumn<String>(
+    'catatan',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<Frequency, String> frekuensi =
+      GeneratedColumn<String>(
+        'frekuensi',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<Frequency>($RecurringRulesTable.$converterfrekuensi);
+  static const VerificationMeta _mulaiMeta = const VerificationMeta('mulai');
+  @override
+  late final GeneratedColumn<DateTime> mulai = GeneratedColumn<DateTime>(
+    'mulai',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sampaiMeta = const VerificationMeta('sampai');
+  @override
+  late final GeneratedColumn<DateTime> sampai = GeneratedColumn<DateTime>(
+    'sampai',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _terakhirDibuatMeta = const VerificationMeta(
+    'terakhirDibuat',
+  );
+  @override
+  late final GeneratedColumn<DateTime> terakhirDibuat =
+      GeneratedColumn<DateTime>(
+        'terakhir_dibuat',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _aktifMeta = const VerificationMeta('aktif');
+  @override
+  late final GeneratedColumn<bool> aktif = GeneratedColumn<bool>(
+    'aktif',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("aktif" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tipe,
+    nominal,
+    kategoriId,
+    akunId,
+    catatan,
+    frekuensi,
+    mulai,
+    sampai,
+    terakhirDibuat,
+    aktif,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recurring_rules';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecurringRule> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('nominal')) {
+      context.handle(
+        _nominalMeta,
+        nominal.isAcceptableOrUnknown(data['nominal']!, _nominalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nominalMeta);
+    }
+    if (data.containsKey('kategori_id')) {
+      context.handle(
+        _kategoriIdMeta,
+        kategoriId.isAcceptableOrUnknown(data['kategori_id']!, _kategoriIdMeta),
+      );
+    }
+    if (data.containsKey('akun_id')) {
+      context.handle(
+        _akunIdMeta,
+        akunId.isAcceptableOrUnknown(data['akun_id']!, _akunIdMeta),
+      );
+    }
+    if (data.containsKey('catatan')) {
+      context.handle(
+        _catatanMeta,
+        catatan.isAcceptableOrUnknown(data['catatan']!, _catatanMeta),
+      );
+    }
+    if (data.containsKey('mulai')) {
+      context.handle(
+        _mulaiMeta,
+        mulai.isAcceptableOrUnknown(data['mulai']!, _mulaiMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mulaiMeta);
+    }
+    if (data.containsKey('sampai')) {
+      context.handle(
+        _sampaiMeta,
+        sampai.isAcceptableOrUnknown(data['sampai']!, _sampaiMeta),
+      );
+    }
+    if (data.containsKey('terakhir_dibuat')) {
+      context.handle(
+        _terakhirDibuatMeta,
+        terakhirDibuat.isAcceptableOrUnknown(
+          data['terakhir_dibuat']!,
+          _terakhirDibuatMeta,
+        ),
+      );
+    }
+    if (data.containsKey('aktif')) {
+      context.handle(
+        _aktifMeta,
+        aktif.isAcceptableOrUnknown(data['aktif']!, _aktifMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RecurringRule map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecurringRule(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tipe: $RecurringRulesTable.$convertertipe.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}tipe'],
+        )!,
+      ),
+      nominal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}nominal'],
+      )!,
+      kategoriId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kategori_id'],
+      ),
+      akunId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}akun_id'],
+      ),
+      catatan: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}catatan'],
+      ),
+      frekuensi: $RecurringRulesTable.$converterfrekuensi.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}frekuensi'],
+        )!,
+      ),
+      mulai: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}mulai'],
+      )!,
+      sampai: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}sampai'],
+      ),
+      terakhirDibuat: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}terakhir_dibuat'],
+      ),
+      aktif: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}aktif'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $RecurringRulesTable createAlias(String alias) {
+    return $RecurringRulesTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<TxType, String, String> $convertertipe =
+      const EnumNameConverter<TxType>(TxType.values);
+  static JsonTypeConverter2<Frequency, String, String> $converterfrekuensi =
+      const EnumNameConverter<Frequency>(Frequency.values);
+}
+
+class RecurringRule extends DataClass implements Insertable<RecurringRule> {
+  final String id;
+  final TxType tipe;
+  final int nominal;
+  final String? kategoriId;
+  final String? akunId;
+  final String? catatan;
+  final Frequency frekuensi;
+
+  /// Jatuh tempo pertama, sekaligus tanggal acuan untuk bulanan/tahunan.
+  final DateTime mulai;
+
+  /// Batas akhir inklusif; null = tanpa batas.
+  final DateTime? sampai;
+
+  /// Jatuh tempo terakhir yang sudah dibuatkan transaksi (null = belum pernah).
+  final DateTime? terakhirDibuat;
+  final bool aktif;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const RecurringRule({
+    required this.id,
+    required this.tipe,
+    required this.nominal,
+    this.kategoriId,
+    this.akunId,
+    this.catatan,
+    required this.frekuensi,
+    required this.mulai,
+    this.sampai,
+    this.terakhirDibuat,
+    required this.aktif,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    {
+      map['tipe'] = Variable<String>(
+        $RecurringRulesTable.$convertertipe.toSql(tipe),
+      );
+    }
+    map['nominal'] = Variable<int>(nominal);
+    if (!nullToAbsent || kategoriId != null) {
+      map['kategori_id'] = Variable<String>(kategoriId);
+    }
+    if (!nullToAbsent || akunId != null) {
+      map['akun_id'] = Variable<String>(akunId);
+    }
+    if (!nullToAbsent || catatan != null) {
+      map['catatan'] = Variable<String>(catatan);
+    }
+    {
+      map['frekuensi'] = Variable<String>(
+        $RecurringRulesTable.$converterfrekuensi.toSql(frekuensi),
+      );
+    }
+    map['mulai'] = Variable<DateTime>(mulai);
+    if (!nullToAbsent || sampai != null) {
+      map['sampai'] = Variable<DateTime>(sampai);
+    }
+    if (!nullToAbsent || terakhirDibuat != null) {
+      map['terakhir_dibuat'] = Variable<DateTime>(terakhirDibuat);
+    }
+    map['aktif'] = Variable<bool>(aktif);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  RecurringRulesCompanion toCompanion(bool nullToAbsent) {
+    return RecurringRulesCompanion(
+      id: Value(id),
+      tipe: Value(tipe),
+      nominal: Value(nominal),
+      kategoriId: kategoriId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(kategoriId),
+      akunId: akunId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(akunId),
+      catatan: catatan == null && nullToAbsent
+          ? const Value.absent()
+          : Value(catatan),
+      frekuensi: Value(frekuensi),
+      mulai: Value(mulai),
+      sampai: sampai == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sampai),
+      terakhirDibuat: terakhirDibuat == null && nullToAbsent
+          ? const Value.absent()
+          : Value(terakhirDibuat),
+      aktif: Value(aktif),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory RecurringRule.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecurringRule(
+      id: serializer.fromJson<String>(json['id']),
+      tipe: $RecurringRulesTable.$convertertipe.fromJson(
+        serializer.fromJson<String>(json['tipe']),
+      ),
+      nominal: serializer.fromJson<int>(json['nominal']),
+      kategoriId: serializer.fromJson<String?>(json['kategoriId']),
+      akunId: serializer.fromJson<String?>(json['akunId']),
+      catatan: serializer.fromJson<String?>(json['catatan']),
+      frekuensi: $RecurringRulesTable.$converterfrekuensi.fromJson(
+        serializer.fromJson<String>(json['frekuensi']),
+      ),
+      mulai: serializer.fromJson<DateTime>(json['mulai']),
+      sampai: serializer.fromJson<DateTime?>(json['sampai']),
+      terakhirDibuat: serializer.fromJson<DateTime?>(json['terakhirDibuat']),
+      aktif: serializer.fromJson<bool>(json['aktif']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tipe': serializer.toJson<String>(
+        $RecurringRulesTable.$convertertipe.toJson(tipe),
+      ),
+      'nominal': serializer.toJson<int>(nominal),
+      'kategoriId': serializer.toJson<String?>(kategoriId),
+      'akunId': serializer.toJson<String?>(akunId),
+      'catatan': serializer.toJson<String?>(catatan),
+      'frekuensi': serializer.toJson<String>(
+        $RecurringRulesTable.$converterfrekuensi.toJson(frekuensi),
+      ),
+      'mulai': serializer.toJson<DateTime>(mulai),
+      'sampai': serializer.toJson<DateTime?>(sampai),
+      'terakhirDibuat': serializer.toJson<DateTime?>(terakhirDibuat),
+      'aktif': serializer.toJson<bool>(aktif),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  RecurringRule copyWith({
+    String? id,
+    TxType? tipe,
+    int? nominal,
+    Value<String?> kategoriId = const Value.absent(),
+    Value<String?> akunId = const Value.absent(),
+    Value<String?> catatan = const Value.absent(),
+    Frequency? frekuensi,
+    DateTime? mulai,
+    Value<DateTime?> sampai = const Value.absent(),
+    Value<DateTime?> terakhirDibuat = const Value.absent(),
+    bool? aktif,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => RecurringRule(
+    id: id ?? this.id,
+    tipe: tipe ?? this.tipe,
+    nominal: nominal ?? this.nominal,
+    kategoriId: kategoriId.present ? kategoriId.value : this.kategoriId,
+    akunId: akunId.present ? akunId.value : this.akunId,
+    catatan: catatan.present ? catatan.value : this.catatan,
+    frekuensi: frekuensi ?? this.frekuensi,
+    mulai: mulai ?? this.mulai,
+    sampai: sampai.present ? sampai.value : this.sampai,
+    terakhirDibuat: terakhirDibuat.present
+        ? terakhirDibuat.value
+        : this.terakhirDibuat,
+    aktif: aktif ?? this.aktif,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  RecurringRule copyWithCompanion(RecurringRulesCompanion data) {
+    return RecurringRule(
+      id: data.id.present ? data.id.value : this.id,
+      tipe: data.tipe.present ? data.tipe.value : this.tipe,
+      nominal: data.nominal.present ? data.nominal.value : this.nominal,
+      kategoriId: data.kategoriId.present
+          ? data.kategoriId.value
+          : this.kategoriId,
+      akunId: data.akunId.present ? data.akunId.value : this.akunId,
+      catatan: data.catatan.present ? data.catatan.value : this.catatan,
+      frekuensi: data.frekuensi.present ? data.frekuensi.value : this.frekuensi,
+      mulai: data.mulai.present ? data.mulai.value : this.mulai,
+      sampai: data.sampai.present ? data.sampai.value : this.sampai,
+      terakhirDibuat: data.terakhirDibuat.present
+          ? data.terakhirDibuat.value
+          : this.terakhirDibuat,
+      aktif: data.aktif.present ? data.aktif.value : this.aktif,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringRule(')
+          ..write('id: $id, ')
+          ..write('tipe: $tipe, ')
+          ..write('nominal: $nominal, ')
+          ..write('kategoriId: $kategoriId, ')
+          ..write('akunId: $akunId, ')
+          ..write('catatan: $catatan, ')
+          ..write('frekuensi: $frekuensi, ')
+          ..write('mulai: $mulai, ')
+          ..write('sampai: $sampai, ')
+          ..write('terakhirDibuat: $terakhirDibuat, ')
+          ..write('aktif: $aktif, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tipe,
+    nominal,
+    kategoriId,
+    akunId,
+    catatan,
+    frekuensi,
+    mulai,
+    sampai,
+    terakhirDibuat,
+    aktif,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecurringRule &&
+          other.id == this.id &&
+          other.tipe == this.tipe &&
+          other.nominal == this.nominal &&
+          other.kategoriId == this.kategoriId &&
+          other.akunId == this.akunId &&
+          other.catatan == this.catatan &&
+          other.frekuensi == this.frekuensi &&
+          other.mulai == this.mulai &&
+          other.sampai == this.sampai &&
+          other.terakhirDibuat == this.terakhirDibuat &&
+          other.aktif == this.aktif &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
+  final Value<String> id;
+  final Value<TxType> tipe;
+  final Value<int> nominal;
+  final Value<String?> kategoriId;
+  final Value<String?> akunId;
+  final Value<String?> catatan;
+  final Value<Frequency> frekuensi;
+  final Value<DateTime> mulai;
+  final Value<DateTime?> sampai;
+  final Value<DateTime?> terakhirDibuat;
+  final Value<bool> aktif;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const RecurringRulesCompanion({
+    this.id = const Value.absent(),
+    this.tipe = const Value.absent(),
+    this.nominal = const Value.absent(),
+    this.kategoriId = const Value.absent(),
+    this.akunId = const Value.absent(),
+    this.catatan = const Value.absent(),
+    this.frekuensi = const Value.absent(),
+    this.mulai = const Value.absent(),
+    this.sampai = const Value.absent(),
+    this.terakhirDibuat = const Value.absent(),
+    this.aktif = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecurringRulesCompanion.insert({
+    required String id,
+    required TxType tipe,
+    required int nominal,
+    this.kategoriId = const Value.absent(),
+    this.akunId = const Value.absent(),
+    this.catatan = const Value.absent(),
+    required Frequency frekuensi,
+    required DateTime mulai,
+    this.sampai = const Value.absent(),
+    this.terakhirDibuat = const Value.absent(),
+    this.aktif = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tipe = Value(tipe),
+       nominal = Value(nominal),
+       frekuensi = Value(frekuensi),
+       mulai = Value(mulai);
+  static Insertable<RecurringRule> custom({
+    Expression<String>? id,
+    Expression<String>? tipe,
+    Expression<int>? nominal,
+    Expression<String>? kategoriId,
+    Expression<String>? akunId,
+    Expression<String>? catatan,
+    Expression<String>? frekuensi,
+    Expression<DateTime>? mulai,
+    Expression<DateTime>? sampai,
+    Expression<DateTime>? terakhirDibuat,
+    Expression<bool>? aktif,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tipe != null) 'tipe': tipe,
+      if (nominal != null) 'nominal': nominal,
+      if (kategoriId != null) 'kategori_id': kategoriId,
+      if (akunId != null) 'akun_id': akunId,
+      if (catatan != null) 'catatan': catatan,
+      if (frekuensi != null) 'frekuensi': frekuensi,
+      if (mulai != null) 'mulai': mulai,
+      if (sampai != null) 'sampai': sampai,
+      if (terakhirDibuat != null) 'terakhir_dibuat': terakhirDibuat,
+      if (aktif != null) 'aktif': aktif,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecurringRulesCompanion copyWith({
+    Value<String>? id,
+    Value<TxType>? tipe,
+    Value<int>? nominal,
+    Value<String?>? kategoriId,
+    Value<String?>? akunId,
+    Value<String?>? catatan,
+    Value<Frequency>? frekuensi,
+    Value<DateTime>? mulai,
+    Value<DateTime?>? sampai,
+    Value<DateTime?>? terakhirDibuat,
+    Value<bool>? aktif,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return RecurringRulesCompanion(
+      id: id ?? this.id,
+      tipe: tipe ?? this.tipe,
+      nominal: nominal ?? this.nominal,
+      kategoriId: kategoriId ?? this.kategoriId,
+      akunId: akunId ?? this.akunId,
+      catatan: catatan ?? this.catatan,
+      frekuensi: frekuensi ?? this.frekuensi,
+      mulai: mulai ?? this.mulai,
+      sampai: sampai ?? this.sampai,
+      terakhirDibuat: terakhirDibuat ?? this.terakhirDibuat,
+      aktif: aktif ?? this.aktif,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tipe.present) {
+      map['tipe'] = Variable<String>(
+        $RecurringRulesTable.$convertertipe.toSql(tipe.value),
+      );
+    }
+    if (nominal.present) {
+      map['nominal'] = Variable<int>(nominal.value);
+    }
+    if (kategoriId.present) {
+      map['kategori_id'] = Variable<String>(kategoriId.value);
+    }
+    if (akunId.present) {
+      map['akun_id'] = Variable<String>(akunId.value);
+    }
+    if (catatan.present) {
+      map['catatan'] = Variable<String>(catatan.value);
+    }
+    if (frekuensi.present) {
+      map['frekuensi'] = Variable<String>(
+        $RecurringRulesTable.$converterfrekuensi.toSql(frekuensi.value),
+      );
+    }
+    if (mulai.present) {
+      map['mulai'] = Variable<DateTime>(mulai.value);
+    }
+    if (sampai.present) {
+      map['sampai'] = Variable<DateTime>(sampai.value);
+    }
+    if (terakhirDibuat.present) {
+      map['terakhir_dibuat'] = Variable<DateTime>(terakhirDibuat.value);
+    }
+    if (aktif.present) {
+      map['aktif'] = Variable<bool>(aktif.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecurringRulesCompanion(')
+          ..write('id: $id, ')
+          ..write('tipe: $tipe, ')
+          ..write('nominal: $nominal, ')
+          ..write('kategoriId: $kategoriId, ')
+          ..write('akunId: $akunId, ')
+          ..write('catatan: $catatan, ')
+          ..write('frekuensi: $frekuensi, ')
+          ..write('mulai: $mulai, ')
+          ..write('sampai: $sampai, ')
+          ..write('terakhirDibuat: $terakhirDibuat, ')
+          ..write('aktif: $aktif, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TransactionsTable extends Transactions
     with TableInfo<$TransactionsTable, Transaction> {
   @override
@@ -1549,6 +2375,20 @@ class $TransactionsTable extends Transactions
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _recurringRuleIdMeta = const VerificationMeta(
+    'recurringRuleId',
+  );
+  @override
+  late final GeneratedColumn<String> recurringRuleId = GeneratedColumn<String>(
+    'recurring_rule_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES recurring_rules (id)',
+    ),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1596,6 +2436,7 @@ class $TransactionsTable extends Transactions
     akunAsalId,
     akunTujuanId,
     biayaAdmin,
+    recurringRuleId,
     createdAt,
     updatedAt,
     deletedAt,
@@ -1675,6 +2516,15 @@ class $TransactionsTable extends Transactions
         biayaAdmin.isAcceptableOrUnknown(data['biaya_admin']!, _biayaAdminMeta),
       );
     }
+    if (data.containsKey('recurring_rule_id')) {
+      context.handle(
+        _recurringRuleIdMeta,
+        recurringRuleId.isAcceptableOrUnknown(
+          data['recurring_rule_id']!,
+          _recurringRuleIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1744,6 +2594,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.int,
         data['${effectivePrefix}biaya_admin'],
       )!,
+      recurringRuleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recurring_rule_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1779,6 +2633,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final String? akunAsalId;
   final String? akunTujuanId;
   final int biayaAdmin;
+
+  /// Terisi bila transaksi ini dibuat otomatis dari jadwal (Bagian 7.6).
+  final String? recurringRuleId;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -1793,6 +2650,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     this.akunAsalId,
     this.akunTujuanId,
     required this.biayaAdmin,
+    this.recurringRuleId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -1824,6 +2682,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       map['akun_tujuan_id'] = Variable<String>(akunTujuanId);
     }
     map['biaya_admin'] = Variable<int>(biayaAdmin);
+    if (!nullToAbsent || recurringRuleId != null) {
+      map['recurring_rule_id'] = Variable<String>(recurringRuleId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || deletedAt != null) {
@@ -1854,6 +2715,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ? const Value.absent()
           : Value(akunTujuanId),
       biayaAdmin: Value(biayaAdmin),
+      recurringRuleId: recurringRuleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recurringRuleId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
@@ -1880,6 +2744,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       akunAsalId: serializer.fromJson<String?>(json['akunAsalId']),
       akunTujuanId: serializer.fromJson<String?>(json['akunTujuanId']),
       biayaAdmin: serializer.fromJson<int>(json['biayaAdmin']),
+      recurringRuleId: serializer.fromJson<String?>(json['recurringRuleId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -1901,6 +2766,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'akunAsalId': serializer.toJson<String?>(akunAsalId),
       'akunTujuanId': serializer.toJson<String?>(akunTujuanId),
       'biayaAdmin': serializer.toJson<int>(biayaAdmin),
+      'recurringRuleId': serializer.toJson<String?>(recurringRuleId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -1918,6 +2784,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     Value<String?> akunAsalId = const Value.absent(),
     Value<String?> akunTujuanId = const Value.absent(),
     int? biayaAdmin,
+    Value<String?> recurringRuleId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -1932,6 +2799,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     akunAsalId: akunAsalId.present ? akunAsalId.value : this.akunAsalId,
     akunTujuanId: akunTujuanId.present ? akunTujuanId.value : this.akunTujuanId,
     biayaAdmin: biayaAdmin ?? this.biayaAdmin,
+    recurringRuleId: recurringRuleId.present
+        ? recurringRuleId.value
+        : this.recurringRuleId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -1956,6 +2826,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       biayaAdmin: data.biayaAdmin.present
           ? data.biayaAdmin.value
           : this.biayaAdmin,
+      recurringRuleId: data.recurringRuleId.present
+          ? data.recurringRuleId.value
+          : this.recurringRuleId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -1975,6 +2848,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('akunAsalId: $akunAsalId, ')
           ..write('akunTujuanId: $akunTujuanId, ')
           ..write('biayaAdmin: $biayaAdmin, ')
+          ..write('recurringRuleId: $recurringRuleId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt')
@@ -1994,6 +2868,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     akunAsalId,
     akunTujuanId,
     biayaAdmin,
+    recurringRuleId,
     createdAt,
     updatedAt,
     deletedAt,
@@ -2012,6 +2887,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.akunAsalId == this.akunAsalId &&
           other.akunTujuanId == this.akunTujuanId &&
           other.biayaAdmin == this.biayaAdmin &&
+          other.recurringRuleId == this.recurringRuleId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt);
@@ -2028,6 +2904,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<String?> akunAsalId;
   final Value<String?> akunTujuanId;
   final Value<int> biayaAdmin;
+  final Value<String?> recurringRuleId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -2043,6 +2920,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.akunAsalId = const Value.absent(),
     this.akunTujuanId = const Value.absent(),
     this.biayaAdmin = const Value.absent(),
+    this.recurringRuleId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -2059,6 +2937,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.akunAsalId = const Value.absent(),
     this.akunTujuanId = const Value.absent(),
     this.biayaAdmin = const Value.absent(),
+    this.recurringRuleId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -2078,6 +2957,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<String>? akunAsalId,
     Expression<String>? akunTujuanId,
     Expression<int>? biayaAdmin,
+    Expression<String>? recurringRuleId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -2094,6 +2974,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (akunAsalId != null) 'akun_asal_id': akunAsalId,
       if (akunTujuanId != null) 'akun_tujuan_id': akunTujuanId,
       if (biayaAdmin != null) 'biaya_admin': biayaAdmin,
+      if (recurringRuleId != null) 'recurring_rule_id': recurringRuleId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -2112,6 +2993,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<String?>? akunAsalId,
     Value<String?>? akunTujuanId,
     Value<int>? biayaAdmin,
+    Value<String?>? recurringRuleId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -2128,6 +3010,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       akunAsalId: akunAsalId ?? this.akunAsalId,
       akunTujuanId: akunTujuanId ?? this.akunTujuanId,
       biayaAdmin: biayaAdmin ?? this.biayaAdmin,
+      recurringRuleId: recurringRuleId ?? this.recurringRuleId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -2170,6 +3053,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (biayaAdmin.present) {
       map['biaya_admin'] = Variable<int>(biayaAdmin.value);
     }
+    if (recurringRuleId.present) {
+      map['recurring_rule_id'] = Variable<String>(recurringRuleId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2198,6 +3084,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('akunAsalId: $akunAsalId, ')
           ..write('akunTujuanId: $akunTujuanId, ')
           ..write('biayaAdmin: $biayaAdmin, ')
+          ..write('recurringRuleId: $recurringRuleId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -2838,6 +3725,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $InstitutionsTable institutions = $InstitutionsTable(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
   late final $AccountsTable accounts = $AccountsTable(this);
+  late final $RecurringRulesTable recurringRules = $RecurringRulesTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $BudgetsTable budgets = $BudgetsTable(this);
   late final Index idxTransactionsTipeTanggalKategori = Index(
@@ -2852,6 +3740,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     institutions,
     categories,
     accounts,
+    recurringRules,
     transactions,
     budgets,
     idxTransactionsTipeTanggalKategori,
@@ -3226,6 +4115,24 @@ final class $$CategoriesTableReferences
     extends BaseReferences<_$AppDatabase, $CategoriesTable, Category> {
   $$CategoriesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
+  static MultiTypedResultKey<$RecurringRulesTable, List<RecurringRule>>
+  _recurringRulesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.recurringRules,
+    aliasName: 'categories__id__recurring_rules__kategori_id',
+  );
+
+  $$RecurringRulesTableProcessedTableManager get recurringRulesRefs {
+    final manager = $$RecurringRulesTableTableManager(
+      $_db,
+      $_db.recurringRules,
+    ).filter((f) => f.kategoriId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_recurringRulesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$TransactionsTable, List<Transaction>>
   _transactionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.transactions,
@@ -3307,6 +4214,31 @@ class $$CategoriesTableFilterComposer
     column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> recurringRulesRefs(
+    Expression<bool> Function($$RecurringRulesTableFilterComposer f) f,
+  ) {
+    final $$RecurringRulesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringRules,
+      getReferencedColumn: (t) => t.kategoriId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringRulesTableFilterComposer(
+            $db: $db,
+            $table: $db.recurringRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 
   Expression<bool> transactionsRefs(
     Expression<bool> Function($$TransactionsTableFilterComposer f) f,
@@ -3434,6 +4366,31 @@ class $$CategoriesTableAnnotationComposer
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
+  Expression<T> recurringRulesRefs<T extends Object>(
+    Expression<T> Function($$RecurringRulesTableAnnotationComposer a) f,
+  ) {
+    final $$RecurringRulesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringRules,
+      getReferencedColumn: (t) => t.kategoriId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringRulesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.recurringRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> transactionsRefs<T extends Object>(
     Expression<T> Function($$TransactionsTableAnnotationComposer a) f,
   ) {
@@ -3498,7 +4455,11 @@ class $$CategoriesTableTableManager
           $$CategoriesTableUpdateCompanionBuilder,
           (Category, $$CategoriesTableReferences),
           Category,
-          PrefetchHooks Function({bool transactionsRefs, bool budgetsRefs})
+          PrefetchHooks Function({
+            bool recurringRulesRefs,
+            bool transactionsRefs,
+            bool budgetsRefs,
+          })
         > {
   $$CategoriesTableTableManager(_$AppDatabase db, $CategoriesTable table)
     : super(
@@ -3560,16 +4521,42 @@ class $$CategoriesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({transactionsRefs = false, budgetsRefs = false}) {
+              ({
+                recurringRulesRefs = false,
+                transactionsRefs = false,
+                budgetsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
+                    if (recurringRulesRefs) db.recurringRules,
                     if (transactionsRefs) db.transactions,
                     if (budgetsRefs) db.budgets,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (recurringRulesRefs)
+                        await $_getPrefetchedData<
+                          Category,
+                          $CategoriesTable,
+                          RecurringRule
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CategoriesTableReferences
+                              ._recurringRulesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CategoriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).recurringRulesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.kategoriId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (transactionsRefs)
                         await $_getPrefetchedData<
                           Category,
@@ -3632,7 +4619,11 @@ typedef $$CategoriesTableProcessedTableManager =
       $$CategoriesTableUpdateCompanionBuilder,
       (Category, $$CategoriesTableReferences),
       Category,
-      PrefetchHooks Function({bool transactionsRefs, bool budgetsRefs})
+      PrefetchHooks Function({
+        bool recurringRulesRefs,
+        bool transactionsRefs,
+        bool budgetsRefs,
+      })
     >;
 typedef $$AccountsTableCreateCompanionBuilder = AccountsCompanion Function({
   required String id,
@@ -3675,6 +4666,24 @@ final class $$AccountsTableReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$RecurringRulesTable, List<RecurringRule>>
+  _recurringRulesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.recurringRules,
+    aliasName: 'accounts__id__recurring_rules__akun_id',
+  );
+
+  $$RecurringRulesTableProcessedTableManager get recurringRulesRefs {
+    final manager = $$RecurringRulesTableTableManager(
+      $_db,
+      $_db.recurringRules,
+    ).filter((f) => f.akunId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_recurringRulesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 }
@@ -3744,6 +4753,31 @@ class $$AccountsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> recurringRulesRefs(
+    Expression<bool> Function($$RecurringRulesTableFilterComposer f) f,
+  ) {
+    final $$RecurringRulesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringRules,
+      getReferencedColumn: (t) => t.akunId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringRulesTableFilterComposer(
+            $db: $db,
+            $table: $db.recurringRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -3869,6 +4903,31 @@ class $$AccountsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> recurringRulesRefs<T extends Object>(
+    Expression<T> Function($$RecurringRulesTableAnnotationComposer a) f,
+  ) {
+    final $$RecurringRulesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recurringRules,
+      getReferencedColumn: (t) => t.akunId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringRulesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.recurringRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$AccountsTableTableManager
@@ -3884,7 +4943,7 @@ class $$AccountsTableTableManager
           $$AccountsTableUpdateCompanionBuilder,
           (Account, $$AccountsTableReferences),
           Account,
-          PrefetchHooks Function({bool institusiId})
+          PrefetchHooks Function({bool institusiId, bool recurringRulesRefs})
         > {
   $$AccountsTableTableManager(_$AppDatabase db, $AccountsTable table)
     : super(
@@ -3949,45 +5008,70 @@ class $$AccountsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({institusiId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (institusiId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.institusiId,
-                        referencedTable: $$AccountsTableReferences
-                            ._institusiIdTable(db),
-                        referencedColumn: $$AccountsTableReferences
-                            ._institusiIdTable(db)
-                            .id,
-                      ) as T;
-                    }
+          prefetchHooksCallback:
+              ({institusiId = false, recurringRulesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (recurringRulesRefs) db.recurringRules,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (institusiId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.institusiId,
+                            referencedTable: $$AccountsTableReferences
+                                ._institusiIdTable(db),
+                            referencedColumn: $$AccountsTableReferences
+                                ._institusiIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (recurringRulesRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          RecurringRule
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._recurringRulesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).recurringRulesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.akunId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -4004,7 +5088,688 @@ typedef $$AccountsTableProcessedTableManager =
       $$AccountsTableUpdateCompanionBuilder,
       (Account, $$AccountsTableReferences),
       Account,
-      PrefetchHooks Function({bool institusiId})
+      PrefetchHooks Function({bool institusiId, bool recurringRulesRefs})
+    >;
+typedef $$RecurringRulesTableCreateCompanionBuilder =
+    RecurringRulesCompanion Function({
+      required String id,
+      required TxType tipe,
+      required int nominal,
+      Value<String?> kategoriId,
+      Value<String?> akunId,
+      Value<String?> catatan,
+      required Frequency frekuensi,
+      required DateTime mulai,
+      Value<DateTime?> sampai,
+      Value<DateTime?> terakhirDibuat,
+      Value<bool> aktif,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$RecurringRulesTableUpdateCompanionBuilder =
+    RecurringRulesCompanion Function({
+      Value<String> id,
+      Value<TxType> tipe,
+      Value<int> nominal,
+      Value<String?> kategoriId,
+      Value<String?> akunId,
+      Value<String?> catatan,
+      Value<Frequency> frekuensi,
+      Value<DateTime> mulai,
+      Value<DateTime?> sampai,
+      Value<DateTime?> terakhirDibuat,
+      Value<bool> aktif,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+final class $$RecurringRulesTableReferences
+    extends BaseReferences<_$AppDatabase, $RecurringRulesTable, RecurringRule> {
+  $$RecurringRulesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $CategoriesTable _kategoriIdTable(_$AppDatabase db) =>
+      db.categories.createAlias('recurring_rules__kategori_id__categories__id');
+
+  $$CategoriesTableProcessedTableManager? get kategoriId {
+    final $_column = $_itemColumn<String>('kategori_id');
+    if ($_column == null) return null;
+    final manager = $$CategoriesTableTableManager(
+      $_db,
+      $_db.categories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_kategoriIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AccountsTable _akunIdTable(_$AppDatabase db) =>
+      db.accounts.createAlias('recurring_rules__akun_id__accounts__id');
+
+  $$AccountsTableProcessedTableManager? get akunId {
+    final $_column = $_itemColumn<String>('akun_id');
+    if ($_column == null) return null;
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_akunIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$TransactionsTable, List<Transaction>>
+  _transactionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.transactions,
+    aliasName: 'recurring_rules__id__transactions__recurring_rule_id',
+  );
+
+  $$TransactionsTableProcessedTableManager get transactionsRefs {
+    final manager = $$TransactionsTableTableManager($_db, $_db.transactions)
+        .filter(
+          (f) => f.recurringRuleId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_transactionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$RecurringRulesTableFilterComposer
+    extends Composer<_$AppDatabase, $RecurringRulesTable> {
+  $$RecurringRulesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<TxType, TxType, String> get tipe =>
+      $composableBuilder(
+        column: $table.tipe,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get nominal => $composableBuilder(
+    column: $table.nominal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get catatan => $composableBuilder(
+    column: $table.catatan,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<Frequency, Frequency, String> get frekuensi =>
+      $composableBuilder(
+        column: $table.frekuensi,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<DateTime> get mulai => $composableBuilder(
+    column: $table.mulai,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get sampai => $composableBuilder(
+    column: $table.sampai,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get terakhirDibuat => $composableBuilder(
+    column: $table.terakhirDibuat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get aktif => $composableBuilder(
+    column: $table.aktif,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CategoriesTableFilterComposer get kategoriId {
+    final $$CategoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.kategoriId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableFilterComposer get akunId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.akunId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> transactionsRefs(
+    Expression<bool> Function($$TransactionsTableFilterComposer f) f,
+  ) {
+    final $$TransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.recurringRuleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RecurringRulesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecurringRulesTable> {
+  $$RecurringRulesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tipe => $composableBuilder(
+    column: $table.tipe,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get nominal => $composableBuilder(
+    column: $table.nominal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get catatan => $composableBuilder(
+    column: $table.catatan,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get frekuensi => $composableBuilder(
+    column: $table.frekuensi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get mulai => $composableBuilder(
+    column: $table.mulai,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get sampai => $composableBuilder(
+    column: $table.sampai,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get terakhirDibuat => $composableBuilder(
+    column: $table.terakhirDibuat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get aktif => $composableBuilder(
+    column: $table.aktif,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CategoriesTableOrderingComposer get kategoriId {
+    final $$CategoriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.kategoriId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableOrderingComposer get akunId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.akunId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecurringRulesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecurringRulesTable> {
+  $$RecurringRulesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<TxType, String> get tipe =>
+      $composableBuilder(column: $table.tipe, builder: (column) => column);
+
+  GeneratedColumn<int> get nominal =>
+      $composableBuilder(column: $table.nominal, builder: (column) => column);
+
+  GeneratedColumn<String> get catatan =>
+      $composableBuilder(column: $table.catatan, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<Frequency, String> get frekuensi =>
+      $composableBuilder(column: $table.frekuensi, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get mulai =>
+      $composableBuilder(column: $table.mulai, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get sampai =>
+      $composableBuilder(column: $table.sampai, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get terakhirDibuat => $composableBuilder(
+    column: $table.terakhirDibuat,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get aktif =>
+      $composableBuilder(column: $table.aktif, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$CategoriesTableAnnotationComposer get kategoriId {
+    final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.kategoriId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableAnnotationComposer get akunId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.akunId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> transactionsRefs<T extends Object>(
+    Expression<T> Function($$TransactionsTableAnnotationComposer a) f,
+  ) {
+    final $$TransactionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.recurringRuleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RecurringRulesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecurringRulesTable,
+          RecurringRule,
+          $$RecurringRulesTableFilterComposer,
+          $$RecurringRulesTableOrderingComposer,
+          $$RecurringRulesTableAnnotationComposer,
+          $$RecurringRulesTableCreateCompanionBuilder,
+          $$RecurringRulesTableUpdateCompanionBuilder,
+          (RecurringRule, $$RecurringRulesTableReferences),
+          RecurringRule,
+          PrefetchHooks Function({
+            bool kategoriId,
+            bool akunId,
+            bool transactionsRefs,
+          })
+        > {
+  $$RecurringRulesTableTableManager(
+    _$AppDatabase db,
+    $RecurringRulesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecurringRulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecurringRulesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecurringRulesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<TxType> tipe = const Value.absent(),
+                Value<int> nominal = const Value.absent(),
+                Value<String?> kategoriId = const Value.absent(),
+                Value<String?> akunId = const Value.absent(),
+                Value<String?> catatan = const Value.absent(),
+                Value<Frequency> frekuensi = const Value.absent(),
+                Value<DateTime> mulai = const Value.absent(),
+                Value<DateTime?> sampai = const Value.absent(),
+                Value<DateTime?> terakhirDibuat = const Value.absent(),
+                Value<bool> aktif = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecurringRulesCompanion(
+                id: id,
+                tipe: tipe,
+                nominal: nominal,
+                kategoriId: kategoriId,
+                akunId: akunId,
+                catatan: catatan,
+                frekuensi: frekuensi,
+                mulai: mulai,
+                sampai: sampai,
+                terakhirDibuat: terakhirDibuat,
+                aktif: aktif,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required TxType tipe,
+                required int nominal,
+                Value<String?> kategoriId = const Value.absent(),
+                Value<String?> akunId = const Value.absent(),
+                Value<String?> catatan = const Value.absent(),
+                required Frequency frekuensi,
+                required DateTime mulai,
+                Value<DateTime?> sampai = const Value.absent(),
+                Value<DateTime?> terakhirDibuat = const Value.absent(),
+                Value<bool> aktif = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecurringRulesCompanion.insert(
+                id: id,
+                tipe: tipe,
+                nominal: nominal,
+                kategoriId: kategoriId,
+                akunId: akunId,
+                catatan: catatan,
+                frekuensi: frekuensi,
+                mulai: mulai,
+                sampai: sampai,
+                terakhirDibuat: terakhirDibuat,
+                aktif: aktif,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RecurringRulesTable, RecurringRule>(table),
+                  $$RecurringRulesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({kategoriId = false, akunId = false, transactionsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (transactionsRefs) db.transactions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (kategoriId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.kategoriId,
+                            referencedTable: $$RecurringRulesTableReferences
+                                ._kategoriIdTable(db),
+                            referencedColumn: $$RecurringRulesTableReferences
+                                ._kategoriIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (akunId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.akunId,
+                            referencedTable: $$RecurringRulesTableReferences
+                                ._akunIdTable(db),
+                            referencedColumn: $$RecurringRulesTableReferences
+                                ._akunIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (transactionsRefs)
+                        await $_getPrefetchedData<
+                          RecurringRule,
+                          $RecurringRulesTable,
+                          Transaction
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RecurringRulesTableReferences
+                              ._transactionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RecurringRulesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).transactionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.recurringRuleId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$RecurringRulesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecurringRulesTable,
+      RecurringRule,
+      $$RecurringRulesTableFilterComposer,
+      $$RecurringRulesTableOrderingComposer,
+      $$RecurringRulesTableAnnotationComposer,
+      $$RecurringRulesTableCreateCompanionBuilder,
+      $$RecurringRulesTableUpdateCompanionBuilder,
+      (RecurringRule, $$RecurringRulesTableReferences),
+      RecurringRule,
+      PrefetchHooks Function({
+        bool kategoriId,
+        bool akunId,
+        bool transactionsRefs,
+      })
     >;
 typedef $$TransactionsTableCreateCompanionBuilder =
     TransactionsCompanion Function({
@@ -4018,6 +5783,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String?> akunAsalId,
       Value<String?> akunTujuanId,
       Value<int> biayaAdmin,
+      Value<String?> recurringRuleId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -4035,6 +5801,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String?> akunAsalId,
       Value<String?> akunTujuanId,
       Value<int> biayaAdmin,
+      Value<String?> recurringRuleId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -4107,6 +5874,24 @@ final class $$TransactionsTableReferences
       $_db.accounts,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_akunTujuanIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $RecurringRulesTable _recurringRuleIdTable(_$AppDatabase db) => db
+      .recurringRules
+      .createAlias('transactions__recurring_rule_id__recurring_rules__id');
+
+  $$RecurringRulesTableProcessedTableManager? get recurringRuleId {
+    final $_column = $_itemColumn<String>('recurring_rule_id');
+    if ($_column == null) return null;
+    final manager = $$RecurringRulesTableTableManager(
+      $_db,
+      $_db.recurringRules,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_recurringRuleIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -4252,6 +6037,29 @@ class $$TransactionsTableFilterComposer
           }) => $$AccountsTableFilterComposer(
             $db: $db,
             $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RecurringRulesTableFilterComposer get recurringRuleId {
+    final $$RecurringRulesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recurringRuleId,
+      referencedTable: $db.recurringRules,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringRulesTableFilterComposer(
+            $db: $db,
+            $table: $db.recurringRules,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4407,6 +6215,29 @@ class $$TransactionsTableOrderingComposer
     );
     return composer;
   }
+
+  $$RecurringRulesTableOrderingComposer get recurringRuleId {
+    final $$RecurringRulesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recurringRuleId,
+      referencedTable: $db.recurringRules,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringRulesTableOrderingComposer(
+            $db: $db,
+            $table: $db.recurringRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TransactionsTableAnnotationComposer
@@ -4538,6 +6369,29 @@ class $$TransactionsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$RecurringRulesTableAnnotationComposer get recurringRuleId {
+    final $$RecurringRulesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recurringRuleId,
+      referencedTable: $db.recurringRules,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecurringRulesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.recurringRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TransactionsTableTableManager
@@ -4558,6 +6412,7 @@ class $$TransactionsTableTableManager
             bool akunId,
             bool akunAsalId,
             bool akunTujuanId,
+            bool recurringRuleId,
           })
         > {
   $$TransactionsTableTableManager(_$AppDatabase db, $TransactionsTable table)
@@ -4583,6 +6438,7 @@ class $$TransactionsTableTableManager
                 Value<String?> akunAsalId = const Value.absent(),
                 Value<String?> akunTujuanId = const Value.absent(),
                 Value<int> biayaAdmin = const Value.absent(),
+                Value<String?> recurringRuleId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -4598,6 +6454,7 @@ class $$TransactionsTableTableManager
                 akunAsalId: akunAsalId,
                 akunTujuanId: akunTujuanId,
                 biayaAdmin: biayaAdmin,
+                recurringRuleId: recurringRuleId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -4615,6 +6472,7 @@ class $$TransactionsTableTableManager
                 Value<String?> akunAsalId = const Value.absent(),
                 Value<String?> akunTujuanId = const Value.absent(),
                 Value<int> biayaAdmin = const Value.absent(),
+                Value<String?> recurringRuleId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -4630,6 +6488,7 @@ class $$TransactionsTableTableManager
                 akunAsalId: akunAsalId,
                 akunTujuanId: akunTujuanId,
                 biayaAdmin: biayaAdmin,
+                recurringRuleId: recurringRuleId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -4649,6 +6508,7 @@ class $$TransactionsTableTableManager
                 akunId = false,
                 akunAsalId = false,
                 akunTujuanId = false,
+                recurringRuleId = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -4713,6 +6573,17 @@ class $$TransactionsTableTableManager
                                 .id,
                           ) as T;
                         }
+                        if (recurringRuleId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.recurringRuleId,
+                            referencedTable: $$TransactionsTableReferences
+                                ._recurringRuleIdTable(db),
+                            referencedColumn: $$TransactionsTableReferences
+                                ._recurringRuleIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
                         return state;
                       },
@@ -4742,6 +6613,7 @@ typedef $$TransactionsTableProcessedTableManager =
         bool akunId,
         bool akunAsalId,
         bool akunTujuanId,
+        bool recurringRuleId,
       })
     >;
 typedef $$BudgetsTableCreateCompanionBuilder = BudgetsCompanion Function({
@@ -5167,6 +7039,8 @@ class $AppDatabaseManager {
       $$CategoriesTableTableManager(_db, _db.categories);
   $$AccountsTableTableManager get accounts =>
       $$AccountsTableTableManager(_db, _db.accounts);
+  $$RecurringRulesTableTableManager get recurringRules =>
+      $$RecurringRulesTableTableManager(_db, _db.recurringRules);
   $$TransactionsTableTableManager get transactions =>
       $$TransactionsTableTableManager(_db, _db.transactions);
   $$BudgetsTableTableManager get budgets =>

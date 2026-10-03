@@ -7,6 +7,7 @@ import 'data/repositories/account_repository.dart';
 import 'data/repositories/budget_repository.dart';
 import 'data/repositories/category_repository.dart';
 import 'data/repositories/institution_repository.dart';
+import 'data/repositories/recurring_repository.dart';
 import 'data/repositories/transaction_repository.dart';
 
 export 'data/backup.dart' show BackupService;
@@ -39,8 +40,17 @@ final budgetRepositoryProvider = Provider<BudgetRepository>(
   (ref) => BudgetRepository(ref.watch(databaseProvider)),
 );
 
+final recurringRepositoryProvider = Provider<RecurringRepository>(
+  (ref) => RecurringRepository(ref.watch(databaseProvider)),
+);
+
 final backupServiceProvider = Provider<BackupService>(
   (ref) => BackupService(ref.watch(databaseProvider)),
+);
+
+/// Daftar aturan transaksi berulang.
+final recurringRulesProvider = StreamProvider<List<RecurringRule>>(
+  (ref) => ref.watch(recurringRepositoryProvider).watchAll(),
 );
 
 /// Daftar anggaran.

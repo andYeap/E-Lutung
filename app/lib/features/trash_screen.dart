@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../data/database.dart';
+import '../data/recurring.dart';
 import '../providers.dart';
 import '../theme/app_theme.dart';
 import '../util/format.dart';
@@ -20,6 +21,7 @@ class TrashScreen extends ConsumerWidget {
     final accRepo = ref.watch(accountRepositoryProvider);
     final instRepo = ref.watch(institutionRepositoryProvider);
     final budRepo = ref.watch(budgetRepositoryProvider);
+    final recRepo = ref.watch(recurringRepositoryProvider);
 
     final categories =
         ref.watch(allCategoriesProvider).value ?? const <Category>[];
@@ -73,6 +75,14 @@ class TrashScreen extends ConsumerWidget {
             stream: instRepo.watchDeleted(),
             label: (i) => i.nama,
             onRestore: (i) => instRepo.restore(i.id),
+          ),
+          _Section<RecurringRule>(
+            title: 'Transaksi berulang',
+            stream: recRepo.watchDeleted(),
+            label: (r) =>
+                '${catName[r.kategoriId] ?? 'Tanpa kategori'} • '
+                '${rupiah(r.nominal)} • ${frequencyLabel(r.frekuensi)}',
+            onRestore: (r) => recRepo.restore(r.id),
           ),
           _Section<Budget>(
             title: 'Anggaran',

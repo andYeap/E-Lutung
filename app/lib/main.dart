@@ -8,6 +8,7 @@ import 'app.dart';
 import 'data/database.dart';
 import 'features/onboarding_screen.dart';
 import 'services/app_lock.dart';
+import 'services/recurring_runner.dart';
 import 'services/widget_sync.dart';
 import 'theme/theme_controller.dart';
 import 'util/format.dart';
@@ -22,6 +23,9 @@ void widgetCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     final db = AppDatabase();
     try {
+      // Susulkan dulu transaksi berulang yang terlewat, supaya widget dan
+      // rekap menampilkannya walau aplikasi tidak dibuka (FR-12.2).
+      await RecurringRunner.runDue(db);
       await WidgetSync.push(db);
     } catch (_) {
       // abaikan — widget hanya data ringkasan

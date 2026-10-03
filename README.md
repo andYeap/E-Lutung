@@ -1,9 +1,9 @@
 # E-Lutung
 
 Aplikasi pencatat keuangan Android: pemasukan, pengeluaran, dan transfer, lengkap dengan
-rekap bulanan, grafik per kategori, batas anggaran berwarna (hijau sampai merah), dan widget
-beranda. **100% lokal** — tanpa server, tanpa akun, dan build rilis tidak meminta izin
-internet.
+rekap bulanan, grafik per kategori, batas anggaran berwarna (hijau sampai merah), transaksi
+berulang otomatis untuk gaji dan langganan, dan widget beranda. **100% lokal** — tanpa
+server, tanpa akun, dan build rilis tidak meminta izin internet.
 
 Spesifikasi produk final ada di [PRD.md](PRD.md) (versi cetak: [PRD.pdf](PRD.pdf)). Catatan
 teknis, keputusan desain, dan jebakan yang perlu dihindari ada di [AGENTS.md](AGENTS.md).
@@ -36,7 +36,7 @@ flutter run
 ```bash
 cd app
 flutter analyze   # harus 0 issue
-flutter test      # 49 test
+flutter test      # 72 test
 ```
 
 ## Membangun APK dan AAB
@@ -80,7 +80,7 @@ app/                    proyek Flutter (Android saja)
   lib/features/         layar per fitur
   lib/services/         kunci aplikasi dan sinkronisasi widget
   lib/widgets/          komponen neobrutalism dan grafik
-  test/                 49 test
+  test/                 72 test
   android/              proyek Android beserta widget beranda (RemoteViews)
 ```
 
@@ -93,6 +93,9 @@ app/                    proyek Flutter (Android saja)
   "Transfer & Admin".
 - Rekap bulanan dihitung di SQL, bukan dengan memuat semua transaksi ke memori, dan dijaga
   tetap setara dengan logika murni di Dart oleh `test/sql_aggregate_test.dart`.
+- Transaksi berulang dibangkitkan saat aplikasi dibuka dan oleh tugas WorkManager, lalu
+  ditandai "dari jadwal" di riwayat. Satu periode tidak pernah tercatat dua kali, dijaga
+  indeks unik pada pasangan aturan dan tanggal.
 - Hapus data selalu berupa soft delete ke layar Sampah, jadi masih bisa dipulihkan.
 - Build rilis tidak meminta izin `INTERNET`. Varian debug dan profil memintanya karena
   kebutuhan hot reload.

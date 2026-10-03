@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../providers.dart';
 import '../util/format.dart';
 import '../services/app_lock.dart';
+import '../services/recurring_runner.dart';
 import '../services/widget_sync.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_controller.dart';
@@ -18,6 +19,7 @@ import 'categories_screen.dart';
 import 'dashboard_screen.dart';
 import 'institutions_screen.dart';
 import 'recap/recap_screen.dart';
+import 'recurring/recurring_screen.dart';
 import 'transactions/transaction_form_screen.dart';
 import 'transactions/transactions_screen.dart';
 import 'trash_screen.dart';
@@ -38,8 +40,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   @override
   void initState() {
     super.initState();
-    // Dorong data ke widget beranda satu kali setelah frame pertama.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncWidget());
+    // Bangkitkan transaksi terjadwal lalu dorong data ke widget beranda.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrapData());
     // Pengingat cadangan bila sudah lama tidak mengekspor (FR-10.4).
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeRemindBackup());
     // Ketukan widget beranda membuka detail transaksi terbaru (FR-9.6).
@@ -98,6 +100,29 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   Future<void> _syncWidget() =>
       WidgetSync.push(ref.read(databaseProvider));
+
+  /// Bangkitkan transaksi dari aturan berulang yang jatuh tempo (FR-12.2),
+  /// baru segarkan widget supaya ikut menampilkan hasilnya.
+  Future<void> _bootstrapData() async {
+    var created = 0;
+    try {
+      created = await RecurringRunner.runDue(ref.read(databaseProvider));
+    } catch (e) {
+      debugPrint('[Recurring] gagal membangkitkan transaksi: $e');
+    }
+    await _syncWidget();
+    if (created > 0 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            created == 1
+                ? '1 transaksi dari jadwal dibuat.'
+                : '$created transaksi dari jadwal dibuat.',
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -214,6 +239,15 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Kelola kategori pengeluaran/pemasukan',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _SettingsTile(
+            icon: Icons.autorenew,
+            title: 'Transaksi berulang',
+            subtitle: 'Gaji, langganan, pengeluaran rutin',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const RecurringScreen()),
             ),
           ),
           const SizedBox(height: 12),
@@ -359,7 +393,7 @@ Future<void> _wipeDialog(BuildContext context, BackupService backup) async {
     builder: (ctx) => AlertDialog(
       title: const Text('Hapus semua data?'),
       content: const Text(
-        'Semua transaksi, anggaran, dan akun akan dihapus. '
+        'Semua transaksi, anggaran, aturan berulang, dan akun akan dihapus. '
         'Master institusi & kategori tetap. Tindakan ini tidak bisa dibatalkan.',
       ),
       actions: [

@@ -195,6 +195,7 @@ Nama akun **direlasikan** ke `Institution` (tidak lagi menyimpan nama bebas). Fi
 | akunAsalId | text? | FK → Account ("dari mana") |
 | akunTujuanId | text? | FK → Account ("ke mana") |
 | biayaAdmin | int | Default 0 |
+| recurringRuleId | text? | FK → RecurringRule. Terisi bila transaksi dibuat otomatis dari jadwal (Bagian 7.6) |
 
 > Implementasi: bisa satu tabel `transactions` dengan kolom transfer nullable, atau tabel terpisah `transfer_details` (1:1). PRD ini tidak mengikat; pilih yang paling mudah diquery untuk rekap.
 
@@ -213,6 +214,32 @@ Periode memakai **rentang tanggal eksplisit dan sekali pakai** — mis. membatas
 | aktif | bool | |
 
 Anggaran berlaku bila tanggal transaksi berada dalam rentang `[periodeMulai, periodeSelesai]`. **Tidak ada reset otomatis bulanan** — pengguna menentukan rentangnya sendiri. Untuk warna chart utama, dipakai anggaran `lingkup = total` yang periodenya mencakup tanggal hari ini.
+
+### 7.6 RecurringRule (Transaksi Berulang) — v1.1
+
+Aturan transaksi yang dibuat otomatis saat jatuh tempo. Hanya untuk **pemasukan** dan **pengeluaran**, bukan transfer, supaya tidak perlu menyimpan akun asal dan tujuan.
+
+| Field | Tipe | Keterangan |
+|---|---|---|
+| id | text | PK |
+| tipe | enum | `pemasukan` \| `pengeluaran` |
+| nominal | int | Nominal tiap kemunculan |
+| kategoriId | text? | FK → Category (wajib diisi lewat form) |
+| akunId | text? | FK → Account (opsional, seperti transaksi biasa) |
+| catatan | text? | Note bebas |
+| frekuensi | enum | `harian` \| `mingguan` \| `bulanan` \| `tahunan` |
+| mulai | date | Jatuh tempo pertama, sekaligus tanggal acuan untuk frekuensi bulanan dan tahunan |
+| sampai | date? | Batas akhir inklusif; null berarti tanpa batas |
+| terakhirDibuat | date? | Jatuh tempo terakhir yang sudah dibuatkan transaksi (null = belum pernah) |
+| aktif | bool | Nonaktifkan tanpa hapus |
+
+Aturan perhitungan tanggal:
+
+- **Bulanan** memakai **tanggal acuan dari `mulai`**, bukan tanggal hasil jepitan. Bila tanggal acuan melebihi jumlah hari pada bulan itu, jatuh tempo dijepit ke hari terakhir (31 Januari menjadi 28 atau 29 Februari), dan bulan berikutnya **kembali ke tanggal acuan** (31 Maret). Ini mencegah jadwal bergeser permanen ke tanggal 28.
+- **Tahunan** mengikuti aturan bulanan dengan langkah 12 bulan; 29 Februari menjadi 28 Februari pada tahun non-kabisat.
+- `sampai` bersifat inklusif; setelah tanggal itu tidak ada transaksi baru.
+
+> Alasan promosi: fitur ini semula ada di Backlog v2 (Bagian 19). Dinaikkan ke v1.1 karena pencatatan rutin (gaji, langganan) termasuk kebutuhan pokok, dan penjadwalannya bisa menumpang WorkManager yang sudah dipakai widget sehingga tidak menambah ketergantungan baru.
 
 ---
 
@@ -328,6 +355,15 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-11.4 Hapus semua data (dengan konfirmasi ganda).
 - FR-11.5 Tema terang/gelap/mengikuti sistem.
 
+### FR-12 Transaksi Berulang (v1.1)
+- FR-12.1 CRUD aturan berulang: tipe (pemasukan/pengeluaran), nominal, kategori, akun (opsional), catatan, frekuensi (harian/mingguan/bulanan/tahunan), tanggal mulai, tanggal sampai (opsional), dan status aktif.
+- FR-12.2 Transaksi dibuat **otomatis** saat jatuh tempo: dibangkitkan ketika aplikasi dibuka, dan tugas WorkManager yang sudah ada ikut menyusul periode yang terlewat. Tidak ada langkah persetujuan.
+- FR-12.3 Satu periode tidak pernah tercatat dua kali (idempotent), termasuk bila aplikasi dan WorkManager berjalan bersamaan.
+- FR-12.4 Transaksi hasil jadwal diberi penanda yang terlihat di riwayat, dan dapat diedit atau dihapus seperti transaksi biasa tanpa mengubah aturannya.
+- FR-12.5 Aturan yang dinonaktifkan atau sudah melewati tanggal selesai berhenti menghasilkan transaksi; transaksi yang sudah ada tetap tersimpan.
+- FR-12.6 Daftar aturan menampilkan jatuh tempo berikutnya serta bisa diaktifkan dan dinonaktifkan.
+- FR-12.7 Pembangkitan dibatasi sejumlah catatan per aturan per jalan, agar aturan bertanggal mulai lama tidak membanjiri riwayat; sisanya dilanjutkan pada jalan berikutnya.
+
 ---
 
 ## 10. Kebutuhan Non-Fungsional
@@ -384,6 +420,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - [x] Ekspor → hapus data → impor menghasilkan data identik (jumlah & nominal cocok).
 - [x] Aplikasi berjalan penuh dalam mode pesawat (airplane mode).
 - [x] Batas bulan benar: transaksi 23:59 tgl terakhir bulan vs 00:00 tgl 1 bulan berikut jatuh ke periode masing-masing.
+- [x] Transaksi berulang: aturan "bulanan tanggal 31" jatuh ke 28/29 Februari lalu kembali ke 31 Maret, dan satu periode tidak pernah tercatat dua kali.
 
 Catatan bukti: kotak di atas ditandai hanya bila ada pemeriksaan otomatis yang menjalankannya.
 
@@ -393,6 +430,7 @@ Catatan bukti: kotak di atas ditandai hanya bila ada pemeriksaan otomatis yang m
 - Ekspor → impor: `test/backup_test.dart`.
 - Mode pesawat: manifest rilis tidak meminta izin `INTERNET` (hanya varian debug/profil yang memintanya untuk hot reload).
 - Batas bulan: `test/finance_test.dart` dan `test/sql_aggregate_test.dart` (dijalankan juga di tiga zona waktu berbeda).
+- Transaksi berulang: `test/recurring_test.dart` (matematika jadwal, penjepitan akhir bulan, tahun kabisat), `test/recurring_runner_test.dart` (idempotensi termasuk dua pelari bersamaan, batas per jalan, tanggal selesai, aturan nonaktif), `test/migration_test.dart` (migrasi v1 dan v2 ke v3, indeks unik menolak periode ganda).
 
 Dua kotak yang masih kosong butuh perangkat/emulator: alur catat transaksi sampai tampil di Dashboard, dan pembaruan widget beranda setelah transaksi ditambahkan.
 
@@ -407,6 +445,10 @@ Dua kotak yang masih kosong butuh perangkat/emulator: alur catat transaksi sampa
 - **M5 — Transfer:** model multi-akun, aturan Bagian 8.1, saldo per akun.
 - **M6 — Widget:** provider native + `home_widget` + WorkManager + deep link.
 - **M7 — Cadangan & Poles:** ekspor/impor, tema, aksesibilitas, build AAB/split.
+
+**v1.1 (setelah v1):**
+
+- **M8 — Transaksi Berulang:** aturan berulang harian/mingguan/bulanan/tahunan, pembangkitan otomatis saat jatuh tempo, dan penanda "dari jadwal" di riwayat.
 
 Setiap milestone harus lolos `flutter analyze` (0 issue) dan set test-nya sebelum lanjut.
 
@@ -436,10 +478,11 @@ Pertanyaan terbuka sebelumnya sudah ditetapkan (boleh ditinjau ulang bila kebutu
 4. **Widget:** provider **RemoteViews** (bukan Jetpack Glance) demi kompatibilitas & ukuran; mendukung ukuran 2×2 dan 4×2.
 5. **Kunci aplikasi:** disertakan di v1 (PIN/biometrik) dengan **default nonaktif**, dapat dinyalakan di Pengaturan.
 6. **Periode anggaran:** memakai rentang tanggal eksplisit (`periodeMulai`–`periodeSelesai`) dan **sekali pakai**; tidak ada reset otomatis bulanan maupun rollover.
-7. **Layar Sampah:** ditunda ke v1.1 — soft delete sudah ada di data, tinggal UI pemulihan.
+7. **Layar Sampah:** disertakan sejak v1 (soft delete sudah ada di data sejak awal, UI pemulihannya menyusul dan kini sudah tersedia).
 8. **Mode gelap & kategori kustom:** keduanya masuk v1 — kategori berupa tabel yang bisa di-CRUD (ikon & warna disimpan per kategori).
 9. **Gaya desain:** **Neobrutalism** (detail di Bagian 6b).
 10. **Navigasi:** **bottom navigation 4 tab** (Dashboard, Riwayat, Rekap, Anggaran) + Pengaturan di AppBar — ditetapkan dan sudah dipakai.
+11. **Transaksi berulang (v1.1):** dibuat **otomatis** saat jatuh tempo, bukan usulan yang perlu disetujui; dibangkitkan saat aplikasi dibuka dan oleh tugas WorkManager yang sudah ada; hanya untuk pemasukan dan pengeluaran; frekuensi harian, mingguan, bulanan, tahunan.
 
 ---
 
@@ -451,11 +494,16 @@ Pertanyaan terbuka sebelumnya sudah ditetapkan (boleh ditinjau ulang bila kebutu
 
 ## 19. Backlog v2 (sengaja ditunda)
 
+Sudah dikerjakan lebih awal dari rencana:
+
+- **Transaksi berulang otomatis** (langganan, gaji bulanan) — dinaikkan ke v1.1, spesifikasinya ada di Bagian 7.6 dan FR-12.
+- Grafik garis tren saldo kumulatif — sudah ada di layar Rekap.
+- Layar "Sampah" + pemulihan transaksi — sudah ada sejak v1.
+
+Masih ditunda:
+
 - Utang/piutang dan cicilan.
-- Transaksi berulang otomatis (langganan, gaji bulanan).
 - Rollover anggaran (sisa dibawa ke bulan berikutnya).
-- Grafik garis tren saldo kumulatif.
-- Layar "Sampah" + pemulihan transaksi (v1.1).
 - Sinkronisasi opsional antar-perangkat / cadangan terenkripsi.
 - Widget iOS (bila aplikasi diperluas ke iOS).
 - Label pembeda akun (bila perlu lebih dari satu akun per institusi).

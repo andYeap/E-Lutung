@@ -343,7 +343,9 @@ class _RecentRow extends StatelessWidget {
               children: [
                 Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                 Text(
-                  '${relativeTime(tx.tanggal)} • ${DateFormat('HH:mm').format(tx.tanggal)}',
+                  '${relativeTime(tx.tanggal)} • '
+                  '${DateFormat('HH:mm').format(tx.tanggal)}'
+                  '${tx.recurringRuleId == null ? '' : ' • dari jadwal'}',
                   style: TextStyle(color: Neo.muted, fontSize: 11),
                 ),
               ],

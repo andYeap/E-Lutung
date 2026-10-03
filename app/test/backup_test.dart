@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:elutung/data/backup.dart';
 import 'package:elutung/data/database.dart';
+import 'package:elutung/data/repositories/recurring_repository.dart';
 import 'package:elutung/data/repositories/transaction_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -46,6 +47,30 @@ void main() {
     expect(after.length, 2);
     final total = after.fold<int>(0, (a, t) => a + t.nominal);
     expect(total, 125000);
+  });
+
+  test('aturan berulang ikut terekspor dan terpulihkan', () async {
+    final rules = RecurringRepository(db);
+    final id = await rules.create(
+      tipe: TxType.pengeluaran,
+      nominal: 99000,
+      kategoriId: 'hiburan',
+      frekuensi: Frequency.bulanan,
+      mulai: DateTime(2026, 5, 1),
+    );
+
+    final dump = await backup.dump();
+    await db.delete(db.recurringRules).go();
+    expect((await db.select(db.recurringRules).get()), isEmpty);
+
+    await backup.restore(dump, replace: true);
+
+    final restored = await db.select(db.recurringRules).get();
+    expect(restored.length, 1);
+    expect(restored.single.id, id);
+    expect(restored.single.nominal, 99000);
+    expect(restored.single.frekuensi, Frequency.bulanan);
+    expect(restored.single.mulai, DateTime(2026, 5, 1));
   });
 
   test('impor mode gabung tidak menggandakan id yang sama', () async {

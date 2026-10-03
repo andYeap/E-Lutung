@@ -10,15 +10,17 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
 - `~/E-Lutung/app/` — proyek Flutter (hanya Android).
   - `lib/main.dart` — bootstrap: `ensureIntlLocale()` → Workmanager init → `ThemeController.load()` → `AppLock.load()` → `runApp`.
   - `lib/app.dart` — `MaterialApp` (+ delegate lokal `id`/`en`, clamp textScaler 0.8–1.4) → `AuthGate` → `ShellScreen`.
-  - `lib/providers.dart` — Riverpod: `databaseProvider`, 5 repository, `*Provider` stream, `ownAccountIdsProvider`, `backupServiceProvider`.
+  - `lib/providers.dart` — Riverpod: `databaseProvider`, 6 repository, `*Provider` stream, `ownAccountIdsProvider`, `backupServiceProvider`, agregat rekap.
   - `lib/data/database.dart` (+ `.g.dart`) — skema Drift + **seed** institusi & kategori di `onCreate`.
   - `lib/data/finance.dart` — logika **murni & teruji**: aturan transfer, `computeTotals`, `expenseByCategory`, `monthlySeries`, `accountBalance`, `budgetUsageOf`.
+  - `lib/data/recurring.dart` — matematika jadwal berulang (murni, teruji): `occurrenceAt`, `occurrences`, `nextDue`, `daysInMonth`. Penjepitan akhir bulan selalu mengacu ke tanggal asli `mulai`, bukan hasil jepitan.
   - `lib/data/backup.dart` — ekspor/impor JSON, ekspor CSV, `wipeUserData`, pengingat cadangan.
-  - `lib/data/repositories/*` — institution, category, account, transaction, budget. **Semua** punya `watchDeleted()` + `restore()` (soft delete).
-  - `lib/features/*` — `shell.dart` (bottom nav 4 tab + Pengaturan + penanganan klik widget), `onboarding_screen.dart` (`OnboardingGate`, sekali saja), `dashboard_screen`, `transactions/*`, `recap/recap_screen`, `budget/budget_screen`, `institutions_screen`, `accounts_screen`, `categories_screen`, `trash_screen`.
+  - `lib/data/repositories/*` — institution, category, account, transaction, budget, recurring. **Semua** punya `watchDeleted()` + `restore()` (soft delete).
+  - `lib/features/*` — `shell.dart` (bottom nav 4 tab + Pengaturan + penanganan klik widget), `onboarding_screen.dart` (`OnboardingGate`, sekali saja), `dashboard_screen`, `transactions/*`, `recap/recap_screen`, `budget/budget_screen`, `recurring/recurring_screen`, `institutions_screen`, `accounts_screen`, `categories_screen`, `trash_screen`.
   - `lib/widgets/neo.dart` — `NeoCard/NeoButton/NeoTextField` + `NeoLoading`/`NeoError` (keadaan memuat/gagal bergaya neobrutalism).
   - `lib/services/app_lock.dart` — kunci PIN/biometrik + `AuthGate`.
   - `lib/services/widget_sync.dart` — tulis data ke widget + `requestPin`.
+  - `lib/services/recurring_runner.dart` — `RecurringRunner.runDue()`: bangkitkan transaksi dari aturan yang jatuh tempo. Dipanggil `ShellScreen` saat aplikasi dibuka dan `widgetCallbackDispatcher` (WorkManager).
   - `lib/theme/app_theme.dart` — token `Neo` (neobrutalism lembut) + `AppTheme.light()/dark()`.
   - `lib/util/` — `format.dart` (rupiah, `ThousandsInputFormatter`, `ensureIntlLocale`), `budget.dart` (level warna), `color.dart`, `labels.dart`.
   - `lib/widgets/neo.dart` — `NeoCard/NeoButton/NeoTextField`; `charts.dart` — `ExpenseDonut/MonthlyBars/NetTrendChart`.
@@ -34,7 +36,7 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
 
 ## Model data & aturan bisnis (Bagian 7–8)
 
-- Tabel: `institutions`, `categories`, `accounts`, `transactions`, `budgets`. Semua entitas: `id` (uuid), `createdAt`, `updatedAt`, `deletedAt` (**soft delete**).
+- Tabel: `institutions`, `categories`, `accounts`, `transactions`, `budgets`, `recurring_rules`. Semua entitas: `id` (uuid), `createdAt`, `updatedAt`, `deletedAt` (**soft delete**).
 - `categories` **tanpa** field `jenis` (tipe dibawa `transactions.tipe`) dan **tanpa** `archived` (keadaan nonaktif = `deletedAt`). Kategori bersifat umum (dipakai masuk maupun keluar).
 - `accounts` = relasi ke `institutions` (tanpa nama/ikon/warna/label).
 - `budgets` = rentang tanggal eksplisit (`periodeMulai`/`periodeSelesai`), sekali pakai; `lingkup` total|kategori.
@@ -43,7 +45,8 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
 - **Grafik donut** menggabungkan kategori kecil (<3% dari total) jadi satu potongan "Lainnya" lewat `buildChartSlices()` di `widgets/charts.dart` (mitigasi Bagian 16); jumlah potongan tetap sama dengan total.
 - **Warna anggaran (Bagian 8.2):** <60% aman, 60–85% waspada, 85–100% menipis, ≥100% lewat batas (`util/budget.dart`).
 - Seed institusi/kategori hanya ditulis saat DB **dibuat** (`onCreate`).
-- **Skema v2** — `categories.archived` dibuang. `onUpgrade` (dari v1) memakai `m.dropColumn(categories, 'archived')` lalu `m.createAll()` untuk membuat indeks `idx_transactions_tipe_tanggal_kategori`. Uji migrasi nyata ada di `test/migration_test.dart`.
+- **Skema v3** — v2 membuang `categories.archived`; v3 menambah tabel `recurring_rules` dan kolom `transactions.recurring_rule_id`. `onUpgrade` memakai `m.dropColumn`, `m.createTable`, dan `m.addColumn`, lalu `_createIndexes()`. Uji migrasi nyata (v1 ke v3 dan v2 ke v3, plus indeks unik menolak periode ganda) ada di `test/migration_test.dart`.
+- **Transaksi berulang (v1.1)** — aturan di `recurring_rules`; transaksi hasilnya ditandai `recurringRuleId`. Hanya pemasukan/pengeluaran, frekuensi harian/mingguan/bulanan/tahunan. Dibangkitkan otomatis saat aplikasi dibuka dan oleh WorkManager, maksimal 100 per aturan per jalan (sisanya menyusul). Aturan ikut terekspor di cadangan JSON dan ada di layar Sampah.
 - Kategori yang sudah dihapus tetap dipakai untuk **label & warna** transaksi lama lewat `allCategoriesProvider`; `categoriesProvider` (aktif saja) hanya untuk pemilih/filter. Hapus kategori yang masih dipakai transaksi **ditolak** (`CategoryRepository.usedByTransactions`).
 - **Agregasi rekap di SQL** (`watchMonthTotals`, `watchMonthExpenseByCategory`, `watchMonthlySeries`) lewat `CaseWhenExpression` + `SUM`/`GROUP BY`; dipakai layar Rekap via `monthTotalsProvider`/`monthExpenseByCategoryProvider`/`monthlySeriesProvider`. Padanan aturan transfer ada di SQL **dan** `finance.dart` — kesetaraannya dijaga `test/sql_aggregate_test.dart` (dijalankan juga di 3 zona waktu). Jalur yang butuh data per baris (anggaran, saldo akun, widget) tetap memakai `allTransactionsProvider`. Pengelompokan bulan memakai `modify(DateTimeModifier.localTime())` — jangan pakai `strftime` polos (UTC → geser batas bulan).
 
@@ -54,7 +57,7 @@ cd ~/E-Lutung/app
 flutter pub get
 dart run build_runner build        # WAJIB setelah mengubah skema Drift
 flutter analyze                    # harus 0 issue
-flutter test                       # 49 test
+flutter test                       # 72 test
 flutter run
 flutter build apk --release
 flutter build appbundle --release
@@ -76,6 +79,9 @@ flutter build apk --release --split-per-abi
 11. **Nama nilai enum** (`textEnum`) tersimpan sebagai teks di DB — mengubahnya butuh migrasi.
 12. **Data widget** — key mengikuti Bagian 12 PRD: `widget_income_month`, `widget_expense_month`, `widget_budget_remaining`, `widget_budget_pct`, `widget_latest_1..3`, plus `widget_budget_color` (tambahan, indikator warna FR-9.3). Harus sinkron antara `widget_sync.dart`, `ElutungWidgetProvider.kt`, dan layout XML; kalau key berubah, ubah ketiganya.
 13. Widget beranda **tidak muncul otomatis**; pengguna memasangnya (Pengaturan → "Pasang widget beranda"). Sejak Android 8, launcher menyembunyikan widget app yang belum pernah dijalankan.
+14. **`m.createAll()` TIDAK idempotent untuk indeks** — DDL indeks yang dihasilkan Drift tidak memakai `IF NOT EXISTS`, jadi memanggilnya saat indeksnya sudah ada langsung gagal (`SqliteException: index ... already exists`). Di `onUpgrade` jangan pakai `createAll()`; gunakan `m.createTable`/`m.addColumn` untuk yang baru, lalu `_createIndexes()` yang memakai `CREATE INDEX IF NOT EXISTS`. Ini pernah membuat dua test migrasi merah.
+15. **`@TableIndex` tidak bisa dipakai dua kali** pada satu kelas tabel (bukan anotasi `@Repeatable`), jadi indeks unik `idx_transactions_recurring_tanggal` dibuat lewat `customStatement`. Jangan "merapikan"-nya jadi anotasi kedua — tidak akan ter-compile.
+16. `RecurringRunner.runDue()` dijalankan dari dua tempat (aplikasi dan isolate WorkManager) yang memakai koneksi DB berbeda. Keamanan ganda: pemeriksaan keberadaan per periode **dan** indeks unik; jangan hapus salah satunya.
 
 ## Verifikasi sebelum mengirim
 

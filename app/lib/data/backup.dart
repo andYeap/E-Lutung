@@ -49,6 +49,7 @@ class BackupService {
     'accounts': (await _db.select(_db.accounts).get()).map((e) => e.toJson()).toList(),
     'transactions': (await _db.select(_db.transactions).get()).map((e) => e.toJson()).toList(),
     'budgets': (await _db.select(_db.budgets).get()).map((e) => e.toJson()).toList(),
+    'recurringRules': (await _db.select(_db.recurringRules).get()).map((e) => e.toJson()).toList(),
   };
 
   Future<File> exportFile() async {
@@ -162,6 +163,7 @@ class BackupService {
         // Urutan hapus: anak dulu, induk terakhir (menghormati FK).
         await _db.delete(_db.transactions).go();
         await _db.delete(_db.budgets).go();
+        await _db.delete(_db.recurringRules).go();
         await _db.delete(_db.accounts).go();
         await _db.delete(_db.categories).go();
         await _db.delete(_db.institutions).go();
@@ -176,6 +178,10 @@ class BackupService {
       }
       for (final m in rows('accounts')) {
         await _db.into(_db.accounts).insertOnConflictUpdate(Account.fromJson(m));
+        count++;
+      }
+      for (final m in rows('recurringRules')) {
+        await _db.into(_db.recurringRules).insertOnConflictUpdate(RecurringRule.fromJson(m));
         count++;
       }
       for (final m in rows('transactions')) {
@@ -196,6 +202,7 @@ class BackupService {
     await _db.transaction(() async {
       await _db.delete(_db.transactions).go();
       await _db.delete(_db.budgets).go();
+      await _db.delete(_db.recurringRules).go();
       await _db.delete(_db.accounts).go();
     });
   }

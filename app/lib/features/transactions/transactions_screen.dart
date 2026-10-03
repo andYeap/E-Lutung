@@ -378,6 +378,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         accName[t.akunId]!,
       if (t.tipe == TxType.transfer && t.biayaAdmin > 0)
         'Admin ${rupiah(t.biayaAdmin)}',
+      if (t.recurringRuleId != null) 'dari jadwal',
       if ((t.catatan ?? '').isNotEmpty) t.catatan!,
     ];
     final amountLabel = t.tipe == TxType.transfer

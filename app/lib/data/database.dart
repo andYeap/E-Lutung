@@ -12,6 +12,9 @@ enum TxType { pemasukan, pengeluaran, transfer }
 /// Lingkup anggaran (Bagian 7.5 PRD).
 enum BudgetScope { total, kategori }
 
+/// Frekuensi aturan transaksi berulang (Bagian 7.6 PRD, v1.1).
+enum Frequency { harian, mingguan, bulanan, tahunan }
+
 /// Master institusi — bank, e-wallet, tunai, lain-lain (Bagian 7.1).
 class Institutions extends Table {
   TextColumn get id => text()();
@@ -78,6 +81,37 @@ class Transactions extends Table {
   TextColumn get akunAsalId => text().nullable().references(Accounts, #id)();
   TextColumn get akunTujuanId => text().nullable().references(Accounts, #id)();
   IntColumn get biayaAdmin => integer().withDefault(const Constant(0))();
+
+  /// Terisi bila transaksi ini dibuat otomatis dari jadwal (Bagian 7.6).
+  TextColumn get recurringRuleId =>
+      text().nullable().references(RecurringRules, #id)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Aturan transaksi berulang (Bagian 7.6, v1.1). Hanya pemasukan/pengeluaran.
+class RecurringRules extends Table {
+  TextColumn get id => text()();
+  TextColumn get tipe => textEnum<TxType>()();
+  IntColumn get nominal => integer()();
+  TextColumn get kategoriId => text().nullable().references(Categories, #id)();
+  TextColumn get akunId => text().nullable().references(Accounts, #id)();
+  TextColumn get catatan => text().nullable()();
+  TextColumn get frekuensi => textEnum<Frequency>()();
+
+  /// Jatuh tempo pertama, sekaligus tanggal acuan untuk bulanan/tahunan.
+  DateTimeColumn get mulai => dateTime()();
+
+  /// Batas akhir inklusif; null = tanpa batas.
+  DateTimeColumn get sampai => dateTime().nullable()();
+
+  /// Jatuh tempo terakhir yang sudah dibuatkan transaksi (null = belum pernah).
+  DateTimeColumn get terakhirDibuat => dateTime().nullable()();
+  BoolColumn get aktif => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -105,30 +139,62 @@ class Budgets extends Table {
 }
 
 @DriftDatabase(
-  tables: [Institutions, Categories, Accounts, Transactions, Budgets],
+  tables: [
+    Institutions,
+    Categories,
+    Accounts,
+    Transactions,
+    Budgets,
+    RecurringRules,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   /// `executor` bisa diisi (mis. `NativeDatabase.memory()`) untuk pengujian.
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _open());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
+      await _createIndexes();
       await _seed();
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) {
-        // Kolom `archived` dibuang: keadaan nonaktif kini hanya `deletedAt`.
+        // v2: kolom `archived` dibuang, keadaan nonaktif kini hanya `deletedAt`.
         await m.dropColumn(categories, 'archived');
-        // Membuat indeks baru (CREATE ... IF NOT EXISTS, aman diulang).
-        await m.createAll();
       }
+      if (from < 3) {
+        // v3: tabel aturan, lalu kolom penanda asal-jadwal di transaksi.
+        await m.createTable(recurringRules);
+        await m.addColumn(transactions, transactions.recurringRuleId);
+      }
+      await _createIndexes();
     },
   );
+
+  /// Membuat indeks yang belum ada.
+  ///
+  /// Sengaja lewat `customStatement`, bukan `m.createAll()`: DDL indeks yang
+  /// dihasilkan Drift tidak memakai `IF NOT EXISTS`, jadi memanggil `createAll()`
+  /// saat indeksnya sudah ada akan gagal. Selain itu `@TableIndex` tidak bisa
+  /// dipakai dua kali pada satu kelas tabel, sehingga indeks unik di bawah harus
+  /// dibuat manual.
+  Future<void> _createIndexes() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_tipe_tanggal_kategori '
+      'ON transactions (tipe, tanggal, kategori_id)',
+    );
+    // Satu periode aturan berulang tidak boleh tercatat dua kali, termasuk bila
+    // aplikasi dan WorkManager berjalan di isolate berbeda (FR-12.3).
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_recurring_tanggal '
+      'ON transactions (recurring_rule_id, tanggal)',
+    );
+  }
 
   static QueryExecutor _open() => driftDatabase(name: 'elutung');
 
