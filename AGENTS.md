@@ -1,0 +1,89 @@
+# AGENTS.md — E-Lutung (Flutter, Android-only, 100% lokal)
+
+Aplikasi pencatat keuangan (pemasukan/pengeluaran/transfer, rekap bulanan, grafik per
+kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** (versi PDF di
+`./PRD.pdf`); implementasi ada di `./app`.
+
+## Structure
+
+- `~/E-Lutung/PRD.md` — PRD final (Bagian 1–19). Semua keputusan desain mengacu ke sini.
+- `~/E-Lutung/app/` — proyek Flutter (hanya Android).
+  - `lib/main.dart` — bootstrap: `ensureIntlLocale()` → Workmanager init → `ThemeController.load()` → `AppLock.load()` → `runApp`.
+  - `lib/app.dart` — `MaterialApp` (+ delegate lokal `id`/`en`, clamp textScaler 0.8–1.4) → `AuthGate` → `ShellScreen`.
+  - `lib/providers.dart` — Riverpod: `databaseProvider`, 5 repository, `*Provider` stream, `ownAccountIdsProvider`, `backupServiceProvider`.
+  - `lib/data/database.dart` (+ `.g.dart`) — skema Drift + **seed** institusi & kategori di `onCreate`.
+  - `lib/data/finance.dart` — logika **murni & teruji**: aturan transfer, `computeTotals`, `expenseByCategory`, `monthlySeries`, `accountBalance`, `budgetUsageOf`.
+  - `lib/data/backup.dart` — ekspor/impor JSON, ekspor CSV, `wipeUserData`, pengingat cadangan.
+  - `lib/data/repositories/*` — institution, category, account, transaction, budget. **Semua** punya `watchDeleted()` + `restore()` (soft delete).
+  - `lib/features/*` — `shell.dart` (bottom nav 4 tab + Pengaturan + penanganan klik widget), `onboarding_screen.dart` (`OnboardingGate`, sekali saja), `dashboard_screen`, `transactions/*`, `recap/recap_screen`, `budget/budget_screen`, `institutions_screen`, `accounts_screen`, `categories_screen`, `trash_screen`.
+  - `lib/widgets/neo.dart` — `NeoCard/NeoButton/NeoTextField` + `NeoLoading`/`NeoError` (keadaan memuat/gagal bergaya neobrutalism).
+  - `lib/services/app_lock.dart` — kunci PIN/biometrik + `AuthGate`.
+  - `lib/services/widget_sync.dart` — tulis data ke widget + `requestPin`.
+  - `lib/theme/app_theme.dart` — token `Neo` (neobrutalism lembut) + `AppTheme.light()/dark()`.
+  - `lib/util/` — `format.dart` (rupiah, `ThousandsInputFormatter`, `ensureIntlLocale`), `budget.dart` (level warna), `color.dart`, `labels.dart`.
+  - `lib/widgets/neo.dart` — `NeoCard/NeoButton/NeoTextField`; `charts.dart` — `ExpenseDonut/MonthlyBars/NetTrendChart`.
+  - `android/app/src/main/kotlin/com/elutung/elutung/` — `MainActivity.kt` (harus `FlutterFragmentActivity`), `ElutungWidgetProvider.kt`.
+  - `android/app/src/main/res/{layout/widget_elutung.xml, xml/widget_elutung_info.xml, drawable/widget_bg.xml}`.
+
+## Keputusan teknis (Bagian 6 PRD)
+
+- Flutter stable, Android-only. `applicationId = com.elutung.app`, `minSdk = 26`; **namespace/Kotlin package = `com.elutung.elutung`** (sengaja beda dari applicationId).
+- Penyimpanan **Drift/SQLite** (bukan Hive) karena rekap butuh agregasi SQL. Nominal = **int rupiah** (tanpa desimal).
+- `fl_chart` untuk grafik, `home_widget` + `workmanager` (provider native **RemoteViews**), `flutter_riverpod` (v3), `intl` (locale `id_ID`), `uuid`, `local_auth`, `share_plus`, `file_picker`, `path_provider`, `shared_preferences`.
+- Gaya visual **neobrutalism lembut** (border tebal + sudut kecil, tapi warna muted).
+
+## Model data & aturan bisnis (Bagian 7–8)
+
+- Tabel: `institutions`, `categories`, `accounts`, `transactions`, `budgets`. Semua entitas: `id` (uuid), `createdAt`, `updatedAt`, `deletedAt` (**soft delete**).
+- `categories` **tanpa** field `jenis` (tipe dibawa `transactions.tipe`) dan **tanpa** `archived` (keadaan nonaktif = `deletedAt`). Kategori bersifat umum (dipakai masuk maupun keluar).
+- `accounts` = relasi ke `institutions` (tanpa nama/ikon/warna/label).
+- `budgets` = rentang tanggal eksplisit (`periodeMulai`/`periodeSelesai`), sekali pakai; `lingkup` total|kategori.
+- **Transfer (Bagian 8.1):** ke akun sendiri → **bukan** pengeluaran (hanya `biayaAdmin`); ke pihak lain → `nominal + biayaAdmin` jadi pengeluaran.
+- **Kategori pembukuan pengeluaran** = `finance.expenseCategoryId()`, bukan selalu `Transaction.kategoriId`: biaya admin transfer antar akun sendiri selalu masuk kategori `transfer_admin` ("Transfer & Admin"). Dipakai konsisten di `expenseByCategory`, `budgetUsageOf`, dan ekspresi SQL `_expenseCategoryExpr()` — termasuk saat **memfilter** kategori, supaya kartu total, tabel, dan grafik tidak berbeda.
+- **Grafik donut** menggabungkan kategori kecil (<3% dari total) jadi satu potongan "Lainnya" lewat `buildChartSlices()` di `widgets/charts.dart` (mitigasi Bagian 16); jumlah potongan tetap sama dengan total.
+- **Warna anggaran (Bagian 8.2):** <60% aman, 60–85% waspada, 85–100% menipis, ≥100% lewat batas (`util/budget.dart`).
+- Seed institusi/kategori hanya ditulis saat DB **dibuat** (`onCreate`).
+- **Skema v2** — `categories.archived` dibuang. `onUpgrade` (dari v1) memakai `m.dropColumn(categories, 'archived')` lalu `m.createAll()` untuk membuat indeks `idx_transactions_tipe_tanggal_kategori`. Uji migrasi nyata ada di `test/migration_test.dart`.
+- Kategori yang sudah dihapus tetap dipakai untuk **label & warna** transaksi lama lewat `allCategoriesProvider`; `categoriesProvider` (aktif saja) hanya untuk pemilih/filter. Hapus kategori yang masih dipakai transaksi **ditolak** (`CategoryRepository.usedByTransactions`).
+- **Agregasi rekap di SQL** (`watchMonthTotals`, `watchMonthExpenseByCategory`, `watchMonthlySeries`) lewat `CaseWhenExpression` + `SUM`/`GROUP BY`; dipakai layar Rekap via `monthTotalsProvider`/`monthExpenseByCategoryProvider`/`monthlySeriesProvider`. Padanan aturan transfer ada di SQL **dan** `finance.dart` — kesetaraannya dijaga `test/sql_aggregate_test.dart` (dijalankan juga di 3 zona waktu). Jalur yang butuh data per baris (anggaran, saldo akun, widget) tetap memakai `allTransactionsProvider`. Pengelompokan bulan memakai `modify(DateTimeModifier.localTime())` — jangan pakai `strftime` polos (UTC → geser batas bulan).
+
+## Commands
+
+```bash
+cd ~/E-Lutung/app
+flutter pub get
+dart run build_runner build        # WAJIB setelah mengubah skema Drift
+flutter analyze                    # harus 0 issue
+flutter test                       # 49 test
+flutter run
+flutter build apk --release
+flutter build appbundle --release
+flutter build apk --release --split-per-abi
+```
+
+## Gotchas (dari bug nyata — jangan diulang)
+
+1. **Token `Neo` bersifat mutable.** `bg/surface/ink/muted` di-swap `applyBrightness()` saat tema berubah. JANGAN memakai `Neo.*` di dalam ekspresi `const` → `invalid_constant`. `NeoCard.color` default `null` (diselesaikan di build).
+2. **Lokalisasi wajib di-init.** Panggil `ensureIntlLocale()` sebelum memakai `DateFormat(..., 'id_ID')`; tanpa itu `LocaleDataException` (dulu bikin tombol **+ di Anggaran tidak berfungsi**). Di widget test: `setUpAll(() async => ensureIntlLocale())`.
+3. **Companion Drift bukan `const`** → daftar seed tidak boleh `const [...]`.
+4. **Widget**: rujuk provider via `qualifiedAndroidName` (`com.elutung.elutung.ElutungWidgetProvider`) karena applicationId (`.app`) ≠ package kelas (`.elutung`).
+5. **`local_auth`** memerlukan `MainActivity extends FlutterFragmentActivity`. Jangan kembalikan ke `FlutterActivity`.
+6. **Hapus = soft delete** (`deletedAt`) → muncul di **Sampah** dan bisa dipulihkan. Jangan buat hard delete dan jangan hidupkan lagi kolom `archived`. Kategori yang masih dipakai transaksi **tidak boleh** dihapus (ditolak) — labelnya masih dibutuhkan riwayat/rekap.
+7. **Widget test + Drift**: jangan `pumpAndSettle()` selama stream belum mengirim data pertama (dulu ada animasi tak berujung → menggantung). Bongkar tree (`pumpWidget(SizedBox())`) sebelum test selesai agar timer pembersihan Drift jalan (menghindari "Pending timers"). Jangan menutup DB saat stream masih aktif ("Cannot add event while adding stream").
+8. **Uang selalu int rupiah**; input lewat `ThousandsInputFormatter` dan dibaca `parseRupiah` (tahan format "25.000"/"Rp 1.250.000").
+9. **Palet harus tetap lembut** (permintaan pengguna). **Aksen dekoratif dilarang memakai hijau/merah** agar tidak bentrok dengan makna pemasukan/pengeluaran.
+10. **Tema gelap**: AppBar memakai permukaan gelap, **bukan** kuning (kontras menyilaukan). Kuning lembut hanya di tema terang.
+11. **Nama nilai enum** (`textEnum`) tersimpan sebagai teks di DB — mengubahnya butuh migrasi.
+12. **Data widget** — key mengikuti Bagian 12 PRD: `widget_income_month`, `widget_expense_month`, `widget_budget_remaining`, `widget_budget_pct`, `widget_latest_1..3`, plus `widget_budget_color` (tambahan, indikator warna FR-9.3). Harus sinkron antara `widget_sync.dart`, `ElutungWidgetProvider.kt`, dan layout XML; kalau key berubah, ubah ketiganya.
+13. Widget beranda **tidak muncul otomatis**; pengguna memasangnya (Pengaturan → "Pasang widget beranda"). Sejak Android 8, launcher menyembunyikan widget app yang belum pernah dijalankan.
+
+## Verifikasi sebelum mengirim
+
+- `flutter analyze` **0 issue**, `flutter test` semua lolos, build APK/AAB sukses.
+- Setelah ubah skema: jalankan `build_runner` dan pastikan `lib/data/database.g.dart` ikut diperbarui.
+- Uji logika uang lewat `lib/data/finance.dart` (murni) — jangan menaruh rumus di widget.
+
+## Di luar lingkup v1 (Bagian 3 & 19 PRD)
+
+Utang/piutang, transaksi berulang otomatis, rollover anggaran, sinkronisasi antar-perangkat,
+widget iOS, dan i18n penuh (v1 hanya locale `id`).

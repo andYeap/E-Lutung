@@ -1,0 +1,19 @@
+# Berkas sistem & editor (tingkat root)
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+
+# Jaring pengaman: jangan pernah ikutkan artefak build, berkas lokal mesin,
+# atau materi signing. (folder app/ sudah punya .gitignore dari template Flutter)
+app/build/
+app/.dart_tool/
+app/android/local.properties
+app/android/key.properties
+*.jks
+*.keystore
+
+# Berkas sementara
+*.log
+*.tmp

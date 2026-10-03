@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kartu neobrutalism: permukaan terang + border hitam tebal. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#F6F5F1" />
+    <corners android:radius="8dp" />
+    <stroke
+        android:width="2dp"
+        android:color="#3A3934" />
+</shape>
