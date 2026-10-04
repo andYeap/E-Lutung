@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -42,6 +43,11 @@ Future<void> main() async {
   final startup = Stopwatch()..start();
   // Muat locale id_ID (DateFormat) sebelum widget dibangun.
   await ensureIntlLocale();
+
+  // Gambar sampai tepi layar supaya status bar dan bilah navigasi bisa ikut
+  // warna tema, bukan memakai latar jendela bawaan (yang tampak abu-abu di
+  // layar tanpa AppBar, seperti onboarding).
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   if (Platform.isAndroid) {
     try {

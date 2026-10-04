@@ -25,6 +25,15 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   String? _akunId;
   DateTimeRange? _range;
 
+  /// Panel filter lanjutan (rentang, kategori, akun) dibuka-tutup.
+  bool _filterTerbuka = false;
+
+  /// Berapa filter lanjutan yang sedang aktif, untuk ditampilkan di tombol.
+  int get _filterAktif =>
+      (_range == null ? 0 : 1) +
+      (_kategoriId == null ? 0 : 1) +
+      (_akunId == null ? 0 : 1);
+
   @override
   void dispose() {
     _kw.dispose();
@@ -37,11 +46,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       context: context,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      initialDateRange: _range ??
-          DateTimeRange(
-            start: DateTime(now.year, now.month, 1),
-            end: now,
-          ),
+      initialDateRange:
+          _range ??
+          DateTimeRange(start: DateTime(now.year, now.month, 1), end: now),
     );
     if (picked != null) setState(() => _range = picked);
   }
@@ -49,7 +56,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final repo = ref.watch(transactionRepositoryProvider);
-    final categories = ref.watch(categoriesProvider).value ?? const <Category>[];
+    final categories =
+        ref.watch(categoriesProvider).value ?? const <Category>[];
     final accounts = ref.watch(accountsProvider).value ?? const [];
     final ownIds = ref.watch(ownAccountIdsProvider);
 
@@ -57,9 +65,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final allCategories =
         ref.watch(allCategoriesProvider).value ?? const <Category>[];
     final catName = {for (final c in allCategories) c.id: c.nama};
-    final accName = {
-      for (final a in accounts) a.account.id: a.institusi.nama,
-    };
+    final accName = {for (final a in accounts) a.account.id: a.institusi.nama};
 
     return Scaffold(
       body: Column(
@@ -135,7 +141,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     );
   }
 
-  Widget _filters(List<Category> categories, List<AccountWithInstitution> accounts) {
+  Widget _filters(
+    List<Category> categories,
+    List<AccountWithInstitution> accounts,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Column(
@@ -150,7 +159,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               filled: true,
               fillColor: Neo.surface,
               prefixIcon: const Icon(Icons.search, size: 20),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(Neo.radius),
                 borderSide: BorderSide(color: Neo.ink, width: Neo.borderW),
@@ -162,67 +174,110 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _filterChip('Semua', _tipe == null, () => setState(() => _tipe = null)),
-                _filterChip('Masuk', _tipe == TxType.pemasukan,
-                    () => setState(() => _tipe = TxType.pemasukan)),
-                _filterChip('Keluar', _tipe == TxType.pengeluaran,
-                    () => setState(() => _tipe = TxType.pengeluaran)),
-                _filterChip('Transfer', _tipe == TxType.transfer,
-                    () => setState(() => _tipe = TxType.transfer)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _filterChip(
-                  _range == null
-                      ? 'Rentang tanggal'
-                      : '${DateFormat('d MMM', 'id_ID').format(_range!.start)} – ${DateFormat('d MMM', 'id_ID').format(_range!.end)}',
-                  _range != null,
-                  _pickRange,
-                ),
-                if (_range != null)
-                  IconButton(
-                    tooltip: 'Hapus rentang',
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () => setState(() => _range = null),
-                  ),
-                _filterChip('Semua kategori', _kategoriId == null,
-                    () => setState(() => _kategoriId = null)),
-                ...categories.map(
-                  (c) => _filterChip(
-                    c.nama,
-                    _kategoriId == c.id,
-                    () => setState(() => _kategoriId = _kategoriId == c.id ? null : c.id),
+          Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _filterChip(
+                        'Semua',
+                        _tipe == null,
+                        () => setState(() => _tipe = null),
+                      ),
+                      _filterChip(
+                        'Masuk',
+                        _tipe == TxType.pemasukan,
+                        () => setState(() => _tipe = TxType.pemasukan),
+                      ),
+                      _filterChip(
+                        'Keluar',
+                        _tipe == TxType.pengeluaran,
+                        () => setState(() => _tipe = TxType.pengeluaran),
+                      ),
+                      _filterChip(
+                        'Transfer',
+                        _tipe == TxType.transfer,
+                        () => setState(() => _tipe = TxType.transfer),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              // Rentang, kategori, dan akun disembunyikan di balik tombol ini.
+              // Sebelumnya ketiganya selalu tampil dan menghabiskan hampir
+              // separuh layar walau daftarnya kosong.
+              _filterChip(
+                _filterAktif == 0 ? 'Filter' : 'Filter ($_filterAktif)',
+                _filterTerbuka || _filterAktif > 0,
+                () => setState(() => _filterTerbuka = !_filterTerbuka),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          // Filter per akun (FR-3.2).
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _filterChip('Semua akun', _akunId == null, () => setState(() => _akunId = null)),
-                ...accounts.map(
-                  (a) => _filterChip(
-                    a.institusi.nama,
-                    _akunId == a.account.id,
-                    () => setState(() => _akunId = _akunId == a.account.id ? null : a.account.id),
+          if (_filterTerbuka) ...[
+            const SizedBox(height: 10),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _filterChip(
+                    _range == null
+                        ? 'Rentang tanggal'
+                        : '${DateFormat('d MMM', 'id_ID').format(_range!.start)} – ${DateFormat('d MMM', 'id_ID').format(_range!.end)}',
+                    _range != null,
+                    _pickRange,
                   ),
-                ),
-              ],
+                  if (_range != null)
+                    IconButton(
+                      tooltip: 'Hapus rentang',
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () => setState(() => _range = null),
+                    ),
+                  _filterChip(
+                    'Semua kategori',
+                    _kategoriId == null,
+                    () => setState(() => _kategoriId = null),
+                  ),
+                  ...categories.map(
+                    (c) => _filterChip(
+                      c.nama,
+                      _kategoriId == c.id,
+                      () => setState(
+                        () => _kategoriId = _kategoriId == c.id ? null : c.id,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            const SizedBox(height: 10),
+            // Filter per akun (FR-3.2).
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _filterChip(
+                    'Semua akun',
+                    _akunId == null,
+                    () => setState(() => _akunId = null),
+                  ),
+                  ...accounts.map(
+                    (a) => _filterChip(
+                      a.institusi.nama,
+                      _akunId == a.account.id,
+                      () => setState(
+                        () => _akunId = _akunId == a.account.id
+                            ? null
+                            : a.account.id,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -251,13 +306,28 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       child: Row(
         children: [
           Expanded(
-            child: _miniStat('Masuk', rupiah(totals.income), Neo.income, Icons.south_west),
+            child: _miniStat(
+              'Masuk',
+              rupiah(totals.income),
+              Neo.income,
+              Icons.south_west,
+            ),
           ),
           Expanded(
-            child: _miniStat('Keluar', rupiah(totals.expense), Neo.expense, Icons.north_east),
+            child: _miniStat(
+              'Keluar',
+              rupiah(totals.expense),
+              Neo.expense,
+              Icons.north_east,
+            ),
           ),
           Expanded(
-            child: _miniStat('Selisih', rupiah(totals.net), Neo.transfer, Icons.balance),
+            child: _miniStat(
+              'Selisih',
+              rupiah(totals.net),
+              Neo.transfer,
+              Icons.balance,
+            ),
           ),
         ],
       ),
@@ -276,7 +346,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           ],
         ),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+        ),
       ],
     );
   }
@@ -287,8 +360,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     Map<String, String> accName,
     Set<String> ownIds,
   ) {
-    final sorted = [...items]
-      ..sort((a, b) => b.tanggal.compareTo(a.tanggal));
+    final sorted = [...items]..sort((a, b) => b.tanggal.compareTo(a.tanggal));
     // Kelompokkan per tanggal sekaligus hitung subtotal harian (FR-3.4).
     final groups = <String, List<Transaction>>{};
     for (final t in sorted) {
@@ -307,7 +379,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               Expanded(
                 child: Text(
                   d,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
                 ),
               ),
               Text(
@@ -342,7 +417,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       _ => catName[t.kategoriId] ?? 'Tanpa kategori',
     };
     final subs = <String>[
-      if (t.tipe != TxType.transfer && t.akunId != null &&
+      if (t.tipe != TxType.transfer &&
+          t.akunId != null &&
           (accName[t.akunId] ?? '').isNotEmpty)
         accName[t.akunId]!,
       if (t.tipe == TxType.transfer && t.biayaAdmin > 0)
@@ -368,13 +444,29 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
                 if (subs.isNotEmpty)
-                  Text(subs.join(' • '), style: TextStyle(color: Neo.muted, fontSize: 12)),
+                  Text(
+                    subs.join(' • '),
+                    style: TextStyle(color: Neo.muted, fontSize: 12),
+                  ),
               ],
             ),
           ),
-          Text(amountLabel, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: color)),
+          Text(
+            amountLabel,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 14,
+              color: color,
+            ),
+          ),
         ],
       ),
     );

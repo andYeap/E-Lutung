@@ -29,6 +29,7 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
   - `lib/widgets/neo.dart` — `NeoCard/NeoButton/NeoTextField`; `charts.dart` — `ExpenseDonut/MonthlyBars/NetTrendChart`.
   - `android/app/src/main/kotlin/com/elutung/elutung/` — `MainActivity.kt` (harus `FlutterFragmentActivity`), `ElutungWidgetProvider.kt`.
   - `android/app/src/main/res/{layout/widget_elutung.xml, xml/widget_elutung_info.xml, drawable/widget_bg.xml}`.
+  - `android/app/src/main/res/` juga memuat ikon aplikasi (`mipmap-*/ic_launcher.png` + `mipmap-anydpi-v26/ic_launcher.xml` adaptif, foreground di `drawable-*/ic_launcher_foreground.png`) dan warna splash di `values-v31/` serta `values-night-v31/`.
 
 ## Keputusan teknis (Bagian 6 PRD)
 
@@ -49,6 +50,7 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
 - **Tema kustom (v1.1)** — `ThemeController` menyimpan mode, preset, dan penyesuaian warna **terpisah per mode** (terang/gelap) di SharedPreferences. `Neo` dulu menyimpan warna sebagai field mutable; sekarang ia hanya *getter* dari satu `NeoPalette` yang diisi `Neo.apply()` di `ElutungApp.build`. `AppTheme.light()/dark()` menerima palet sebagai argumen supaya `theme` dan `darkTheme` bisa dibangun berdampingan tanpa tertukar. Warna semantik tidak ikut berubah.
 - **Warna anggaran (Bagian 8.2):** <60% aman, 60–85% waspada, 85–100% menipis, ≥100% lewat batas (`util/budget.dart`).
 - Seed institusi/kategori hanya ditulis saat DB **dibuat** (`onCreate`).
+- **Pengingat cadangan (FR-10.4) tidak boleh menagih.** `BackupService.shouldRemindBackup({hasData})` hanya berbunyi bila sudah ada data, tidak diulang dalam 7 hari (waktu pengingat dicatat di `last_backup_reminder_at`), dan hanya bila belum pernah mencadangkan atau sudah lewat 30 hari. Dulu ia berbunyi di setiap pembukaan selama pengguna belum pernah ekspor.
 - **Skema v3** — v2 membuang `categories.archived`; v3 menambah tabel `recurring_rules` dan kolom `transactions.recurring_rule_id`. `onUpgrade` memakai `m.dropColumn`, `m.createTable`, dan `m.addColumn`, lalu `_createIndexes()`. Uji migrasi nyata (v1 ke v3 dan v2 ke v3, plus indeks unik menolak periode ganda) ada di `test/migration_test.dart`.
 - **Transaksi berulang (v1.1)** — aturan di `recurring_rules`; transaksi hasilnya ditandai `recurringRuleId`. Hanya pemasukan/pengeluaran, frekuensi harian/mingguan/bulanan/tahunan. Dibangkitkan otomatis saat aplikasi dibuka dan oleh WorkManager, maksimal 100 per aturan per jalan (sisanya menyusul). Aturan ikut terekspor di cadangan JSON dan ada di layar Sampah.
 - Kategori yang sudah dihapus tetap dipakai untuk **label & warna** transaksi lama lewat `allCategoriesProvider`; `categoriesProvider` (aktif saja) hanya untuk pemilih/filter. Hapus kategori yang masih dipakai transaksi **ditolak** (`CategoryRepository.usedByTransactions`).
@@ -61,7 +63,7 @@ cd ~/E-Lutung/app
 flutter pub get
 dart run build_runner build        # WAJIB setelah mengubah skema Drift
 flutter analyze                    # harus 0 issue
-flutter test                       # 105 test
+flutter test                       # 111 test
 flutter run
 flutter build apk --release
 flutter build appbundle --release
@@ -90,6 +92,8 @@ flutter build apk --release --split-per-abi
 18. **Deteksi warna "mirip makna" memakai rona (hue), bukan jarak RGB.** Jarak RGB mentah menyesatkan: arang `#3A3934` dianggap dekat dengan hijau pemasukan. Lihat `miripWarnaSemantik`. Kalau preset baru ditambahkan, jalankan `test/contrast_test.dart` — ada test yang menuntut semua preset bawaan bebas peringatan.
 19. **FAB dan SnackBar wajib satu Scaffold.** Flutter hanya menaruh SnackBar `floating` **di atas** FAB bila keduanya berada di Scaffold yang sama (`scaffold.dart`: `snackBarYOffsetBase = floatingActionButtonRect.top`). Kalau FAB ada di dalam Scaffold tab sementara SnackBar dimunculkan dari shell, SnackBar akan menutupi tombolnya — ini sudah pernah terjadi. Karena itu tombol tambah dimiliki `ShellScreen._buildFab()`, dan `test/budget_screen_test.dart` menguji lewat `ShellScreen`, bukan lewat layar Anggaran langsung.
 20. **Grafik tanpa data jangan menggambar apa pun.** `MonthlyBars` dan `NetTrendChart` sama-sama memakai konstanta `kNoMonthlyData`; grafik tren pernah menggambar garis datar saat kosong sehingga terlihat seperti saldo nol yang nyata.
+21. **Splash Android 12+ diambil dari ikon aplikasi**, bukan dari berkas terpisah: `windowSplashScreenAnimatedIcon` + `windowSplashScreenBackground` di `values-v31/styles.xml` dan `values-night-v31/styles.xml`. Karena itu ikon bawaan Flutter dulu ikut muncul di splash. Kalau ikon diganti, splash ikut berubah — jangan tambahkan gambar splash terpisah. Layer **foreground** ikon adaptif sebaiknya tanpa border: mask bulat peluncur akan memotong sudutnya.
+22. **Chrome sistem diatur sekali di `app.dart`, bukan per layar.** `main.dart` mengaktifkan `SystemUiMode.edgeToEdge`, lalu `AnnotatedRegion<SystemUiOverlayStyle>` (dihitung dari palet aktif lewat `readableOn`) menentukan warna dan kecerahan ikon status bar serta bilah navigasi. Jangan menyetel `statusBarColor` buram di layar tertentu — layar tanpa AppBar (onboarding) akan kembali memunculkan pita warna jendela.
 
 ## Verifikasi sebelum mengirim
 

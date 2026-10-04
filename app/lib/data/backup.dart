@@ -34,11 +34,32 @@ class BackupService {
     } catch (_) {}
   }
 
-  /// True bila belum pernah atau sudah >30 hari (pengingat cadangan).
-  static Future<bool> shouldRemindBackup() async {
+  static const _reminderKey = 'last_backup_reminder_at';
+
+  /// Pengingat cadangan (FR-10.4) yang tidak mengganggu.
+  ///
+  /// Dulu fungsi ini mengembalikan true selama pengguna belum pernah mengekspor,
+  /// sehingga aplikasi baru menagih di **setiap** pembukaan. Sekarang:
+  /// - tidak diingatkan bila belum ada data untuk dicadangkan;
+  /// - tidak diulang dalam 7 hari;
+  /// - dan hanya bila belum pernah mencadangkan atau sudah lewat 30 hari.
+  ///
+  /// Saat memutuskan untuk mengingatkan, waktu pengingat ikut dicatat.
+  static Future<bool> shouldRemindBackup({required bool hasData}) async {
+    if (!hasData) return false;
+    final now = DateTime.now();
     final last = await lastBackupAt();
-    if (last == null) return true;
-    return DateTime.now().difference(last).inDays >= 30;
+    if (last != null && now.difference(last).inDays < 30) return false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_reminderKey);
+      final terakhir = raw == null ? null : DateTime.tryParse(raw);
+      if (terakhir != null && now.difference(terakhir).inDays < 7) return false;
+      await prefs.setString(_reminderKey, now.toIso8601String());
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<Map<String, dynamic>> dump() async => {

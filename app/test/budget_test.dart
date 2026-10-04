@@ -1,6 +1,7 @@
 import 'package:elutung/data/database.dart';
 import 'package:elutung/data/finance.dart';
 import 'package:elutung/util/budget.dart';
+import 'package:elutung/util/format.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Budget budget({
@@ -47,6 +48,14 @@ Transaction tx({
 );
 
 void main() {
+  setUpAll(() async => ensureIntlLocale());
+
+  test('sisa anggaran negatif memakai tanda minus yang sama dengan riwayat', () {
+    expect(sisaAnggaranTeks(-20000), '−Rp 20.000');
+    expect(sisaAnggaranTeks(750000), 'Rp 750.000');
+    expect(sisaAnggaranTeks(0), 'Rp 0');
+  });
+
   group('budgetLevel (Bagian 8.2)', () {
     test('ambang batas warna', () {
       expect(budgetLevel(0.0), BudgetLevel.aman);

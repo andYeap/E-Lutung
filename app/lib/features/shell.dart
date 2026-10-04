@@ -85,11 +85,15 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   }
 
   Future<void> _maybeRemindBackup() async {
-    if (!await BackupService.shouldRemindBackup()) return;
+    final db = ref.read(databaseProvider);
+    final adaData =
+        (await (db.select(db.transactions)..limit(1)).get()).isNotEmpty;
+    if (!await BackupService.shouldRemindBackup(hasData: adaData)) return;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Sudah lama tidak mencadangkan data.'),
+        // Satu baris saja supaya SnackBar tidak menutupi banyak isi layar.
+        content: const Text('Data belum dicadangkan.'),
         duration: const Duration(seconds: 6),
         action: SnackBarAction(
           label: 'Cadangkan',
@@ -282,7 +286,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           _SettingsTile(
-            icon: Icons.sell,
+            icon: Icons.category,
             title: 'Kategori',
             subtitle: 'Kelola kategori pengeluaran/pemasukan',
             onTap: () => Navigator.of(context).push(

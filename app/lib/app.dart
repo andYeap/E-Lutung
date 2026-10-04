@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'features/onboarding_screen.dart';
 import 'features/shell.dart';
 import 'services/app_lock.dart';
 import 'theme/app_theme.dart';
+import 'theme/neo_palette.dart';
 import 'theme/theme_controller.dart';
+import 'util/contrast.dart';
 
 class ElutungApp extends StatefulWidget {
   const ElutungApp({super.key, this.themeController});
@@ -18,7 +21,8 @@ class ElutungApp extends StatefulWidget {
 }
 
 class _ElutungAppState extends State<ElutungApp> with WidgetsBindingObserver {
-  late final ThemeController _ctl = widget.themeController ?? ThemeController.instance;
+  late final ThemeController _ctl =
+      widget.themeController ?? ThemeController.instance;
 
   @override
   void initState() {
@@ -52,41 +56,66 @@ class _ElutungAppState extends State<ElutungApp> with WidgetsBindingObserver {
       listenable: _ctl,
       builder: (context, _) {
         // Token neobrutalism mengikuti tema aktif sebelum widget dibangun.
-        Neo.apply(_ctl.paletteFor(_brightness));
-        return MaterialApp(
-          title: 'E-Lutung',
-          debugShowCheckedModeBanner: false,
-          // Kedua tema dibangun dari paletnya masing-masing, bukan dari palet
-          // global, supaya warna terang dan gelap tidak saling tertukar.
-          theme: AppTheme.light(_ctl.paletteFor(Brightness.light)),
-          darkTheme: AppTheme.dark(_ctl.paletteFor(Brightness.dark)),
-          themeMode: _ctl.mode,
-          // Material (date picker dll) memakai Bahasa Indonesia.
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('id'), Locale('en')],
-          // Batasi pembesaran font (0.8x-1.4x) supaya layout tidak pecah
-          // pada setelan aksesibilitas ekstrem (NFR aksesibilitas).
-          builder: (context, child) {
-            final mq = MediaQuery.of(context);
-            return MediaQuery(
-              data: mq.copyWith(
-                textScaler: mq.textScaler.clamp(
-                  minScaleFactor: 0.8,
-                  maxScaleFactor: 1.4,
+        final palet = _ctl.paletteFor(_brightness);
+        Neo.apply(palet);
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: _sistemUi(palet),
+          child: MaterialApp(
+            title: 'E-Lutung',
+            debugShowCheckedModeBanner: false,
+            // Kedua tema dibangun dari paletnya masing-masing, bukan dari palet
+            // global, supaya warna terang dan gelap tidak saling tertukar.
+            theme: AppTheme.light(_ctl.paletteFor(Brightness.light)),
+            darkTheme: AppTheme.dark(_ctl.paletteFor(Brightness.dark)),
+            themeMode: _ctl.mode,
+            // Material (date picker dll) memakai Bahasa Indonesia.
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('id'), Locale('en')],
+            // Batasi pembesaran font (0.8x-1.4x) supaya layout tidak pecah
+            // pada setelan aksesibilitas ekstrem (NFR aksesibilitas).
+            builder: (context, child) {
+              final mq = MediaQuery.of(context);
+              return MediaQuery(
+                data: mq.copyWith(
+                  textScaler: mq.textScaler.clamp(
+                    minScaleFactor: 0.8,
+                    maxScaleFactor: 1.4,
+                  ),
                 ),
-              ),
-              child: child ?? const SizedBox.shrink(),
-            );
-          },
-          home: const AuthGate(
-            child: OnboardingGate(child: ShellScreen()),
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
+            home: const AuthGate(child: OnboardingGate(child: ShellScreen())),
           ),
         );
       },
+    );
+  }
+
+  /// Warna status bar dan bilah navigasi mengikuti palet aktif.
+  ///
+  /// Transparan supaya AppBar (atau latar layar bila tidak ada AppBar) yang
+  /// tampak di belakangnya; kecerahan ikon dipilih dari kontras latarnya.
+  SystemUiOverlayStyle _sistemUi(NeoPalette palet) {
+    final ikonStatusTerang = readableOn(palet.appBar).computeLuminance() > 0.5;
+    final ikonNavTerang = readableOn(palet.surface).computeLuminance() > 0.5;
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: ikonStatusTerang
+          ? Brightness.light
+          : Brightness.dark,
+      statusBarBrightness: ikonStatusTerang
+          ? Brightness.dark
+          : Brightness.light,
+      systemNavigationBarColor: palet.surface,
+      systemNavigationBarIconBrightness: ikonNavTerang
+          ? Brightness.light
+          : Brightness.dark,
+      systemNavigationBarDividerColor: Colors.transparent,
     );
   }
 }

@@ -68,14 +68,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                NeoCard(
-                  child: Text(
-                    'Setelah ada data, di sini akan tampil ringkasan bulan, '
-                    'donut per kategori, status anggaran, dan 5 transaksi terbaru.',
-                    style: TextStyle(color: Neo.muted, fontSize: 12),
-                  ),
-                ),
               ],
             );
           }
@@ -255,7 +247,7 @@ class _BudgetCard extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'sisa ${rupiah(usage.remaining)} / ${rupiah(budget.nominal)} '
+            'sisa ${sisaAnggaranTeks(usage.remaining)} / ${rupiah(budget.nominal)} '
             '(${(usage.fraction * 100).toStringAsFixed(0)}%)',
             style: const TextStyle(fontSize: 12),
           ),

@@ -154,7 +154,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'sisa ${rupiah(usage.remaining)} / ${rupiah(b.nominal)} '
+                      'sisa ${sisaAnggaranTeks(usage.remaining)} / ${rupiah(b.nominal)} '
                       '(${(usage.fraction * 100).toStringAsFixed(0)}%)',
                       style: const TextStyle(fontSize: 12),
                     ),

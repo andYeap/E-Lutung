@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'format.dart';
 
 /// Tingkat pemakaian anggaran (Bagian 8.2).
 enum BudgetLevel { aman, waspada, menipis, lewat }
@@ -19,6 +20,11 @@ Color budgetColor(BudgetLevel level) => switch (level) {
   BudgetLevel.menipis => const Color(0xFFF97316),
   BudgetLevel.lewat => Neo.expense,
 };
+
+/// Teks sisa anggaran dengan tanda minus yang sama seperti tampilan transaksi
+/// (U+2212), bukan tanda hubung dari formatter mata uang.
+String sisaAnggaranTeks(int remaining) =>
+    remaining < 0 ? '−${rupiah(-remaining)}' : rupiah(remaining);
 
 String budgetLevelLabel(BudgetLevel level) => switch (level) {
   BudgetLevel.aman => 'Aman',

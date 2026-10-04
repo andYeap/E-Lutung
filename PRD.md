@@ -405,7 +405,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - **Performa:** cold start ke Dashboard < 2 detik (dataset normal ≤ 10.000 transaksi); scroll 60fps; query rekap bulanan < 100 ms.
 - **Privasi:** data tak pernah keluar perangkat kecuali lewat ekspor manual pengguna.
 - **Integritas:** nominal integer; transaksi tak bisa "setengah tersimpan" (operasi tulis atomik); soft delete agar salah hapus bisa dipulihkan (v1.1: layar Sampah).
-- **Aksesibilitas:** label Semantics untuk tombol/grafik, target sentuh ≥48dp, kontras teks memenuhi WCAG AA, mendukung pembesaran font; **warna bukan satu-satunya penanda** (pemasukan `+`, pengeluaran `−` + ikon berbeda).
+- **Aksesibilitas:** label Semantics untuk tombol/grafik, target sentuh ≥48dp, kontras teks memenuhi WCAG AA, mendukung pembesaran font; **warna bukan satu-satunya penanda** (pemasukan `+`, pengeluaran `−` + ikon berbeda). Pembesaran font dibatasi sampai **1,4×** supaya tata letak tidak pecah pada setelan ekstrem; batas ini disengaja dan tercatat, bukan kelalaian. Bila nanti dibutuhkan batas yang lebih longgar, tata letak chip, kartu statistik, dan dialog perlu diuji ulang pada skala tersebut.
 - **Ukuran & distribusi:** sediakan AAB untuk Play dan split-per-ABI untuk sideload.
 - **Tanggal:** konsisten memakai zona lokal; hindari bug batas bulan (mis. 31 → pergantian bulan).
 
