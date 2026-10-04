@@ -1,6 +1,8 @@
 package com.elutung.elutung
 
-import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.android.FlutterActivity
 
-// local_auth (kunci aplikasi) memerlukan FragmentActivity.
-class MainActivity : FlutterFragmentActivity()
+// FragmentActivity tidak lagi diperlukan sejak fitur kunci aplikasi (local_auth)
+// dihapus atas permintaan pengguna. Bila suatu saat menambah plugin yang
+// membutuhkannya, ubah kembali ke FlutterFragmentActivity.
+class MainActivity : FlutterActivity()

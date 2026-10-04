@@ -4,7 +4,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'features/onboarding_screen.dart';
 import 'features/shell.dart';
-import 'services/app_lock.dart';
 import 'theme/app_theme.dart';
 import 'theme/neo_palette.dart';
 import 'theme/theme_controller.dart';
@@ -89,7 +88,7 @@ class _ElutungAppState extends State<ElutungApp> with WidgetsBindingObserver {
                 child: child ?? const SizedBox.shrink(),
               );
             },
-            home: const AuthGate(child: OnboardingGate(child: ShellScreen())),
+            home: const OnboardingGate(child: ShellScreen()),
           ),
         );
       },

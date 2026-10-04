@@ -383,7 +383,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 ### FR-11 Pengaturan
 - FR-11.1 Setel batas anggaran (pintasan ke FR-6).
 - FR-11.2 Format & lokalisasi (IDR, `id_ID`).
-- FR-11.3 Kunci aplikasi (PIN/biometrik) — opsional.
+- FR-11.3 Kunci aplikasi (PIN/biometrik): **dihapus** atas permintaan pengguna (v1.1). Aplikasi tidak lagi meminta autentikasi saat dibuka, dan kebergantungan `local_auth` ikut dibuang.
 - FR-11.4 Hapus semua data (dengan konfirmasi ganda).
 - FR-11.5 Tema terang/gelap/mengikuti sistem.
 - FR-11.6 Tema yang dapat disesuaikan (Bagian 6c): pilih preset palet, lalu setel latar, permukaan, border/teks, bilah atas, dan aksen secara terpisah untuk mode terang dan gelap; warna semantik terkunci; ada peringatan kontras dan peringatan warna yang terlalu mirip makna pemasukan/pengeluaran; ada tombol kembali ke preset.
@@ -512,7 +512,7 @@ Pertanyaan terbuka sebelumnya sudah ditetapkan (boleh ditinjau ulang bila kebutu
 2. **Transfer antar akun sendiri:** **tidak** dihitung sebagai pengeluaran/pemasukan; hanya `biayaAdmin` yang tercatat sebagai pengeluaran (lihat Bagian 8.1).
 3. **Target Android:** `minSdk 26` (Android 8.0); `targetSdk` mengikuti versi terbaru yang didukung Flutter saat rilis.
 4. **Widget:** provider **RemoteViews** (bukan Jetpack Glance) demi kompatibilitas & ukuran; mendukung ukuran 2×2 dan 4×2.
-5. **Kunci aplikasi:** disertakan di v1 (PIN/biometrik) dengan **default nonaktif**, dapat dinyalakan di Pengaturan.
+5. **Kunci aplikasi:** **dihapus** atas permintaan pengguna (v1.1). Sebelumnya disertakan di v1 dengan default nonaktif; perlindungan sekilas saat HP dipinjam dianggap tidak sepadan dengan tambahan friksi setiap kali membuka aplikasi.
 6. **Periode anggaran:** memakai rentang tanggal eksplisit (`periodeMulai`–`periodeSelesai`) dan **sekali pakai**; tidak ada reset otomatis bulanan maupun rollover.
 7. **Layar Sampah:** disertakan sejak v1 (soft delete sudah ada di data sejak awal, UI pemulihannya menyusul dan kini sudah tersedia).
 8. **Mode gelap & kategori kustom:** keduanya masuk v1 — kategori berupa tabel yang bisa di-CRUD (ikon & warna disimpan per kategori).

@@ -8,7 +8,6 @@ import 'package:workmanager/workmanager.dart';
 import 'app.dart';
 import 'data/database.dart';
 import 'features/onboarding_screen.dart';
-import 'services/app_lock.dart';
 import 'services/recurring_runner.dart';
 import 'services/widget_sync.dart';
 import 'theme/theme_controller.dart';
@@ -59,7 +58,6 @@ Future<void> main() async {
 
   // Baca tema & status onboarding tersimpan sebelum runApp (hindari kedip).
   await ThemeController.instance.load();
-  await AppLock.instance.load();
   await Onboarding.load();
   runApp(const ProviderScope(child: ElutungApp()));
   WidgetsBinding.instance.addPostFrameCallback((_) {

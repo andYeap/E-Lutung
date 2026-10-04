@@ -8,8 +8,8 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
 
 - `~/E-Lutung/PRD.md` — PRD final (Bagian 1–19). Semua keputusan desain mengacu ke sini.
 - `~/E-Lutung/app/` — proyek Flutter (hanya Android).
-  - `lib/main.dart` — bootstrap: `ensureIntlLocale()` → Workmanager init → `ThemeController.load()` → `AppLock.load()` → `runApp`.
-  - `lib/app.dart` — `MaterialApp` (+ delegate lokal `id`/`en`, clamp textScaler 0.8–1.4) → `AuthGate` → `ShellScreen`.
+  - `lib/main.dart` — bootstrap: `ensureIntlLocale()` → edge-to-edge → Workmanager init → `ThemeController.load()` → `Onboarding.load()` → `runApp`.
+  - `lib/app.dart` — `MaterialApp` (+ delegate lokal `id`/`en`, clamp textScaler 0.8–1.4) → `OnboardingGate` → `ShellScreen`, dibungkus `AnnotatedRegion` untuk chrome sistem.
   - `lib/providers.dart` — Riverpod: `databaseProvider`, 6 repository, `*Provider` stream, `ownAccountIdsProvider`, `backupServiceProvider`, agregat rekap.
   - `lib/features/shell.dart` — juga pemilik **satu tombol tambah** (`_buildFab`) untuk Dashboard, Riwayat, dan Anggaran; Rekap tidak punya. Lihat gotcha 19.
   - `lib/data/database.dart` (+ `.g.dart`) — skema Drift + **seed** institusi & kategori di `onCreate`.
@@ -21,7 +21,6 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
   - `lib/data/repositories/*` — institution, category, account, transaction, budget, recurring. **Semua** punya `watchDeleted()` + `restore()` (soft delete).
   - `lib/features/*` — `shell.dart` (bottom nav 4 tab + Pengaturan + penanganan klik widget), `onboarding_screen.dart` (`OnboardingGate`, sekali saja), `dashboard_screen`, `transactions/*`, `recap/recap_screen`, `budget/budget_screen`, `recurring/recurring_screen`, `theme/theme_screen`, `institutions_screen`, `accounts_screen`, `categories_screen`, `trash_screen`.
   - `lib/widgets/neo.dart` — `NeoCard/NeoButton/NeoTextField` + `NeoLoading`/`NeoError` (keadaan memuat/gagal bergaya neobrutalism).
-  - `lib/services/app_lock.dart` — kunci PIN/biometrik + `AuthGate`.
   - `lib/services/widget_sync.dart` — tulis data ke widget + `requestPin`.
   - `lib/services/recurring_runner.dart` — `RecurringRunner.runDue()`: bangkitkan transaksi dari aturan yang jatuh tempo. Dipanggil `ShellScreen` saat aplikasi dibuka dan `widgetCallbackDispatcher` (WorkManager).
   - `lib/theme/app_theme.dart` — token `Neo` (neobrutalism lembut) + `AppTheme.light()/dark()`.
@@ -35,7 +34,7 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
 
 - Flutter stable, Android-only. `applicationId = com.elutung.app`, `minSdk = 26`; **namespace/Kotlin package = `com.elutung.elutung`** (sengaja beda dari applicationId).
 - Penyimpanan **Drift/SQLite** (bukan Hive) karena rekap butuh agregasi SQL. Nominal = **int rupiah** (tanpa desimal).
-- `fl_chart` untuk grafik, `home_widget` + `workmanager` (provider native **RemoteViews**), `flutter_riverpod` (v3), `intl` (locale `id_ID`), `uuid`, `local_auth`, `share_plus`, `file_picker`, `path_provider`, `shared_preferences`.
+- `fl_chart` untuk grafik, `home_widget` + `workmanager` (provider native **RemoteViews**), `flutter_riverpod` (v3), `intl` (locale `id_ID`), `uuid`, `share_plus`, `file_picker`, `path_provider`, `shared_preferences`.
 - Gaya visual **neobrutalism lembut** (border tebal + sudut kecil, tapi warna muted).
 
 ## Model data & aturan bisnis (Bagian 7–8)
@@ -76,7 +75,7 @@ flutter build apk --release --split-per-abi
 2. **Lokalisasi wajib di-init.** Panggil `ensureIntlLocale()` sebelum memakai `DateFormat(..., 'id_ID')`; tanpa itu `LocaleDataException` (dulu bikin tombol **+ di Anggaran tidak berfungsi**). Di widget test: `setUpAll(() async => ensureIntlLocale())`.
 3. **Companion Drift bukan `const`** → daftar seed tidak boleh `const [...]`.
 4. **Widget**: rujuk provider via `qualifiedAndroidName` (`com.elutung.elutung.ElutungWidgetProvider`) karena applicationId (`.app`) ≠ package kelas (`.elutung`).
-5. **`local_auth`** memerlukan `MainActivity extends FlutterFragmentActivity`. Jangan kembalikan ke `FlutterActivity`.
+5. **`MainActivity` memakai `FlutterActivity`.** Dulu `FlutterFragmentActivity` karena `local_auth`; fitur kunci aplikasi sudah **dihapus** (v1.1, permintaan pengguna), jadi kebergantungan itu ikut dibuang. Ubah kembali ke `FlutterFragmentActivity` hanya bila menambah plugin yang membutuhkannya (mis. mengembalikan `local_auth`).
 6. **Hapus = soft delete** (`deletedAt`) → muncul di **Sampah** dan bisa dipulihkan. Jangan buat hard delete dan jangan hidupkan lagi kolom `archived`. Kategori yang masih dipakai transaksi **tidak boleh** dihapus (ditolak) — labelnya masih dibutuhkan riwayat/rekap.
 7. **Widget test + Drift**: jangan `pumpAndSettle()` selama stream belum mengirim data pertama (dulu ada animasi tak berujung → menggantung). Bongkar tree (`pumpWidget(SizedBox())`) sebelum test selesai agar timer pembersihan Drift jalan (menghindari "Pending timers"). Jangan menutup DB saat stream masih aktif ("Cannot add event while adding stream").
 8. **Uang selalu int rupiah**; input lewat `ThousandsInputFormatter` dan dibaca `parseRupiah` (tahan format "25.000"/"Rp 1.250.000").

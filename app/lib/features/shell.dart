@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import '../data/database.dart';
 import '../providers.dart';
 import '../util/format.dart';
-import '../services/app_lock.dart';
 import '../services/recurring_runner.dart';
 import '../services/widget_sync.dart';
 import '../theme/app_theme.dart';
@@ -337,36 +336,6 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          ListenableBuilder(
-            listenable: AppLock.instance,
-            builder: (context, _) => SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              secondary: const Icon(Icons.lock_outline),
-              title: const Text('Kunci aplikasi'),
-              subtitle: const Text('Minta PIN/biometrik perangkat saat membuka'),
-              value: AppLock.instance.enabled,
-              activeThumbColor: Neo.ink,
-              onChanged: (v) async {
-                if (v) {
-                  final ok = await AppLock.instance.authenticate();
-                  if (!ok) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Autentikasi gagal — kunci tidak diaktifkan.'),
-                        ),
-                      );
-                    }
-                    return;
-                  }
-                  await AppLock.instance.setEnabled(true);
-                } else {
-                  await AppLock.instance.setEnabled(false);
-                }
-              },
             ),
           ),
           const SizedBox(height: 12),
