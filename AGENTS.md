@@ -11,6 +11,7 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
   - `lib/main.dart` — bootstrap: `ensureIntlLocale()` → Workmanager init → `ThemeController.load()` → `AppLock.load()` → `runApp`.
   - `lib/app.dart` — `MaterialApp` (+ delegate lokal `id`/`en`, clamp textScaler 0.8–1.4) → `AuthGate` → `ShellScreen`.
   - `lib/providers.dart` — Riverpod: `databaseProvider`, 6 repository, `*Provider` stream, `ownAccountIdsProvider`, `backupServiceProvider`, agregat rekap.
+  - `lib/features/shell.dart` — juga pemilik **satu tombol tambah** (`_buildFab`) untuk Dashboard, Riwayat, dan Anggaran; Rekap tidak punya. Lihat gotcha 19.
   - `lib/data/database.dart` (+ `.g.dart`) — skema Drift + **seed** institusi & kategori di `onCreate`.
   - `lib/data/finance.dart` — logika **murni & teruji**: aturan transfer, `computeTotals`, `expenseByCategory`, `monthlySeries`, `accountBalance`, `budgetUsageOf`.
   - `lib/data/recurring.dart` — matematika jadwal berulang (murni, teruji): `occurrenceAt`, `occurrences`, `nextDue`, `daysInMonth`. Penjepitan akhir bulan selalu mengacu ke tanggal asli `mulai`, bukan hasil jepitan.
@@ -60,7 +61,7 @@ cd ~/E-Lutung/app
 flutter pub get
 dart run build_runner build        # WAJIB setelah mengubah skema Drift
 flutter analyze                    # harus 0 issue
-flutter test                       # 95 test
+flutter test                       # 105 test
 flutter run
 flutter build apk --release
 flutter build appbundle --release
@@ -87,10 +88,14 @@ flutter build apk --release --split-per-abi
 16. `RecurringRunner.runDue()` dijalankan dari dua tempat (aplikasi dan isolate WorkManager) yang memakai koneksi DB berbeda. Keamanan ganda: pemeriksaan keberadaan per periode **dan** indeks unik; jangan hapus salah satunya.
 17. **Jangan menggambar teks dengan `Neo.ink` di atas `accent` atau `appBar`.** Dulu `NeoButton` begitu, dan di mode gelap hasilnya teks terang di atas kuning terang — kontras 1.2:1, praktis tak terbaca. Sekarang teks di atas kedua token itu memakai `readableOn(latar)`, dan `ColorScheme.onPrimary` juga dihitung dari `readableOn(accent)`. Ini bug lama yang baru ketahuan saat fitur tema menambahkan pemeriksa kontras.
 18. **Deteksi warna "mirip makna" memakai rona (hue), bukan jarak RGB.** Jarak RGB mentah menyesatkan: arang `#3A3934` dianggap dekat dengan hijau pemasukan. Lihat `miripWarnaSemantik`. Kalau preset baru ditambahkan, jalankan `test/contrast_test.dart` — ada test yang menuntut semua preset bawaan bebas peringatan.
+19. **FAB dan SnackBar wajib satu Scaffold.** Flutter hanya menaruh SnackBar `floating` **di atas** FAB bila keduanya berada di Scaffold yang sama (`scaffold.dart`: `snackBarYOffsetBase = floatingActionButtonRect.top`). Kalau FAB ada di dalam Scaffold tab sementara SnackBar dimunculkan dari shell, SnackBar akan menutupi tombolnya — ini sudah pernah terjadi. Karena itu tombol tambah dimiliki `ShellScreen._buildFab()`, dan `test/budget_screen_test.dart` menguji lewat `ShellScreen`, bukan lewat layar Anggaran langsung.
+20. **Grafik tanpa data jangan menggambar apa pun.** `MonthlyBars` dan `NetTrendChart` sama-sama memakai konstanta `kNoMonthlyData`; grafik tren pernah menggambar garis datar saat kosong sehingga terlihat seperti saldo nol yang nyata.
 
 ## Verifikasi sebelum mengirim
 
 - `flutter analyze` **0 issue**, `flutter test` semua lolos, build APK/AAB sukses.
+- `test/app_smoke_test.dart` membangun aplikasi utuh dan menelusuri keempat tab serta Pengaturan; `test/core_flow_test.dart` menguji alur catat transaksi sampai tersimpan. Jalankan keduanya setiap kali menyentuh `app.dart`, `shell.dart`, atau tema.
+- Dua jebakan saat menulis test widget aplikasi utuh: (1) form lebih panjang dari viewport uji, jadi ketuk tombol setelah `ensureVisible`; (2) **SnackBar mengantre** — pengingat cadangan dari shell bisa menutupi SnackBar yang sedang diuji, jadi setel `last_backup_at` di `SharedPreferences.setMockInitialValues`. Dan selalu bongkar tree (`pumpWidget(SizedBox())`) di blok `finally`, karena menutup basis data selagi stream hidup membuat test menggantung.
 - Setelah ubah skema: jalankan `build_runner` dan pastikan `lib/data/database.g.dart` ikut diperbarui.
 - Uji logika uang lewat `lib/data/finance.dart` (murni) — jangan menaruh rumus di widget.
 

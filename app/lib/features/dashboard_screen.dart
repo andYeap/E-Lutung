@@ -10,7 +10,6 @@ import '../util/budget.dart';
 import '../util/format.dart';
 import '../widgets/charts.dart';
 import '../widgets/neo.dart';
-import 'transactions/transaction_form_screen.dart';
 
 /// Dashboard (Bagian FR-1): ringkasan bulan terpilih, donut kategori,
 /// anggaran aktif, transaksi terbaru, dan tombol tambah cepat.
@@ -26,43 +25,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   void _shift(int delta) {
     setState(() => _month = DateTime(_month.year, _month.month + delta));
-  }
-
-  Future<void> _quickAdd() async {
-    final tipe = await showModalBottomSheet<TxType>(
-      context: context,
-      backgroundColor: Neo.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Neo.radius),
-        side: BorderSide(color: Neo.ink, width: Neo.borderW),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.south_west, color: Neo.income),
-              title: const Text('Pemasukan'),
-              onTap: () => Navigator.pop(ctx, TxType.pemasukan),
-            ),
-            ListTile(
-              leading: const Icon(Icons.north_east, color: Neo.expense),
-              title: const Text('Pengeluaran'),
-              onTap: () => Navigator.pop(ctx, TxType.pengeluaran),
-            ),
-            ListTile(
-              leading: const Icon(Icons.swap_horiz, color: Neo.transfer),
-              title: const Text('Transfer'),
-              onTap: () => Navigator.pop(ctx, TxType.transfer),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (tipe == null || !mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => TransactionFormScreen(tipe: tipe)),
-    );
   }
 
   @override
@@ -218,19 +180,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'dashboard-add',
-        onPressed: _quickAdd,
-        backgroundColor: Neo.accent,
-        foregroundColor: Neo.ink,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Neo.radius),
-          side: BorderSide(color: Neo.ink, width: Neo.borderW),
-        ),
-        icon: const Icon(Icons.add, size: 18),
-        label: const Text('Tambah', style: TextStyle(fontWeight: FontWeight.w800)),
-      ),
+      // Tombol tambah dimiliki shell, supaya FAB dan SnackBar satu Scaffold.
     );
   }
 }

@@ -106,6 +106,15 @@ class AppTheme {
           fontSize: 18,
         ),
       ),
+      // `floating` supaya SnackBar tidak menimpa FAB: Material otomatis
+      // meletakkannya di atas tombol itu. Sebelumnya mode `fixed` (bawaan)
+      // menutupi FAB di Dashboard, Riwayat, dan Anggaran.
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Neo.radius),
+        ),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: p.surface,
         indicatorColor: p.accent,

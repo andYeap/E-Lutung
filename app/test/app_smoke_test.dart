@@ -112,6 +112,24 @@ void main() {
     await bereskan(tester);
   });
 
+  testWidgets('Riwayat hanya punya satu tombol tambah, bukan tiga bertumpuk', (
+    tester,
+  ) async {
+    await nyalakan(tester);
+    await lolosOnboarding(tester);
+    await bukaTab(tester, 'Riwayat');
+
+    // Tiga FAB per tipe sudah dihapus; sekarang satu tombol "Tambah" yang sama
+    // dengan Dashboard.
+    expect(find.widgetWithText(FloatingActionButton, 'Transfer'), findsNothing);
+    expect(find.widgetWithText(FloatingActionButton, 'Pemasukan'), findsNothing);
+    expect(find.widgetWithText(FloatingActionButton, 'Pengeluaran'), findsNothing);
+    expect(find.widgetWithText(FloatingActionButton, 'Tambah'), findsWidgets);
+    expect(tester.takeException(), isNull);
+
+    await bereskan(tester);
+  });
+
   testWidgets('Pengaturan dan layar Tema bisa dibuka', (tester) async {
     await nyalakan(tester);
     await lolosOnboarding(tester);
@@ -143,6 +161,8 @@ void main() {
     expect(aktif.brightness, Brightness.dark);
     expect(aktif.appBarTheme.backgroundColor, gelap.appBar);
     expect(aktif.scaffoldBackgroundColor, gelap.bg);
+    // SnackBar mengambang supaya tidak menimpa FAB.
+    expect(aktif.snackBarTheme.behavior, SnackBarBehavior.floating);
     // Label di atas aksen harus terbaca, termasuk di mode gelap.
     expect(
       contrastRatio(aktif.colorScheme.onPrimary, aktif.colorScheme.primary),

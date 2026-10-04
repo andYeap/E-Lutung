@@ -31,12 +31,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     super.dispose();
   }
 
-  Future<void> _openForm(TxType tipe) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => TransactionFormScreen(tipe: tipe)),
-    );
-  }
-
   Future<void> _pickRange() async {
     final now = DateTime.now();
     final picked = await showDateRangePicker(
@@ -136,33 +130,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           ),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _fab('Transfer', Icons.swap_horiz, () => _openForm(TxType.transfer)),
-          const SizedBox(height: 10),
-          _fab('Pemasukan', Icons.south_west, () => _openForm(TxType.pemasukan)),
-          const SizedBox(height: 10),
-          _fab('Pengeluaran', Icons.north_east, () => _openForm(TxType.pengeluaran)),
-        ],
-      ),
-    );
-  }
-
-  Widget _fab(String label, IconData icon, VoidCallback onTap) {
-    return FloatingActionButton.extended(
-      heroTag: label,
-      onPressed: onTap,
-      backgroundColor: Neo.accent,
-      foregroundColor: Neo.ink,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Neo.radius),
-        side: BorderSide(color: Neo.ink, width: Neo.borderW),
-      ),
-      icon: Icon(icon, size: 18),
-      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+      // Tombol tambah dimiliki shell. Sebelumnya tiga FAB bertumpuk di sini dan
+      // menutupi isi daftar.
     );
   }
 

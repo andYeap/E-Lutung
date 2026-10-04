@@ -2,6 +2,7 @@ import 'package:elutung/data/database.dart';
 import 'package:elutung/data/finance.dart';
 import 'package:elutung/util/color.dart';
 import 'package:elutung/widgets/charts.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -86,6 +87,31 @@ void main() {
     expect(slices.last.label, kOtherSliceLabel);
     expect(slices.last.total, 30000);
     expect(slices.last.color, parseHexColor(null));
+  });
+
+  testWidgets('grafik batang dan grafik tren memakai pesan kosong yang sama', (
+    tester,
+  ) async {
+    final kosong = [
+      MonthPoint(month: DateTime(2026, 1, 1), income: 0, expense: 0),
+      MonthPoint(month: DateTime(2026, 2, 1), income: 0, expense: 0),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [MonthlyBars(series: kosong), NetTrendChart(series: kosong)],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Dulu grafik tren menggambar garis datar saat tidak ada data, padahal itu
+    // terlihat seperti saldo nol yang nyata.
+    expect(find.text(kNoMonthlyData), findsNWidgets(2));
+    expect(find.byType(LineChart), findsNothing);
   });
 
   test('total nol atau daftar kosong menghasilkan grafik kosong', () {

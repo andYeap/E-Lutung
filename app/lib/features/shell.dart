@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 
+import '../data/database.dart';
 import '../providers.dart';
 import '../util/format.dart';
 import '../services/app_lock.dart';
@@ -21,6 +22,7 @@ import 'institutions_screen.dart';
 import 'recap/recap_screen.dart';
 import 'recurring/recurring_screen.dart';
 import 'theme/theme_screen.dart';
+import 'transactions/add_transaction_sheet.dart';
 import 'transactions/transaction_form_screen.dart';
 import 'transactions/transactions_screen.dart';
 import 'trash_screen.dart';
@@ -99,6 +101,44 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     );
   }
 
+  /// Tombol tambah sesuai tab yang sedang aktif. Rekap tidak punya aksi tambah.
+  Widget? _buildFab() {
+    if (_index == 2) return null;
+
+    final bentuk = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(Neo.radius),
+      side: BorderSide(color: Neo.ink, width: Neo.borderW),
+    );
+
+    if (_index == 3) {
+      return FloatingActionButton(
+        heroTag: 'shell-add-budget',
+        tooltip: 'Tambah anggaran',
+        backgroundColor: Neo.accent,
+        foregroundColor: Neo.ink,
+        elevation: 0,
+        shape: bentuk,
+        onPressed: () => showBudgetForm(
+          context,
+          ref,
+          ref.read(categoriesProvider).value ?? const <Category>[],
+        ),
+        child: const Icon(Icons.add),
+      );
+    }
+
+    return FloatingActionButton.extended(
+      heroTag: 'shell-add-transaction',
+      onPressed: () => showAddTransactionSheet(context),
+      backgroundColor: Neo.accent,
+      foregroundColor: Neo.ink,
+      elevation: 0,
+      shape: bentuk,
+      icon: const Icon(Icons.add, size: 18),
+      label: const Text('Tambah', style: TextStyle(fontWeight: FontWeight.w800)),
+    );
+  }
+
   Future<void> _syncWidget() =>
       WidgetSync.push(ref.read(databaseProvider));
 
@@ -158,6 +198,13 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           BudgetScreen(),
         ],
       ),
+      // Satu tombol tambah milik shell, bukan milik tiap tab.
+      //
+      // Ini bukan sekadar merapikan: SnackBar yang muncul dari shell dirender
+      // oleh Scaffold ini, dan Flutter hanya menaruh SnackBar mengambang **di
+      // atas FAB** bila keduanya berada di Scaffold yang sama. Waktu FAB masih
+      // di dalam tab, SnackBar menutupi tombolnya.
+      floatingActionButton: _buildFab(),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),

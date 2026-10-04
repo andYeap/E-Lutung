@@ -36,6 +36,10 @@ class ChartSlice {
 /// Label gabungan untuk kategori kecil.
 const String kOtherSliceLabel = 'Lainnya';
 
+/// Pesan saat belum ada data bulanan, dipakai bersama oleh grafik batang dan
+/// grafik tren supaya keadaan kosongnya seragam.
+const String kNoMonthlyData = 'Belum ada data 12 bulan.';
+
 /// Porsi minimum sebuah kategori agar tampil sendiri di grafik. Kategori di
 /// bawah ambang ini digabung jadi satu potongan "Lainnya" supaya legend tidak
 /// ramai saat kategorinya banyak (mitigasi risiko Bagian 16 PRD).
@@ -219,7 +223,7 @@ class MonthlyBars extends StatelessWidget {
         .fold<int>(0, (a, b) => a > b ? a : b)
         .toDouble();
     if (maxY == 0) {
-      return Text('Belum ada data 12 bulan.', style: TextStyle(color: Neo.muted, fontSize: 12));
+      return Text(kNoMonthlyData, style: TextStyle(color: Neo.muted, fontSize: 12));
     }
     final last = series.isNotEmpty ? series.last : null;
     return Semantics(
@@ -319,8 +323,11 @@ class NetTrendChart extends StatelessWidget {
       running += series[i].income - series[i].expense;
       spots.add(FlSpot(i.toDouble(), running.toDouble()));
     }
-    if (spots.isEmpty) {
-      return Text('Belum ada data.', style: TextStyle(color: Neo.muted, fontSize: 12));
+    // Tanpa data, jangan menggambar garis datar: itu terlihat seperti saldo nol
+    // yang nyata. Tampilkan pesan kosong yang sama dengan grafik batang.
+    final adaData = series.any((p) => p.income != 0 || p.expense != 0);
+    if (spots.isEmpty || !adaData) {
+      return Text(kNoMonthlyData, style: TextStyle(color: Neo.muted, fontSize: 12));
     }
     var minY = spots.first.y;
     var maxY = spots.first.y;

@@ -110,7 +110,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                   ? 'Total pengeluaran'
                   : (catById[b.kategoriId]?.nama ?? 'Kategori');
               return NeoCard(
-                onTap: () => _showForm(context, ref, categories, initial: b),
+                onTap: () => showBudgetForm(context, ref, categories, initial: b),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -168,23 +168,17 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
         );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: 'Tambah anggaran',
-        backgroundColor: Neo.accent,
-        foregroundColor: Neo.ink,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Neo.radius),
-          side: BorderSide(color: Neo.ink, width: Neo.borderW),
-        ),
-        onPressed: () => _showForm(context, ref, categories),
-        child: const Icon(Icons.add),
-      ),
+      // Tombol tambah dipindah ke shell (lihat `ShellScreen._buildFab`), supaya
+      // FAB dan SnackBar berada di Scaffold yang sama.
+      floatingActionButton: null,
     );
   }
 }
 
-Future<void> _showForm(
+/// Membuka form tambah/ubah anggaran.
+///
+/// Publik karena dipanggil dari [ShellScreen] lewat FAB-nya.
+Future<void> showBudgetForm(
   BuildContext context,
   WidgetRef ref,
   List<Category> categories, {
