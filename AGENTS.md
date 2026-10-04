@@ -15,8 +15,10 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
   - `lib/data/finance.dart` — logika **murni & teruji**: aturan transfer, `computeTotals`, `expenseByCategory`, `monthlySeries`, `accountBalance`, `budgetUsageOf`.
   - `lib/data/recurring.dart` — matematika jadwal berulang (murni, teruji): `occurrenceAt`, `occurrences`, `nextDue`, `daysInMonth`. Penjepitan akhir bulan selalu mengacu ke tanggal asli `mulai`, bukan hasil jepitan.
   - `lib/data/backup.dart` — ekspor/impor JSON, ekspor CSV, `wipeUserData`, pengingat cadangan.
+  - `lib/theme/neo_palette.dart` — [NeoPalette] (bg/surface/ink/appBar/accent), `NeoToken`, preset bawaan, dan warna semantik yang terkunci (`kSemanticColors`).
+  - `lib/util/contrast.dart` — rasio kontras WCAG, `readableOn` (memilih teks gelap/terang), `miripWarnaSemantik`, dan `paletteWarnings`.
   - `lib/data/repositories/*` — institution, category, account, transaction, budget, recurring. **Semua** punya `watchDeleted()` + `restore()` (soft delete).
-  - `lib/features/*` — `shell.dart` (bottom nav 4 tab + Pengaturan + penanganan klik widget), `onboarding_screen.dart` (`OnboardingGate`, sekali saja), `dashboard_screen`, `transactions/*`, `recap/recap_screen`, `budget/budget_screen`, `recurring/recurring_screen`, `institutions_screen`, `accounts_screen`, `categories_screen`, `trash_screen`.
+  - `lib/features/*` — `shell.dart` (bottom nav 4 tab + Pengaturan + penanganan klik widget), `onboarding_screen.dart` (`OnboardingGate`, sekali saja), `dashboard_screen`, `transactions/*`, `recap/recap_screen`, `budget/budget_screen`, `recurring/recurring_screen`, `theme/theme_screen`, `institutions_screen`, `accounts_screen`, `categories_screen`, `trash_screen`.
   - `lib/widgets/neo.dart` — `NeoCard/NeoButton/NeoTextField` + `NeoLoading`/`NeoError` (keadaan memuat/gagal bergaya neobrutalism).
   - `lib/services/app_lock.dart` — kunci PIN/biometrik + `AuthGate`.
   - `lib/services/widget_sync.dart` — tulis data ke widget + `requestPin`.
@@ -43,6 +45,7 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
 - **Transfer (Bagian 8.1):** ke akun sendiri → **bukan** pengeluaran (hanya `biayaAdmin`); ke pihak lain → `nominal + biayaAdmin` jadi pengeluaran.
 - **Kategori pembukuan pengeluaran** = `finance.expenseCategoryId()`, bukan selalu `Transaction.kategoriId`: biaya admin transfer antar akun sendiri selalu masuk kategori `transfer_admin` ("Transfer & Admin"). Dipakai konsisten di `expenseByCategory`, `budgetUsageOf`, dan ekspresi SQL `_expenseCategoryExpr()` — termasuk saat **memfilter** kategori, supaya kartu total, tabel, dan grafik tidak berbeda.
 - **Grafik donut** menggabungkan kategori kecil (<3% dari total) jadi satu potongan "Lainnya" lewat `buildChartSlices()` di `widgets/charts.dart` (mitigasi Bagian 16); jumlah potongan tetap sama dengan total.
+- **Tema kustom (v1.1)** — `ThemeController` menyimpan mode, preset, dan penyesuaian warna **terpisah per mode** (terang/gelap) di SharedPreferences. `Neo` dulu menyimpan warna sebagai field mutable; sekarang ia hanya *getter* dari satu `NeoPalette` yang diisi `Neo.apply()` di `ElutungApp.build`. `AppTheme.light()/dark()` menerima palet sebagai argumen supaya `theme` dan `darkTheme` bisa dibangun berdampingan tanpa tertukar. Warna semantik tidak ikut berubah.
 - **Warna anggaran (Bagian 8.2):** <60% aman, 60–85% waspada, 85–100% menipis, ≥100% lewat batas (`util/budget.dart`).
 - Seed institusi/kategori hanya ditulis saat DB **dibuat** (`onCreate`).
 - **Skema v3** — v2 membuang `categories.archived`; v3 menambah tabel `recurring_rules` dan kolom `transactions.recurring_rule_id`. `onUpgrade` memakai `m.dropColumn`, `m.createTable`, dan `m.addColumn`, lalu `_createIndexes()`. Uji migrasi nyata (v1 ke v3 dan v2 ke v3, plus indeks unik menolak periode ganda) ada di `test/migration_test.dart`.
@@ -57,7 +60,7 @@ cd ~/E-Lutung/app
 flutter pub get
 dart run build_runner build        # WAJIB setelah mengubah skema Drift
 flutter analyze                    # harus 0 issue
-flutter test                       # 72 test
+flutter test                       # 95 test
 flutter run
 flutter build apk --release
 flutter build appbundle --release
@@ -82,6 +85,8 @@ flutter build apk --release --split-per-abi
 14. **`m.createAll()` TIDAK idempotent untuk indeks** — DDL indeks yang dihasilkan Drift tidak memakai `IF NOT EXISTS`, jadi memanggilnya saat indeksnya sudah ada langsung gagal (`SqliteException: index ... already exists`). Di `onUpgrade` jangan pakai `createAll()`; gunakan `m.createTable`/`m.addColumn` untuk yang baru, lalu `_createIndexes()` yang memakai `CREATE INDEX IF NOT EXISTS`. Ini pernah membuat dua test migrasi merah.
 15. **`@TableIndex` tidak bisa dipakai dua kali** pada satu kelas tabel (bukan anotasi `@Repeatable`), jadi indeks unik `idx_transactions_recurring_tanggal` dibuat lewat `customStatement`. Jangan "merapikan"-nya jadi anotasi kedua — tidak akan ter-compile.
 16. `RecurringRunner.runDue()` dijalankan dari dua tempat (aplikasi dan isolate WorkManager) yang memakai koneksi DB berbeda. Keamanan ganda: pemeriksaan keberadaan per periode **dan** indeks unik; jangan hapus salah satunya.
+17. **Jangan menggambar teks dengan `Neo.ink` di atas `accent` atau `appBar`.** Dulu `NeoButton` begitu, dan di mode gelap hasilnya teks terang di atas kuning terang — kontras 1.2:1, praktis tak terbaca. Sekarang teks di atas kedua token itu memakai `readableOn(latar)`, dan `ColorScheme.onPrimary` juga dihitung dari `readableOn(accent)`. Ini bug lama yang baru ketahuan saat fitur tema menambahkan pemeriksa kontras.
+18. **Deteksi warna "mirip makna" memakai rona (hue), bukan jarak RGB.** Jarak RGB mentah menyesatkan: arang `#3A3934` dianggap dekat dengan hijau pemasukan. Lihat `miripWarnaSemantik`. Kalau preset baru ditambahkan, jalankan `test/contrast_test.dart` — ada test yang menuntut semua preset bawaan bebas peringatan.
 
 ## Verifikasi sebelum mengirim
 

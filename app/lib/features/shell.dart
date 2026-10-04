@@ -20,6 +20,7 @@ import 'dashboard_screen.dart';
 import 'institutions_screen.dart';
 import 'recap/recap_screen.dart';
 import 'recurring/recurring_screen.dart';
+import 'theme/theme_screen.dart';
 import 'transactions/transaction_form_screen.dart';
 import 'transactions/transactions_screen.dart';
 import 'trash_screen.dart';
@@ -254,14 +255,12 @@ class SettingsScreen extends ConsumerWidget {
           ListenableBuilder(
             listenable: theme,
             builder: (context, _) => _SettingsTile(
-              icon: Icons.dark_mode,
-              title: 'Tema',
-              subtitle: switch (theme.mode) {
-                ThemeMode.system => 'Mengikuti sistem',
-                ThemeMode.light => 'Terang',
-                ThemeMode.dark => 'Gelap',
-              },
-              onTap: theme.cycle,
+              icon: Icons.palette,
+              title: 'Tema & warna',
+              subtitle: '${themeModeLabel(theme.mode)} • ${theme.preset.name}',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ThemeScreen()),
+              ),
             ),
           ),
           const SizedBox(height: 12),

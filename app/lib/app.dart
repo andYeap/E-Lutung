@@ -52,12 +52,14 @@ class _ElutungAppState extends State<ElutungApp> with WidgetsBindingObserver {
       listenable: _ctl,
       builder: (context, _) {
         // Token neobrutalism mengikuti tema aktif sebelum widget dibangun.
-        Neo.applyBrightness(_brightness);
+        Neo.apply(_ctl.paletteFor(_brightness));
         return MaterialApp(
           title: 'E-Lutung',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
+          // Kedua tema dibangun dari paletnya masing-masing, bukan dari palet
+          // global, supaya warna terang dan gelap tidak saling tertukar.
+          theme: AppTheme.light(_ctl.paletteFor(Brightness.light)),
+          darkTheme: AppTheme.dark(_ctl.paletteFor(Brightness.dark)),
           themeMode: _ctl.mode,
           // Material (date picker dll) memakai Bahasa Indonesia.
           localizationsDelegates: const [

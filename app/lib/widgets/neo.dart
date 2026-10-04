@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
+import '../util/contrast.dart';
 
 /// Kartu bergaya neobrutalism + efek "press" (Bagian 6b).
 class NeoCard extends StatefulWidget {
@@ -56,14 +57,17 @@ class NeoButton extends StatefulWidget {
     required this.label,
     required this.onPressed,
     this.icon,
-    this.color = Neo.accent,
+    this.color,
     this.expand = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
-  final Color color;
+
+  /// Warna tombol; null berarti aksen tema aktif. Tidak boleh dijadikan nilai
+  /// default parameter karena aksen kini ditentukan saat `build`.
+  final Color? color;
   final bool expand;
 
   @override
@@ -76,6 +80,13 @@ class _NeoButtonState extends State<NeoButton> {
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null;
+    final background = enabled
+        ? (widget.color ?? Neo.accent)
+        : Color.alphaBlend(Neo.muted.withValues(alpha: 0.25), Neo.surface);
+    // Teks tombol dipilih agar terbaca di atas latarnya. Sebelumnya selalu
+    // memakai `Neo.ink`, yang di mode gelap menghasilkan teks terang di atas
+    // aksen kuning terang — hanya berkontras 1.2:1.
+    final foreground = readableOn(background);
     final btn = GestureDetector(
       onTapDown: enabled ? (_) => setState(() => _down = true) : null,
       onTapUp: enabled ? (_) => setState(() => _down = false) : null,
@@ -87,22 +98,19 @@ class _NeoButtonState extends State<NeoButton> {
         constraints: const BoxConstraints(minHeight: 48),
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: Neo.box(
-          color: enabled ? widget.color : const Color(0xFFE5E7EB),
-          shadow: _down ? 2 : 4,
-        ),
+        decoration: Neo.box(color: background, shadow: _down ? 2 : 4),
         child: Row(
           mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (widget.icon != null) ...[
-              Icon(widget.icon, size: 18, color: Neo.ink),
+              Icon(widget.icon, size: 18, color: foreground),
               const SizedBox(width: 8),
             ],
             Text(
               widget.label,
               style: TextStyle(
-                color: Neo.ink,
+                color: foreground,
                 fontWeight: FontWeight.w800,
                 fontSize: 14,
               ),
@@ -125,6 +133,7 @@ class NeoTextField extends StatelessWidget {
     this.keyboardType,
     this.prefixText,
     this.inputFormatters,
+    this.onChanged,
   });
 
   final TextEditingController controller;
@@ -133,6 +142,7 @@ class NeoTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final String? prefixText;
   final List<TextInputFormatter>? inputFormatters;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -150,6 +160,7 @@ class NeoTextField extends StatelessWidget {
           controller: controller,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
+          onChanged: onChanged,
           decoration: InputDecoration(
             hintText: hint,
             prefixText: prefixText,

@@ -103,7 +103,7 @@ Konteks pemakaian: pencatatan cepat sambil jalan (satu tangan), cek sekilas lewa
 | **Pengeluaran** | #DC2626 | idem | Semantik |
 | **Transfer** | #4F46E5 | idem | Semantik |
 
-> Aturan penting: karena neobrutalism gemar memakai hijau/merah sebagai aksen dekoratif, **aksen dekoratif dilarang memakai hijau & merah** agar tidak rancu dengan makna pemasukan/pengeluaran.
+> Aturan penting: karena neobrutalism gemar memakai hijau/merah sebagai aksen dekoratif, **aksen dekoratif dilarang memakai hijau & merah** agar tidak rancu dengan makna pemasukan/pengeluaran. Aturan ini mengikat **palet bawaan**; pengguna boleh menyimpanginya lewat tema yang dapat disesuaikan (Bagian 6c), dan aplikasi memberi peringatan saat pilihannya berisiko.
 
 **Makna & aksesibilitas (wajib):**
 - **Warna bukan satu-satunya penanda:** nominal pemasukan selalu bertanda `+`, pengeluaran `−`, dengan ikon/arah berbeda (ramah buta warna).
@@ -130,6 +130,38 @@ Konteks pemakaian: pencatatan cepat sambil jalan (satu tangan), cek sekilas lewa
 **Onboarding:** 2–3 kartu singkat bergaya neobrutalism (cara mencatat, grafik, widget), bisa dilewati.
 
 **Risiko desain:** neobrutalism mengutamakan estetika di atas kepadatan data. Untuk aplikasi keuangan, **keterbacaan angka diprioritaskan**: jangan menaruh teks di atas aksen cerah tanpa kontras cukup, dan chart harus tetap jelas meski bergaya.
+
+---
+
+## 6c. Tema yang Dapat Disesuaikan (v1.1)
+
+Pengguna boleh mengganti warna tampilan, tidak lagi terpaku pada palet Bagian 6b.
+
+**Token yang bisa diubah** (masing-masing **terpisah untuk mode terang dan mode gelap**):
+
+| Token | Memengaruhi |
+|---|---|
+| `bg` | Latar tiap layar |
+| `surface` | Kartu, panel, dialog |
+| `ink` | Border tebal dan teks utama |
+| `appBar` | Bilah atas di semua layar |
+| `accent` | Tombol, chip terpilih, indikator navigasi bawah |
+
+**Yang tidak bisa diubah dan tidak boleh diserahkan ke pengguna:**
+
+- `income`, `expense`, dan `transfer` tetap **terkunci**. Ketiganya pembawa makna, dan membiarkannya diubah membuat warna berhenti bisa dipercaya.
+- `muted` (teks sekunder) **diturunkan** dari `ink` dan `bg` dengan transparansi, bukan token tersendiri, supaya selalu ikut menyesuaikan dan tidak bisa jadi tak terbaca.
+
+**Preset dan penyesuaian.** Tersedia beberapa palet bawaan sebagai titik awal, masing-masing dengan pasangan terang dan gelap. Setelah memilih preset, tiap token di atas masih bisa disetel sendiri. Satu tombol mengembalikan mode yang sedang disunting ke preset-nya.
+
+**Pengaman (wajib):**
+
+1. Teks di atas `accent` dan `appBar` **dijamin** terbaca: aplikasi memilih sendiri antara teks gelap dan terang sesuai kontras latarnya, tidak memakai `ink` mentah. Karena sudah dijamin, pasangan ini tidak perlu diperingatkan.
+2. Untuk pasangan yang tetap ditentukan pengguna, aplikasi menghitung rasio kontras WCAG dan menampilkan peringatan bila di bawah ambang AA — yaitu `ink` terhadap `bg` dan `ink` terhadap `surface`.
+3. Aplikasi memperingatkan bila `accent` atau `ink` yang dipilih terlalu mirip **rona** dan kecerahannya dengan warna semantik pemasukan, pengeluaran, atau transfer, karena itu mengembalikan kekacauan makna yang dicegah Bagian 6b. Perbandingannya memakai rona, bukan jarak RGB, supaya arang netral tidak salah dianggap menyerupai hijau.
+4. Peringatan bersifat **tidak memblokir**: pengguna tetap boleh menyimpan pilihannya. Aplikasi menyarankan, bukan melarang.
+
+> Alasan pelonggaran: Bagian 6b mengunci palet demi konsistensi dan keterbacaan. Permintaan pengguna untuk bisa mengatur tampilan sendiri lebih kuat daripada kekakuan itu, jadi yang dipertahankan bukan larangannya melainkan **safeguard**-nya: makna warna tetap dijaga, keterbacaan tetap diperiksa, dan pengguna tetap diberi tahu saat pilihannya berisiko.
 
 ---
 
@@ -354,6 +386,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-11.3 Kunci aplikasi (PIN/biometrik) — opsional.
 - FR-11.4 Hapus semua data (dengan konfirmasi ganda).
 - FR-11.5 Tema terang/gelap/mengikuti sistem.
+- FR-11.6 Tema yang dapat disesuaikan (Bagian 6c): pilih preset palet, lalu setel latar, permukaan, border/teks, bilah atas, dan aksen secara terpisah untuk mode terang dan gelap; warna semantik terkunci; ada peringatan kontras dan peringatan warna yang terlalu mirip makna pemasukan/pengeluaran; ada tombol kembali ke preset.
 
 ### FR-12 Transaksi Berulang (v1.1)
 - FR-12.1 CRUD aturan berulang: tipe (pemasukan/pengeluaran), nominal, kategori, akun (opsional), catatan, frekuensi (harian/mingguan/bulanan/tahunan), tanggal mulai, tanggal sampai (opsional), dan status aktif.
@@ -421,6 +454,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - [x] Aplikasi berjalan penuh dalam mode pesawat (airplane mode).
 - [x] Batas bulan benar: transaksi 23:59 tgl terakhir bulan vs 00:00 tgl 1 bulan berikut jatuh ke periode masing-masing.
 - [x] Transaksi berulang: aturan "bulanan tanggal 31" jatuh ke 28/29 Februari lalu kembali ke 31 Maret, dan satu periode tidak pernah tercatat dua kali.
+- [x] Tema kustom: mengubah warna latar mode terang tidak mengubah mode gelap, pengaturan bertahan setelah aplikasi ditutup, warna semantik tetap tidak bisa diubah, dan kontras rendah memunculkan peringatan tanpa menghalangi penyimpanan.
 
 Catatan bukti: kotak di atas ditandai hanya bila ada pemeriksaan otomatis yang menjalankannya.
 
@@ -431,6 +465,7 @@ Catatan bukti: kotak di atas ditandai hanya bila ada pemeriksaan otomatis yang m
 - Mode pesawat: manifest rilis tidak meminta izin `INTERNET` (hanya varian debug/profil yang memintanya untuk hot reload).
 - Batas bulan: `test/finance_test.dart` dan `test/sql_aggregate_test.dart` (dijalankan juga di tiga zona waktu berbeda).
 - Transaksi berulang: `test/recurring_test.dart` (matematika jadwal, penjepitan akhir bulan, tahun kabisat), `test/recurring_runner_test.dart` (idempotensi termasuk dua pelari bersamaan, batas per jalan, tanggal selesai, aturan nonaktif), `test/migration_test.dart` (migrasi v1 dan v2 ke v3, indeks unik menolak periode ganda).
+- Tema kustom: `test/theme_controller_test.dart` (pisahan terang/gelap, persistensi, pengaturan rusak tidak menggagalkan pemuatan, token semantik terkunci), `test/contrast_test.dart` (rasio WCAG, `readableOn` yang menyapu seluruh rentang kecerahan, semua preset bawaan bebas peringatan, deteksi rona yang menyerupai warna semantik), `test/theme_screen_test.dart` (layar tema).
 
 Dua kotak yang masih kosong butuh perangkat/emulator: alur catat transaksi sampai tampil di Dashboard, dan pembaruan widget beranda setelah transaksi ditambahkan.
 
@@ -449,6 +484,7 @@ Dua kotak yang masih kosong butuh perangkat/emulator: alur catat transaksi sampa
 **v1.1 (setelah v1):**
 
 - **M8 — Transaksi Berulang:** aturan berulang harian/mingguan/bulanan/tahunan, pembangkitan otomatis saat jatuh tempo, dan penanda "dari jadwal" di riwayat.
+- **M9 — Tema Kustom:** preset palet, penyesuaian warna per mode, warna semantik terkunci, dan peringatan kontras.
 
 Setiap milestone harus lolos `flutter analyze` (0 issue) dan set test-nya sebelum lanjut.
 
@@ -483,6 +519,7 @@ Pertanyaan terbuka sebelumnya sudah ditetapkan (boleh ditinjau ulang bila kebutu
 9. **Gaya desain:** **Neobrutalism** (detail di Bagian 6b).
 10. **Navigasi:** **bottom navigation 4 tab** (Dashboard, Riwayat, Rekap, Anggaran) + Pengaturan di AppBar — ditetapkan dan sudah dipakai.
 11. **Transaksi berulang (v1.1):** dibuat **otomatis** saat jatuh tempo, bukan usulan yang perlu disetujui; dibangkitkan saat aplikasi dibuka dan oleh tugas WorkManager yang sudah ada; hanya untuk pemasukan dan pengeluaran; frekuensi harian, mingguan, bulanan, tahunan.
+12. **Tema yang dapat disesuaikan (v1.1):** pengguna boleh mengubah `bg`, `surface`, `ink`, `appBar`, dan `accent`, terpisah untuk mode terang dan gelap; `income`, `expense`, dan `transfer` terkunci; peringatan kontras dan kemiripan makna bersifat tidak memblokir (Bagian 6c).
 
 ---
 

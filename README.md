@@ -2,8 +2,9 @@
 
 Aplikasi pencatat keuangan Android: pemasukan, pengeluaran, dan transfer, lengkap dengan
 rekap bulanan, grafik per kategori, batas anggaran berwarna (hijau sampai merah), transaksi
-berulang otomatis untuk gaji dan langganan, dan widget beranda. **100% lokal** — tanpa
-server, tanpa akun, dan build rilis tidak meminta izin internet.
+berulang otomatis untuk gaji dan langganan, tema yang bisa kamu sesuaikan sendiri, dan widget
+beranda. **100% lokal** — tanpa server, tanpa akun, dan build rilis tidak meminta izin
+internet.
 
 Spesifikasi produk final ada di [PRD.md](PRD.md) (versi cetak: [PRD.pdf](PRD.pdf)). Catatan
 teknis, keputusan desain, dan jebakan yang perlu dihindari ada di [AGENTS.md](AGENTS.md).
@@ -36,7 +37,7 @@ flutter run
 ```bash
 cd app
 flutter analyze   # harus 0 issue
-flutter test      # 72 test
+flutter test      # 95 test
 ```
 
 ## Membangun APK dan AAB
@@ -80,7 +81,7 @@ app/                    proyek Flutter (Android saja)
   lib/features/         layar per fitur
   lib/services/         kunci aplikasi dan sinkronisasi widget
   lib/widgets/          komponen neobrutalism dan grafik
-  test/                 72 test
+  test/                 95 test
   android/              proyek Android beserta widget beranda (RemoteViews)
 ```
 
@@ -96,6 +97,10 @@ app/                    proyek Flutter (Android saja)
 - Transaksi berulang dibangkitkan saat aplikasi dibuka dan oleh tugas WorkManager, lalu
   ditandai "dari jadwal" di riwayat. Satu periode tidak pernah tercatat dua kali, dijaga
   indeks unik pada pasangan aturan dan tanggal.
+- Tema bisa disesuaikan lewat Pengaturan: pilih preset, lalu setel latar, kartu, border/teks,
+  bilah atas, dan aksen secara terpisah untuk mode terang dan gelap. Warna semantik
+  (pemasukan, pengeluaran, transfer) sengaja tidak bisa diubah, dan aplikasi menampilkan
+  peringatan bila pilihanmu berkontras rendah atau terlalu mirip warna makna.
 - Hapus data selalu berupa soft delete ke layar Sampah, jadi masih bisa dipulihkan.
 - Build rilis tidak meminta izin `INTERNET`. Varian debug dan profil memintanya karena
   kebutuhan hot reload.

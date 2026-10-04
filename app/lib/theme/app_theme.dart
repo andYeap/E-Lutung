@@ -1,52 +1,54 @@
 import 'package:flutter/material.dart';
 
-/// Token gaya neobrutalism (Bagian 6b PRD).
+import '../util/contrast.dart';
+import 'neo_palette.dart';
+
+/// Token gaya neobrutalism (Bagian 6b dan 6c PRD).
 ///
-/// Warna bersifat **mutable** dan di-swap oleh [applyBrightness] saat tema
-/// berubah (terang/gelap). Konstanta struktural (border/radius/spacing) tetap.
+/// Warna sekarang datang dari palet yang dipilih pengguna ([NeoPalette]) lewat
+/// [apply]. Struktur (border, radius, spacing) tetap. Warna semantik **tidak**
+/// ikut berubah — lihat [kSemanticColors].
+///
+/// Jangan memakai token di bawah di dalam ekspresi `const`: nilainya baru pasti
+/// saat `build`, dan `const` akan ditolak pengompilasi.
 class Neo {
   Neo._();
 
-  // ---- Warna (berubah mengikuti brightness) ----
-  static Color bg = _bgLight;
-  static Color surface = _surfaceLight;
-  static Color ink = _inkLight;
-  static Color muted = _mutedLight;
+  /// Palet yang sedang berlaku. `ElutungApp` memanggil [apply] untuk mode yang
+  /// aktif sebelum membangun `MaterialApp`.
+  static NeoPalette _aktif = kThemePresets.first.light;
 
-  // Aksen & warna semantik — versi lembut (tidak menyilaukan)
-  static const Color accent = Color(0xFFF2CE6B); // kuning lembut
-  static const Color income = Color(0xFF2E7D5B); // hijau sage
-  static const Color expense = Color(0xFFB85C5C); // merah bata lembut
-  static const Color transfer = Color(0xFF5B6BB5); // indigo lembut
+  static Color get bg => _aktif.bg;
+  static Color get surface => _aktif.surface;
+  static Color get ink => _aktif.ink;
+  static Color get appBar => _aktif.appBar;
+  static Color get accent => _aktif.accent;
 
-  // Nilai dasar tema terang/gelap
-  static const _bgLight = Color(0xFFF6F5F1);
-  static const _bgDark = Color(0xFF1E1F22);
-  static const _surfaceLight = Color(0xFFFCFCFA);
-  static const _surfaceDark = Color(0xFF2A2C30);
-  static const _inkLight = Color(0xFF3A3934); // arang, bukan hitam pekat
-  static const _inkDark = Color(0xFFE8E7E3);
-  static const _mutedLight = Color(0xFF7C7B75);
-  static const _mutedDark = Color(0xFFA6A5A0);
+  /// Teks sekunder **diturunkan** dari [ink] dan [bg], bukan token tersendiri,
+  /// supaya selalu ikut menyesuaikan dan tidak bisa dibuat tak terbaca
+  /// (Bagian 6c).
+  static Color get muted => Color.alphaBlend(ink.withValues(alpha: 0.55), bg);
+
+  // Warna semantik — terkunci, tidak dapat diubah pengguna (Bagian 6c).
+  static const Color income = kIncomeColor;
+  static const Color expense = kExpenseColor;
+  static const Color transfer = kTransferColor;
 
   // ---- Struktur (konstan) ----
   static const double borderW = 2.0;
   static const double radius = 6.0;
   static const double space = 12.0;
 
-  /// Panggil sebelum membangun MaterialApp agar warna sesuai tema aktif.
-  static void applyBrightness(Brightness brightness) {
-    final dark = brightness == Brightness.dark;
-    bg = dark ? _bgDark : _bgLight;
-    surface = dark ? _surfaceDark : _surfaceLight;
-    ink = dark ? _inkDark : _inkLight;
-    muted = dark ? _mutedDark : _mutedLight;
-  }
+  static void apply(NeoPalette palette) => _aktif = palette;
+
+  /// Warna bayangan: mengikuti [ink] selama ink-nya gelap, dan memakai hitam
+  /// saat ink-nya terang supaya bayangan tetap berupa bayangan, bukan pendar.
+  static Color get _shadowBase =>
+      ink.computeLuminance() > 0.5 ? Colors.black : ink;
 
   static List<BoxShadow> hardShadow([double offset = 3]) => [
-    // Bayangan memakai warna arang transparan (bukan hitam pekat) agar lembut.
     BoxShadow(
-      color: const Color(0xFF3A3934).withValues(alpha: 0.35),
+      color: _shadowBase.withValues(alpha: 0.35),
       offset: Offset(offset, offset),
       blurRadius: 2,
     ),
@@ -68,53 +70,55 @@ class Neo {
 class AppTheme {
   AppTheme._();
 
-  static ThemeData light() => _build(Brightness.light);
-  static ThemeData dark() => _build(Brightness.dark);
+  /// Tema dibangun dari palet yang diberikan, bukan dari palet global, supaya
+  /// `theme` dan `darkTheme` bisa dibangun berdampingan pada `MaterialApp`.
+  static ThemeData light(NeoPalette p) => _build(p, Brightness.light);
+  static ThemeData dark(NeoPalette p) => _build(p, Brightness.dark);
 
-  static ThemeData _build(Brightness brightness) {
-    final dark = brightness == Brightness.dark;
+  static ThemeData _build(NeoPalette p, Brightness brightness) {
     final scheme = ColorScheme.fromSeed(
-      seedColor: Neo.accent,
+      seedColor: p.accent,
       brightness: brightness,
     ).copyWith(
-      surface: dark ? Neo._bgDark : Neo._surfaceLight,
-      onSurface: dark ? Neo._inkDark : Neo._inkLight,
-      primary: Neo.accent,
-      onPrimary: const Color(0xFF3A3934),
+      surface: p.surface,
+      onSurface: p.ink,
+      primary: p.accent,
+      // Dihitung, bukan diambil dari `ink`: label yang duduk di atas aksen
+      // harus terbaca apa pun warna aksennya (chip terpilih, tombol).
+      onPrimary: readableOn(p.accent),
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
-      scaffoldBackgroundColor: dark ? Neo._bgDark : Neo._bgLight,
+      scaffoldBackgroundColor: p.bg,
       appBarTheme: AppBarTheme(
-        // Terang: bar kuning lembut. Gelap: permukaan gelap (bukan kuning) agar
-        // tidak kontras menyilaukan.
-        backgroundColor: dark ? Neo._surfaceDark : Neo.accent,
-        foregroundColor: dark ? Neo._inkDark : const Color(0xFF3A3934),
+        backgroundColor: p.appBar,
+        // Sama seperti aksen: dipilih otomatis agar selalu terbaca.
+        foregroundColor: readableOn(p.appBar),
         elevation: 0,
         centerTitle: false,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: TextStyle(
-          color: dark ? Neo._inkDark : const Color(0xFF3A3934),
+          color: readableOn(p.appBar),
           fontWeight: FontWeight.w800,
           fontSize: 18,
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: dark ? Neo._surfaceDark : Neo._surfaceLight,
-        indicatorColor: Neo.accent,
+        backgroundColor: p.surface,
+        indicatorColor: p.accent,
         labelTextStyle: WidgetStateProperty.all(
           const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
         ),
         height: 64,
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: dark ? Neo._surfaceDark : Neo._surfaceLight,
+        backgroundColor: p.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Neo.radius),
-          side: BorderSide(color: dark ? Neo._inkDark : Neo._inkLight, width: Neo.borderW),
+          side: BorderSide(color: p.ink, width: Neo.borderW),
         ),
       ),
     );
