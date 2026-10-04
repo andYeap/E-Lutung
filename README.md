@@ -37,7 +37,7 @@ flutter run
 ```bash
 cd app
 flutter analyze   # harus 0 issue
-flutter test      # 95 test
+flutter test      # 102 test
 ```
 
 ## Membangun APK dan AAB
