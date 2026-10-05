@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hapus izin INTERNET dari build rilis.
+
+  Sumbernya bukan kode aplikasi: `com.google.android.datatransport:transport-
+  backend-cct` (telemetry Google, ikut terbawa google_mlkit_text_recognition)
+  mendeklarasikan INTERNET dan ACCESS_NETWORK_STATE, lalu manifest merger
+  meneruskannya ke APK. Padahal model OCR-nya sudah tersaji penuh di dalam
+  APK (assets/mlkit-google-ocr-models + libmlkit_google_ocr_pipeline.so),
+  jadi aplikasi tidak pernah benar-benar butuh jaringan — dan PRD Bagian 10
+  menjanjikan seluruh fitur inti berjalan tanpa jaringan.
+
+  Removal ini sengaja hanya ada di source set `release`. Varian debug dan
+  profile tetap memakai INTERNET (lihat src/debug dan src/profile) karena
+  hot reload dan DevTools memerlukannya; menghapusnya di src/main akan
+  mematikan keduanya.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="android.permission.INTERNET"
+        tools:node="remove" />
+
+</manifest>
