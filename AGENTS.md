@@ -67,7 +67,7 @@ cd ~/E-Lutung/app
 flutter pub get
 dart run build_runner build        # WAJIB setelah mengubah skema Drift
 flutter analyze                    # harus 0 issue
-flutter test                       # 189 test
+flutter test                       # 198 test
 flutter run
 flutter build apk --release
 flutter build appbundle --release
@@ -107,6 +107,7 @@ tool/check-charset.sh
 26. **Berkas foto bukan urusan basis data, jadi dua hal harus selalu berpasangan.** (a) `wipeUserData()` menghapus berkas foto lewat `ReceiptStorage.hapusSemua` — kalau hanya baris `transactions` yang dihapus, foto pengguna tetap tertinggal di dokumen aplikasi tanpa jejak dan tanpa layar untuk menemukannya. (b) Impor cadangan mengembalikan `struk_path` tanpa gambarnya, jadi `watchWithReceipt()` **sengaja** mengembalikan path yang menunjuk berkas hilang; jangan "membetulkan" dengan menyembunyikannya, karena layar Foto struk butuh membedakannya dari "tidak ada struk" supaya bisa offer pembersihan lewat `clearReceiptPaths`. `softDelete` sengaja tidak menghapus berkas — transaksinya masih bisa dipulihkan dari Sampah.
 27. **Jangan menulis huruf Han/Hiragana/Katakana/Hangul/Cyrillic di mana pun — kode, komentar, atau pesan commit.** Proyek ini bahasa Indonesia; kemunculan huruf itu selalu berarti teks terganti, bukan gaya penulisan. Jalankan `tool/check-charset.sh` sebelum commit (sudah jadi langkah CI, lebih awal dari `flutter analyze`). Satu-satunya non-ASCII yang sah adalah `Σ` dan `−` di rumus PRD.md — Greek sengaja tidak dilarang karena itu. Kalau memang perlu huruf asing untuk menguji OCR, tambahkan penanda `@charset-allow` di baris yang sama.
 28. **Lipatan huruf OCR harus simetris pada kedua sisi pencocokan.** `_mengandung()` melipat teks baris **dan** kata kunci lewat `_lipatHuruf`. Jangan pernah melipat hanya satu sisi: itu yang membuat bug di perangkat, di mana `TUNAI` yang huruf terakhirnya salah baca jadi `1` terlipat menjadi `tunal` sementara kata kunci tetap `tunai`, sehingga baris uang diterima lolos dari daftar abaikan dan nominal 150.000 terpakai untuk belanja 110.000. Menormalisasi `i`->`l` tidak mematikan kata abaikan selama **kedua** sisi terlipat: `invoice` jadi `lnvolce` di baris maupun di kata kunci, jadi tetap cocok. Cara ini menggantikan pemisahan "daftar abaikan tidak boleh pakai bentuk lenting" yang dulu sempat dibutuhkan; sekarang tidak perlu pemisahan itu.
+29. **Struk dua kolom: label dan nominalnya terpisah, jadi jangan cari pasangan lewat baris.** ML Kit sering mengembalikan seluruh label di satu blok dan seluruh nominal di blok lain — `TOTAL : Rp.` tanpa angka, sementara `110.000` berdiri sendiri belasan baris di bawahnya. Pencarian berbasis baris tidak akan pernah menemukan pasangannya. Yang dipakai sebagai gantinya adalah identitas aritmetika pembayaran tunai yang **bisa diuji**: `tunai - kembalian = total`, atau `tunai == total` untuk bayar pas. Lihat `_dariIdentitasTunai`. Kalau identitasnya tidak terpenuhi sementara ada label total tanpa nominal (`labelTanpaNominal`), nominal **harus** dibiarkan null — angka terbesar di blok nominal adalah uang yang terima kasir, dan mengisinya berarti mencatat pengeluaran yang lebih besar tanpa pengguna sadari.
 
 ## Verifikasi sebelum mengirim
 

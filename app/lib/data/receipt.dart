@@ -6,6 +6,11 @@ enum SumberNominal {
   /// Baris berlabel total/jumlah bayar yang nominalnya terbaca.
   labelTotal,
 
+  /// Nominal tidak menempel pada labelnya, tapi terbukti dari hitungan
+  /// pembayaran tunai: `tunai - kembalian = total`. Karena hubungannya bisa
+  /// diuji aritmetika, hasilnya lebih dapat dipercaya daripada tebakan.
+  pembayaranTunai,
+
   /// Angka terbesar pada baris yang bukan telepon/nomor dokumen.
   tebakanAngka,
 }
@@ -25,9 +30,11 @@ class ReceiptDraft {
   final String? merchant;
   final SumberNominal sumber;
 
-  /// true bila nominal diambil dari baris berlabel total, bukan dari tebakan
-  /// "angka terbesar". Dipakai layar review untuk memperingatkan pengguna.
-  bool get yakin => nominal != null && sumber == SumberNominal.labelTotal;
+  /// true bila nominal berasal dari bukti, bukan tebakan. Dua sumber terbukti:
+  /// baris berlabel total, dan identitas `tunai - kembalian = total` yang
+  /// lolos uji aritmetika.
+  bool get yakin =>
+      nominal != null && sumber != SumberNominal.tebakanAngka;
 
   bool get kosong => nominal == null && tanggal == null && merchant == null;
 }
@@ -471,6 +478,8 @@ bool _tidakSamaDenganTotal(String line) =>
   // angkanya ada di baris berikutnya (karena OCR memisah) ikut diperiksa.
   int? terkuat;
   int? terlemah;
+  // true bila ada baris berlabel total yang nominalnya tidak menempel (dua kolom).
+  var labelTanpaNominal = false;
   for (var i = 0; i < lines.length; i++) {
     final low = _untukCocok(lines[i]);
     final lowLenting = _untukCocokLenting(lines[i]);
@@ -504,7 +513,14 @@ bool _tidakSamaDenganTotal(String line) =>
         }
       }
     }
-    if (n == null || n <= 0) continue;
+    if (n == null || n <= 0) {
+      // Labelnya dikenali tapi nominalnya tidak ada di baris itu. Namanya
+      // "struk dua kolom": nominalnya berdiri sendiri di blok lain. Dicatat
+      // karena pola itu membuat tebakan "angka terbesar" tidak bisa dipercaya —
+      // angka terbesar di blok nominal adalah uang yang diterima.
+      labelTanpaNominal = true;
+      continue;
+    }
 
     if (kuat) {
       terkuat = terkuat == null ? n : math.max(terkuat, n);
@@ -519,6 +535,23 @@ bool _tidakSamaDenganTotal(String line) =>
     return (nilai: terlemah, sumber: SumberNominal.labelTotal);
   }
 
+  // Strok dua kolom: ML Kit sering mengembalikan label dan nominal sebagai
+  // blok terpisah, jadi "TOTAL : Rp." tanpa angka sementara 110.000 berdiri
+  // sendiri belasan baris di bawahnya. Karena itu, pencarian label selalu gagal
+  // lalu fallback "angka terbesar" mengambil TUNAI.
+  //
+  // Jalan keluarnya memakai identitas aritmetika struk tunai, yang bisa diuji:
+  // `tunai - kembalian = total`. Kalau tiga angka di ekor receipt memenuhi
+  // hubungan itu, totalnya bukan tebakan melainkan hasil pembuktian.
+  //
+  // Kalau identitasnya tidak terpenuhi, tebakan tetap boleh jalan — tapi hanya
+  // kalau kandidat terbesarnya tidak mungkin uang diterima.
+  final dariTunai = _dariIdentitasTunai(lines);
+  if (dariTunai != null) {
+    return (nilai: dariTunai, sumber: SumberNominal.pembayaranTunai);
+  }
+  final bayar = _nilaiUangDiterima(lines);
+
   // Cadangan: angka terbesar pada baris yang bukan nomor telepon/dokumen.
   // Mode tidak agresif di sini supaya kode barang dan nomor seri tidak ikut
   // dibaca sebagai nominal.
@@ -530,10 +563,21 @@ bool _tidakSamaDenganTotal(String line) =>
     final n = _angkaTerbesar(line);
     if (n != null) semua.add(n);
   }
-  return (
-    nilai: semua.isEmpty ? null : semua.reduce(math.max),
-    sumber: SumberNominal.tebakanAngka,
-  );
+  if (semua.isEmpty || labelTanpaNominal) {
+    // Struktur dua kolom: ada label total, tapi nominalnya hidup di blok
+    // terpisah. Angka terbesar di blok itu adalah uang yang diterima, jadi
+    // tebakan tidak aman dan nominal dibiarkan kosong untuk diisi manual.
+    return (nilai: null, sumber: SumberNominal.tebakanAngka);
+  }
+  final tebakan = semua.reduce(math.max);
+  // Pagar terakhir: kandidat yang menyentuh nilai uang diterima bisa jadi
+  // TUNAI, bukan belanja. Nominal dibiarkan kosong supaya form review meminta
+  // pengguna mengetik — lebih baik daripada mencatat pengeluaran yang lebih
+  // besar tanpa pengguna sadari.
+  if (bayar != null && tebakan >= bayar) {
+    return (nilai: null, sumber: SumberNominal.tebakanAngka);
+  }
+  return (nilai: tebakan, sumber: SumberNominal.tebakanAngka);
 }
 
 /// Angka terbesar pada satu baris.
@@ -586,6 +630,77 @@ int? _angkaDariLabel(String line) {
   final hurufTersisa = kandidat.replaceAll(RegExp(r'[^0-9]'), '').length;
   if (hurufAsli - hurufTersisa > 1) return null;
   return _angkaTerbesar(kandidat);
+}
+
+/// Baris yang isinya **hanya** nominal: angka, pemisah, mata uang, dan
+/// simbol. Tanpa ini, baris seperti "2 x 5,300.00" atau "1 @ty :10" ikut
+/// terhitung sebagai angka berdiri sendiri.
+bool _barisNominalBersama(String line) {
+  final sisa = line
+      .toLowerCase()
+      .replaceAll(RegExp(r'\b(?:rp|idr)\b\.?'), ' ')
+      .replaceAll(RegExp(r'[^0-9a-z.,:*]+'), '');
+  // Huruf hanya boleh sisa yang memang salah baca digit; huruf lain berarti
+  // baris ini punya isi, bukan nominal berdiri sendiri.
+  if (RegExp(r'[a-wyz]').hasMatch(sisa)) return false;
+  return RegExp(r'\d').hasMatch(sisa);
+}
+
+/// Nominal dari identitas pembayaran tunai, atau null bila tidak terpenuhi.
+///
+/// struk tunai selalu memenuhi `tunai - kembalian = total`, atau `tunai ==
+/// total` bila bayar pas tanpa kembalian. Kalau salah satu hubungan itu terbukti
+/// dari angka-angka di kolom nominal, hasilnya pembuktian, bukan tebakan.
+///
+/// Dipakai untuk struk dua kolom, di mana ML Kit mengembalikan label
+/// ("TOTAL : Rp.") terpisah dari nominalnya (110.000 berdiri sendiri di baris
+/// lain). Pencarian label mustahil berhasil di sana.
+int? _dariIdentitasTunai(List<String> lines) {
+  final kolom = <int>[];
+  for (final line in lines) {
+    if (!_barisNominalBersama(line)) continue;
+    final n = _angkaTerbesar(line);
+    if (n != null && n > 0) kolom.add(n);
+  }
+
+  // Dua angka terakhir yang sama besar berarti bayar pas tanpa kembalian: uang
+  // yang diterima persis sama dengan total, jadi totalnya sudah terbukti.
+  if (kolom.length >= 2) {
+    final a = kolom[kolom.length - 2];
+    final b = kolom[kolom.length - 1];
+    if (a == b) return a;
+  }
+
+  // Tiga angka terakhir: total, tunai, kembalian.
+  if (kolom.length >= 3) {
+    // Diuji dari ekor ke depan supaya bagian pembayaran lebih diutamakan
+    // daripada angka yang kebetulan memenuhi hubungan di tengah struk.
+    for (var i = kolom.length - 3; i >= 0; i--) {
+      final total = kolom[i];
+      final tunai = kolom[i + 1];
+      final kembali = kolom[i + 2];
+      if (tunai > total && kembali < total && tunai - total == kembali) {
+        return total;
+      }
+    }
+  }
+  return null;
+}
+
+/// Nilai terbesar yang tercatat pada baris uang diterima atau kembalian.
+///
+/// Dipakai sebagai pagar: kalau tebakan "angka terbesar" menyentuh nilai ini,
+/// ia bisa jadi uang yang diterima toko, bukan belanja. Kandidat yang lebih
+/// kecil dari nilai ini aman dipakai, karena uang diterima selalu >= total.
+int? _nilaiUangDiterima(List<String> lines) {
+  int? terbesar;
+  for (final line in lines) {
+    if (!_tidakSamaDenganTotal(line)) continue;
+    final n = _angkaTerbesar(line);
+    if (n == null || n <= 0) continue;
+    if (terbesar == null || n > terbesar) terbesar = n;
+  }
+  return terbesar;
 }
 
 /// Token angka yang sebenarnya pola tanggal, bukan nominal.
@@ -768,6 +883,12 @@ String? _cariMerchant(List<String> lines) {
 
     final huruf = line.replaceAll(RegExp(r'[^A-Za-z]'), '');
     if (huruf.length < 3) continue;
+
+    // Kode transaksi/keranjang tercetak sebelum nama toko dan penuh angka
+    // yang menempel ke huruf, misalnya "BO04-900-GRMBMOMMEEP CAD 0". Nama
+    // toko boleh bert angka asal terpisah spasi ("7 ELEVEN"), jadi yang
+    // ditolak hanya huruf dan angka yang bersentuhan.
+    if (RegExp(r'[A-Za-z]\d|\d[A-Za-z]').hasMatch(line)) continue;
 
     // Buang sisa angka di ekor, misalnya nama bercampur nomor: "TOKO 12".
     final bersih = line

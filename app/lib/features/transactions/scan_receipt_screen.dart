@@ -280,6 +280,25 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                 ),
               ),
             ),
+          if (_draft != null &&
+              !_memproses &&
+              _draft!.sumber == SumberNominal.pembayaranTunai)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                children: [
+                  Icon(Icons.verified_outlined, size: 16, color: Neo.income),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Nominal dicocokkan dari hitungan tunai dikurangi '
+                      'kembalian.',
+                      style: TextStyle(color: Neo.muted, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 16),
           NeoTextField(
             controller: _nominal,

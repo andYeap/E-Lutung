@@ -421,4 +421,95 @@ Item:9 , Qty:10
     expect(draft.yakin, isTrue);
     expect(draft.merchant, 'BORNEO SUPERMAKET');
   });
+
+  // --- Teks OCR asli dari perangkat (dua kolom) ---------------------------
+  //
+  // ML Kit mengembalikan label dan nominal sebagai blok terpisah: "TOTAL : Rp."
+  // tanpa angka, sementara 110.000 berdiri sendiri belasan baris di bawahnya.
+  // Parser berbasis label tidak akan pernah menemukan pasangannya, dan tebakan
+  // "angka terbesar" mengambil TUNAI 150.000 untuk belanja 110.000.
+  //
+  // Yang menyelamatkan struk ini adalah identitas aritmetika pembayaran tunai
+  // yang bisa diuji: 150.000 - 40.000 = 110.000.
+  const ocrDuaKolom = '''
+-05-04-26 18:18 POS-SM--
+BO04-900-GRMBMOMMEEP CAD 0
+BORNEO SUPERMAKET
+Jl, Batu Batanggui
+Nanga Bulik, Lamandau
+Telp. 082189785649
+BIMOLI KLASIK RF 2L.;PCS
+LARISSA KR.SGKG 250G;PCS
+SUPERPELL PINK RF 770 ML;PC
+SEDAAP KCP MANIS SPC RF 220
+NAMASUKA SAUS BULGOGI 160 M
+FOXS BERRIES OVAL 125GR;PCS
+HACHIKO CABERBK 5825; PCS
+DESAKU MRNSIBMB THPERIKN 6*15G;PCS
+2 x 5,300.00
+C1
+NUTRIJELL COKLAT 20GR;PCS
+Item:9
+TOTAL : Rp.
+TUNA I: Rp.
+KEMBA LIAN : Rp.
+1 @ty :10
+43,800
+6, 300
+13,400
+8,200
+7,700
+6,500
+10,300
+10,600
+3,200
+110,000
+150,000
+40,000
+Terinakasih atas kunjungan anda
+Belanja Hemat Pelay anan Bersahabat
+INGAT BELANJA *. INGAT .. BORNEO
+''';
+
+  test('struk dua kolom: total dari identitas tunai - kembalian', () {
+    final draft = parseReceipt(ocrDuaKolom);
+    expect(draft.nominal, 110000);
+    expect(draft.yakin, isTrue);
+    expect(draft.sumber, SumberNominal.pembayaranTunai);
+    expect(draft.merchant, 'BORNEO SUPERMAKET');
+    expect(draft.tanggal, DateTime(2026, 4, 5));
+  });
+
+  test('struk dua kolom: bayar pas tanpa kembalian', () {
+    // Bayar pas: uang diterima sama dengan total, jadi kembalian nol dan tidak
+    // dicetak. Dua angka terakhir pada blok nominal sama besar.
+    final draft = parseReceipt(
+      ocrDuaKolom.replaceAll('150,000', '110,000').replaceAll('40,000\n', ''),
+    );
+    expect(draft.nominal, 110000);
+    expect(draft.sumber, SumberNominal.pembayaranTunai);
+  });
+
+  test('struk dua kolom tanpa kembalian tidak menebak TUNAI', () {
+    // Kembalian hilang, jadi identitas tidak bisa diuji. Angka terbesar di
+    // blok nominal adalah uang yang diterima, jadi nominal dibiarkan kosong.
+    final draft = parseReceipt(ocrDuaKolom.replaceAll('40,000\n', ''));
+    expect(draft.nominal, isNull);
+    expect(draft.yakin, isFalse);
+  });
+
+  test('kode transaksi tidak dianggap merchant', () {
+    // "BO04-900-GRMBMOMMEEP CAD 0" tercetak sebelum nama toko dan hurufnya
+    // melekat ke angka, cirinya kode bukan nama.
+    expect(
+      parseReceipt('BO04-900-GRMBMOMMEEP CAD 0\nBORNEO SUPERMAKET\nTOTAL 50.000')
+          .merchant,
+      'BORNEO SUPERMAKET',
+    );
+  });
+
+  test('nama toko berangka tetap terbaca', () {
+    // Angka yang terpisah spasi bukan kode, jadi "7 ELEVEN" tetap nama.
+    expect(parseReceipt('7 ELEVEN\nTOTAL 50.000').merchant, 'ELEVEN');
+  });
 }
