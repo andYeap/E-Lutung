@@ -22,6 +22,7 @@ import 'design_style_screen.dart';
 import 'institutions_screen.dart';
 import 'recap/recap_screen.dart';
 import 'recurring/recurring_screen.dart';
+import 'receipts/receipts_screen.dart';
 import 'theme/theme_screen.dart';
 import 'transactions/add_transaction_sheet.dart';
 import 'transactions/transaction_form_screen.dart';
@@ -362,6 +363,24 @@ class SettingsScreen extends ConsumerWidget {
               final msg = await WidgetSync.requestPin(ref.read(databaseProvider));
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+            },
+          ),
+          const SizedBox(height: 12),
+          Consumer(
+            builder: (context, ref, _) {
+              final jml = ref.watch(receiptTransactionsProvider).value?.length;
+              return _SettingsTile(
+                icon: Icons.receipt_long,
+                title: 'Foto struk',
+                subtitle: jml == null
+                    ? 'Bukti foto dari scan struk'
+                    : jml == 0
+                        ? 'Belum ada foto tersimpan'
+                        : '$jml foto tersimpan di perangkat',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ReceiptsScreen()),
+                ),
+              );
             },
           ),
           const SizedBox(height: 12),

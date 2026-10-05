@@ -85,6 +85,12 @@ final allTransactionsProvider = StreamProvider<List<Transaction>>(
   (ref) => ref.watch(transactionRepositoryProvider).watchFiltered(),
 );
 
+/// Transaksi yang punya foto struk tersimpan — untuk layar Foto struk di
+/// Pengaturan.
+final receiptTransactionsProvider = StreamProvider<List<Transaction>>(
+  (ref) => ref.watch(transactionRepositoryProvider).watchWithReceipt(),
+);
+
 // ---- Agregat SQL untuk rekap (Bagian 6 & 16 PRD) -------------------------
 // Rekap bulanan dihitung di basis data, bukan dengan memuat seluruh transaksi
 // ke memori lalu fold di Dart.

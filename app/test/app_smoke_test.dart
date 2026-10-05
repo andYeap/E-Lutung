@@ -168,6 +168,25 @@ void main() {
     await bereskan(tester);
   });
 
+  testWidgets('Pengaturan membuka layar Foto struk', (tester) async {
+    await nyalakan(tester);
+    await lolosOnboarding(tester);
+
+    await tester.tap(find.byIcon(Icons.settings));
+    await pumpBeberapaKali(tester);
+
+    await tester.ensureVisible(find.text('Foto struk'));
+    await tester.tap(find.text('Foto struk'));
+    await pumpBeberapaKali(tester);
+
+    expect(tester.takeException(), isNull);
+    // Basis data kosong, jadi layar harus menampilkan keadaan kosong — bukan
+    // Daftar kosong tanpa penjelasan.
+    expect(find.text('Belum ada foto struk tersimpan.'), findsOneWidget);
+
+    await bereskan(tester);
+  });
+
   testWidgets('mode gelap benar-benar terpasang pada tema', (tester) async {
     await theme.setMode(ThemeMode.dark);
     await nyalakan(tester);

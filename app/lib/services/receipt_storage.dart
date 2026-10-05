@@ -37,4 +37,59 @@ class ReceiptStorage {
     final e = path.substring(dot).toLowerCase();
     return e.length <= 5 ? e : '.jpg';
   }
+
+  /// Apakah file di [path] benar-benar ada.
+  ///
+  /// `strukPath` bisa menunjuk ke berkas yang sudah hilang: gambar tidak ikut
+  /// cadangan JSON, jadi setelah ekspor lalu impor, path-nya masih ada tapi
+  /// berkasnya tidak. Layar Foto struk memakai ini untuk membedakan "tidak ada
+  /// struk" dari "struk hilang".
+  static bool ada(String? path) {
+    if (path == null || path.isEmpty) return false;
+    try {
+      return File(path).existsSync();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Ukuran berkas dalam byte, atau 0 bila tidak ada / tidak terbaca.
+  static int ukuran(String? path) {
+    if (!ada(path)) return 0;
+    try {
+      return File(path!).lengthSync();
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Jumlah seluruh foto struk, dalam byte.
+  ///
+  /// Dipakai untuk memberi tahu pengguna berapa ruang yang dipakai foto struk
+  /// di Pengaturan — satu-satunya bagian aplikasi yang memang menyimpan berkas
+  /// besar, dan tidak ikut dalam ekspor cadangan.
+  ///
+  /// Sinkron supaya bisa dipanggil langsung dari `build`. Jumlah berkas biasanya
+  /// kecil (puluhan), jadi biayanya tidak terasa.
+  static int totalUkuranSync(Iterable<String?> paths) {
+    var total = 0;
+    for (final p in paths) {
+      total += ukuran(p);
+    }
+    return total;
+  }
+
+  /// Format ukuran berkas untuk ditampilkan ("1,2 MB").
+  static String formatUkuran(int byte) {
+    if (byte < 1024) return '$byte B';
+    if (byte < 1024 * 1024) return '${(byte / 1024).toStringAsFixed(0)} KB';
+    return '${(byte / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  /// Menghapus banyak berkas sekaligus, mengabaikan yang sudah tidak ada.
+  static Future<void> hapusSemua(Iterable<String?> paths) async {
+    for (final p in paths) {
+      await hapus(p);
+    }
+  }
 }

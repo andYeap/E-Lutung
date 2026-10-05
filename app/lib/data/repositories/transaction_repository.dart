@@ -238,6 +238,48 @@ class TransactionRepository {
     });
   }
 
+  /// Transaksi yang punya foto struk tersimpan (untuk layar Foto struk di
+  /// Pengaturan).
+  ///
+  /// Hanya transaksi aktif — struk transaksi yang sudah dihapus ikut dibuang
+  /// berkasnya, jadi tidak ada yang perlu dilihat lagi. Berkas yang hilang
+  /// (mis. setelah impor cadangan, karena gambar tidak ikut JSON) tetap
+  /// dikembalikan; pemanggil yang memeriksa `File.existsSync`, supaya
+  /// dashboard bisa membedakan "tidak ada struk" dari "struk hilang".
+  Stream<List<Transaction>> watchWithReceipt() {
+    final q = _db.select(_db.transactions)
+      ..where((t) => t.deletedAt.isNull() & t.strukPath.isNotNull())
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.tanggal, mode: OrderingMode.desc),
+      ]);
+    return q.watch();
+  }
+
+  /// Melepas foto struk dari satu transaksi **tanpa** menghapus transaksinya.
+  ///
+  /// Dipakai ketika berkasnya memang hilang, supaya `strukPath` tidak
+  /// menunjuk ke file yang sudah tidak ada selamanya.
+  Future<void> clearReceiptPath(String id) {
+    return (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
+      TransactionsCompanion(
+        strukPath: const Value(null),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Melepas foto struk dari banyak transaksi sekaligus, untuk membersihkan
+  /// seluruh path yang menunjuk ke berkas hilang.
+  Future<void> clearReceiptPaths(Iterable<String> ids) async {
+    if (ids.isEmpty) return;
+    await (_db.update(_db.transactions)..where((t) => t.id.isIn(ids))).write(
+      TransactionsCompanion(
+        strukPath: const Value(null),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   /// Transaksi terhapus (untuk layar Sampah, v1.1).
   Stream<List<Transaction>> watchDeleted() {
     final q = _db.select(_db.transactions)

@@ -37,7 +37,7 @@ flutter run
 ```bash
 cd app
 flutter analyze   # harus 0 issue
-flutter test      # 174 test
+flutter test      # 189 test
 ```
 
 ## Membangun APK dan AAB
@@ -81,7 +81,7 @@ app/                    proyek Flutter (Android saja)
   lib/features/         layar per fitur
   lib/services/         kunci aplikasi dan sinkronisasi widget
   lib/widgets/          komponen neobrutalism dan grafik
-  test/                 174 test
+  test/                 189 test
   android/              proyek Android beserta widget beranda (RemoteViews)
 ```
 

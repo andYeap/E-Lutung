@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../services/receipt_storage.dart';
 import 'database.dart';
 
 /// Ekspor/impor seluruh data (Bagian FR-10). Cadangan berbentuk satu file JSON.
@@ -241,13 +242,25 @@ class BackupService {
 
   /// Hapus data pengguna (transaksi, anggaran, akun). Master institusi &
   /// kategori dipertahankan agar aplikasi tetap bisa dipakai (FR-11.4).
+  ///
+  /// Foto struk ikut dihapus. Baris database-nya hilang saja, sementara
+  /// berkasnya ada di dokumen aplikasi — tanpa pembersihan ini, "Hapus semua
+  /// data" meninggalkan foto pengguna tetap tersimpan di HP tanpa jejak di
+  /// aplikasi, dan tidak ada layar yang bisa menemukannya lagi.
   Future<void> wipeUserData() async {
+    final paths = await (_db.selectOnly(_db.transactions)
+          ..addColumns([_db.transactions.strukPath]))
+        .map((row) => row.read(_db.transactions.strukPath))
+        .get();
+
     await _db.transaction(() async {
       await _db.delete(_db.transactions).go();
       await _db.delete(_db.budgets).go();
       await _db.delete(_db.recurringRules).go();
       await _db.delete(_db.accounts).go();
     });
+
+    await ReceiptStorage.hapusSemua(paths);
   }
 }
 
