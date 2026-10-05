@@ -202,4 +202,156 @@ T U N A I : Rp. 150,000
     expect(parseReceipt('TOTAL : Rp. 110,000').yakin, isTrue);
     expect(parseReceipt('Bimoli 43,800\nNutrijell 3,200').yakin, isFalse);
   });
+
+  test('sumber nominal menjelaskan asal angka', () {
+    expect(
+      parseReceipt('TOTAL : Rp. 110,000').sumber,
+      SumberNominal.labelTotal,
+    );
+    expect(
+      parseReceipt('Bimoli 43,800\nNutrijell 3,200').sumber,
+      SumberNominal.tebakanAngka,
+    );
+  });
+
+  // --- Huruf yang tertukar angka di dalam nominal ---
+
+  test('huruf O di dalam nominal diperbaiki menjadi nol', () {
+    // Tanpa ini parser hanya melihat digit "11" dan melaporkan 11.
+    expect(parseReceipt('TOTAL : Rp. 11O.OOO').nominal, 110000);
+  });
+
+  test('huruf l di dalam nominal diperbaiki menjadi satu', () {
+    // Tanpa ini tidak ada digit sama sekali, jadi nominalnya null.
+    expect(parseReceipt('TOTAL : Rp. lO.OOO').nominal, 10000);
+  });
+
+  test('huruf S dan B di dalam nominal diperbaiki', () {
+    expect(parseReceipt('TOTAL : Rp. 1l5.SOO').nominal, 115500);
+    expect(parseReceipt('TOTAL : Rp. 4B.5OO').nominal, 48500);
+  });
+
+  test('perbaikan huruf tidak berlaku pada baris daftar barang', () {
+    // Baris barang bukan baris nominal, jadi "B004" tidak boleh jadi 8004.
+    expect(parseReceipt('Barang B004\nTOTAL 50.000').nominal, 50000);
+  });
+
+  // --- Label total yang huruf ekornya rusak ---
+
+  test('label total dengan tanda baca tetap dikenali', () {
+    final draft = parseReceipt('TOTA! : Rp. 110.000');
+    expect(draft.nominal, 110000);
+    expect(draft.yakin, isTrue);
+  });
+
+  test('label total dengan digit nyasar tetap dikenali', () {
+    for (final label in ['TOTA5', 'T0TA!', 'TOTAl', 'T0TAL', 'TOTAI']) {
+      expect(
+        parseReceipt('$label : Rp. 110.000').nominal,
+        110000,
+        reason: 'label "$label" harusnya terbaca',
+      );
+    }
+  });
+
+  // --- Merchant ---
+
+  test('merchant bukan label transaksi', () {
+    // Label total pernah dipakai sebagai nama toko.
+    for (final label in ['TOTAL', 'TOTA!', 'T0TA!', 'TOTA5']) {
+      expect(
+        parseReceipt('$label : Rp. 110.000').merchant,
+        isNull,
+        reason: 'baris berlabel "$label" bukan merchant',
+      );
+    }
+  });
+
+  test('merchant bukan alamat, dokumen, atau kalimat penutup', () {
+    expect(
+      parseReceipt('JL. MERDEKA NO. 10\nKASIR: BUDI\nTOTAL 50.000').merchant,
+      isNull,
+    );
+    expect(
+      parseReceipt('TERIMA KASIH TELAH BERKUNJUNGAN\nTOKO A\nTOTAL 50.000')
+          .merchant,
+      'TOKO A',
+    );
+    expect(
+      parseReceipt('NPWP 01.234.567.8-901.000\nTOKO A\nTOTAL 50.000').merchant,
+      'TOKO A',
+    );
+  });
+
+  test('merchant tetap terbaca pada nama yang memuat singkatan pendek', () {
+    // "Nova Mart" mengandung "no" dan "rt"; hanya boleh ditolak bila awalannya.
+    expect(parseReceipt('NOVA MART\nTOTAL 50.000').merchant, 'NOVA MART');
+    expect(parseReceipt('HYPERMARKET XYZ\nTOTAL 50.000').merchant, 'HYPERMARKET XYZ');
+    expect(parseReceipt('INDOMARET\nTOTAL 7.500').merchant, 'INDOMARET');
+  });
+
+  test('merchant bukan garis pemisah struk', () {
+    expect(
+      parseReceipt('---------05-04-26 18:10 POS-SM--------\nTOTAL 110.000')
+          .merchant,
+      isNull,
+    );
+  });
+
+  // --- Metode pembayaran ---
+
+  test('nominal metode pembayaran tidak dipakai saat label total hilang', () {
+    // Nilai yang ditagih kartu sama dengan total, jadi di sini masih dipakai.
+    expect(parseReceipt('TOKO A\nTOTAL\nKARTU DEBIT 110.000').nominal, 110000);
+  });
+
+  test('QRIS tanpa label total tidak dipakai sebagai nominal', () {
+    // 150.000 adalah uang yang diterima, bukan belanja — lebih baik kosong
+    // daripada mencatat nominal keliru tanpa pengguna sadar.
+    final draft = parseReceipt('WARUNG A\nQRIS 150.000\nKEMBALI 100.000');
+    expect(draft.nominal, isNull);
+    expect(draft.yakin, isFalse);
+  });
+
+  test('dana pada baris pembayaran tidak mengaburkan nama bank', () {
+    expect(parseReceipt('TOKO A\nTOTAL 50.000\nDANA 50.000').nominal, 50000);
+  });
+
+  test('refund lebih besar tidak menimpa total', () {
+    expect(parseReceipt('TOKO A\nREFUND 90.000\nTOTAL 40.000').nominal, 40000);
+  });
+
+  test('label total kosong tidak mencuri angka dari baris tunai', () {
+    // Nol bukan nominal: baris "TOTAL : Rp." tidak boleh membuat parser melirik
+    // ke bawah dan mengambil 150.000 dari baris tunai.
+    final draft = parseReceipt('TOTAL : Rp.\nT U N A I : Rp. 150,000');
+    expect(draft.nominal, isNull);
+  });
+
+  test('label terpisah beberapa baris tetap membaca nominalnya', () {
+    expect(parseReceipt('TOTAL\nBAYAR\n33.000').nominal, 33000);
+    expect(parseReceipt('TOTAL : Rp\n33.000').nominal, 33000);
+  });
+
+  test('baris tanpa digit asli tidak dihitung meski mirip kata', () {
+    // "BAYAR" bisa jadi "8AYAR" setelah normalisasi huruf; itu bukan nominal.
+    expect(parseReceipt('TOTAL\nBAYAR\n33.000').nominal, 33000);
+  });
+
+  // --- Tanggal ---
+
+  test('tanggal di masa depan ditolak', () {
+    // Struk dicetak saat transaksi terjadi, jadi tanggalnya tidak mungkin
+    // belum terjadi.
+    expect(parseReceipt('WARUNG\n31/12/2099\nTOTAL 50.000').tanggal, isNull);
+  });
+
+  test('delapan digit tanpa pemisah dibaca sebagai tanggal', () {
+    expect(parseReceipt('TOKO\n20260512\nTOTAL 50.000').tanggal, DateTime(2026, 5, 12));
+  });
+
+  test('delapan digit baca rupiah tidak dianggap tanggal', () {
+    // "12052026" dekat mata uang lebih mungkin nominal besar.
+    expect(parseReceipt('TOKO\nTOTAL Rp 12052026').tanggal, isNull);
+  });
 }

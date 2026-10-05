@@ -233,7 +233,8 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
             const NeoLoading(message: 'Membaca struk…')
           else if (_imagePath != null)
             Text(
-              'Periksa hasil baca di bawah dan sesuaikan bila perlu.',
+              'Periksa hasil baca di bawah dan sesuaikan bila perlu. Kategori '
+              'selalu kamu pilih sendiri.',
               style: TextStyle(color: Neo.muted, fontSize: 12),
             ),
           if (_teksOcr != null && !_memproses)
@@ -266,10 +267,13 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                   children: [
                     Icon(Icons.warning_amber, size: 18, color: Neo.expense),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Nominal tidak yakin terbaca. Periksa dan betulkan bila perlu.',
-                        style: TextStyle(fontSize: 12),
+                        _draft!.nominal == null
+                            ? 'Nominal belum terbaca. Ketik sendiri dari struk.'
+                            : 'Nominal ditebak dari angka terbesar, bukan dari '
+                                  'baris total. Periksa dan betulkan bila perlu.',
+                        style: const TextStyle(fontSize: 12),
                       ),
                     ),
                   ],
