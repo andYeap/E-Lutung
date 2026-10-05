@@ -354,4 +354,71 @@ T U N A I : Rp. 150,000
     // "12052026" dekat mata uang lebih mungkin nominal besar.
     expect(parseReceipt('TOKO\nTOTAL Rp 12052026').tanggal, isNull);
   });
+
+  // --- Kasus nyata dari pengujian di perangkat ---------------------------
+  //
+  // Di HP, struk Borneo Supermaket terbaca "TOTAL : Rp. 110,000" tapi
+  // aplikasi mengisi 150.000 — angka TUNAI — dan aplikasi menampilkan
+  // peringatan "ditebak dari angka terbesar". Untuk tebakan sebesar itu,
+  // baris TUNAI wajib tidak terbaca sebagai tunai.
+  //
+  // Penyebabnya asimetri: teks baris dilipat (1->l) tapi kata kunci tidak.
+  // "TUNAI" yang huruf terakhirnya salah baca jadi "1" terlipat menjadi
+  // "tunal", sedangkan kata kunci tetap "tunai" — jadi tidak cocok, dan baris
+  // uang diterima lolos dari daftar abaikan.
+
+  test('TUNAI dengan huruf terakhir salah baca tetap diabaikan', () {
+    for (final tf in ['TUNAI', 'TUNA1', 'TUNAI', 'TUN A1', 'T U N A 1']) {
+      final draft = parseReceipt('TOTAL : Rp. 110,000\n$tf : Rp. 150,000');
+      expect(
+        draft.nominal,
+        110000,
+        reason: '"$tf" adalah uang diterima, bukan total',
+      );
+    }
+  });
+
+  test('KEMBALI dengan huruf salah baca tetap diabaikan', () {
+    for (final kb in ['KEMBALI', 'KEMBA11', 'KEMBAL1', 'KEMBA L I']) {
+      expect(
+        parseReceipt('TOTAL : Rp. 110,000\n$kb : Rp. 40,000').nominal,
+        110000,
+        reason: '"$kb" adalah kembalian, bukan total',
+      );
+    }
+  });
+
+  test('pencocokan kata abaikan tetap berlaku untuk huruf i dan l', () {
+    // Lipatan simetris tidak boleh mematikan kata abaikan yang mengandung i:
+    // "invoice" -> "lnvolce" di kedua sisi, jadi tetap cocok.
+    expect(parseReceipt('WARUNG A\nINVOICE 12345\nTOTAL 50.000').nominal, 50000);
+  });
+
+  test('struk perangkat: total beats tunai dan kembalian', () {
+    final draft = parseReceipt('''
+BORNEO SUPERMAKET
+Jl. Batu Batanggui
+Nanga Bulik, Lamandau
+Telp. 082189785649
+---------05-04-26 18:10 POS-SM--------
+B004-900-GRMBMDMMEEP CAD 0
+BIMOLI KLASIK RF 2L;PCS 43,800
+LARISSA KR.SGKG 250G;PCS 6,300
+SUPERPELL PINK RF 770 ML;PC 13,400
+SEDAAP KCP MANIS SPC RF 220 8,200
+MAMASUKA SAUS BULGOGI 160 M 7,700
+FOXS BERRIES OVAL 125GR;PCS 6,500
+HACHIKO CABEBRK 5*25;PCS 10,300
+DESAUK MANSIBHA TMPEKIN 6K15G;PCS 6,200
+C1 2 x 5.300,00 10,600
+NUTRIJELL COKLAT 20GR;PCS 3,200
+TOTAL : Rp. 110,000
+T U N A I : Rp. 150,000
+KEMBALIAN : Rp. 40,000
+Item:9 , Qty:10
+''');
+    expect(draft.nominal, 110000);
+    expect(draft.yakin, isTrue);
+    expect(draft.merchant, 'BORNEO SUPERMAKET');
+  });
 }

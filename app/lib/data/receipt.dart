@@ -344,8 +344,12 @@ String _akarKata(String line) {
 }
 
 /// Akar sebuah kata kunci, dengan aturan yang sama seperti [_akarKata].
+///
+/// [_lipatHuruf] dipakai supaya perlakuan kata kunci identik dengan perlakuan
+/// teks baris; tanpa itu, akar "invoice" ("invoic") tidak akan sama dengan akar
+/// baris yang sudah terlipat ("lnvolc").
 String _akarDariKata(String kata) {
-  final dasar = kata.replaceAll(' ', '');
+  final dasar = _lipatHuruf(kata.replaceAll(' ', ''));
   if (dasar.length < 5) return dasar;
   return dasar.substring(0, dasar.length - 1);
 }
@@ -364,10 +368,33 @@ bool _mengandungAkar(String akarBaris, List<String> kata) {
   });
 }
 
-/// Cek apakah [teks] (sudah dinormalisasi) memuat salah satu [kata]. Frasa
-/// kunci juga dibuang spasinya supaya "grand total" cocok dengan "grandtotal".
-bool _mengandung(String teks, List<String> kata) =>
-    kata.any((k) => teks.contains(k.replaceAll(' ', '')));
+/// Lipat huruf yang saling tertukar oleh OCR ke satu huruf kanonik.
+///
+/// Dipakai pada **kedua** sisi pencocokan: teks baris maupun kata kuncinya.
+/// Itu penting dan ditemukan lewat pengujian di perangkat: kalau hanya teks
+/// baris yang dilipat, pencocokan jadi asimetris. "TUNAI" yang salah terbaca
+/// jadi "TUNAI" dengan huruf terakhir `1` akan terlipat menjadi "tunal",
+/// sedangkan kata kunci "tunai" tetap "tunai" — sehingga baris uang diterima
+/// lolos dari daftar abaikan dan nilainya (150.000) dipakai sebagai nominal.
+///
+/// Menormalisasi kedua sisi membuat bentuk yang tertukar tetap saling cocok:
+/// "tunal" vs "tunal", "kemball" vs "kemball", "lnvolce" vs "lnvolce".
+String _lipatHuruf(String teks) => teks
+    .replaceAll('0', 'o')
+    .replaceAll('1', 'l')
+    .replaceAll('i', 'l')
+    .replaceAll('5', 's')
+    .replaceAll('8', 'b');
+
+/// Cek apakah [teks] memuat salah satu [kata]. Frasa kunci juga dibuang
+/// spasinya supaya "grand total" cocok dengan "grandtotal".
+///
+/// Kedua sisi dilipat [_lipatHuruf], jadi huruf `i`, `l`, dan `1` dianggap
+/// sama oleh kedua belah pihak.
+bool _mengandung(String teks, List<String> kata) {
+  final t = _lipatHuruf(teks);
+  return kata.any((k) => t.contains(_lipatHuruf(k.replaceAll(' ', ''))));
+}
 
 /// Pencocokan kata kunci yang Versions gracefully: coba bentuk ketat dulu,
 /// lalu bentuk lenting. Bentuk ketat selalu lebih dulu supaya daftar abaikan
