@@ -6,6 +6,7 @@ import '../data/repositories/category_repository.dart';
 import '../providers.dart';
 import '../theme/app_theme.dart';
 import '../util/color.dart';
+import '../util/contrast.dart';
 import '../widgets/neo.dart';
 
 /// CRUD kategori (Bagian FR-8). Hapus = arsip, bukan hapus permanen.
@@ -19,7 +20,7 @@ class CategoriesScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Kategori'),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(Neo.borderW),
+          preferredSize: Size.fromHeight(Neo.borderW),
           child: SizedBox(height: Neo.borderW, child: ColoredBox(color: Neo.ink)),
         ),
       ),
@@ -29,6 +30,18 @@ class CategoriesScreen extends ConsumerWidget {
           if (snap.hasError) return NeoError(message: '${snap.error}');
           if (!snap.hasData) return const NeoLoading();
           final items = snap.data!;
+          if (items.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Belum ada kategori. Tekan + untuk menambah.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Neo.muted),
+                ),
+              ),
+            );
+          }
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             itemCount: items.length,
@@ -69,7 +82,7 @@ class CategoriesScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         tooltip: 'Tambah kategori',
         backgroundColor: Neo.accent,
-        foregroundColor: Neo.ink,
+        foregroundColor: readableOn(Neo.accent),
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Neo.radius),
@@ -91,6 +104,7 @@ Future<void> _showForm(
   final namaCtrl = TextEditingController(text: initial?.nama ?? '');
   final warnaCtrl = TextEditingController(text: initial?.warna ?? '#FF6B6B');
   final ikonCtrl = TextEditingController(text: initial?.ikon ?? '');
+  var saving = false;
 
   await showDialog<void>(
     context: context,
@@ -114,6 +128,7 @@ Future<void> _showForm(
         NeoButton(
           label: 'Simpan',
           onPressed: () async {
+            if (saving) return;
             final nama = namaCtrl.text.trim();
             if (nama.isEmpty) {
               ScaffoldMessenger.of(ctx).showSnackBar(
@@ -123,6 +138,7 @@ Future<void> _showForm(
             }
             final warna = warnaCtrl.text.trim().isEmpty ? null : warnaCtrl.text.trim();
             final ikon = ikonCtrl.text.trim().isEmpty ? null : ikonCtrl.text.trim();
+            saving = true;
             if (initial == null) {
               await repo.create(nama: nama, ikon: ikon, warna: warna);
             } else {

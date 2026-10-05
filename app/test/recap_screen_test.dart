@@ -18,6 +18,7 @@ void main() {
     tester,
   ) async {
     final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
     final repo = TransactionRepository(db);
     final now = DateTime.now();
     await repo.create(

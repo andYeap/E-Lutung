@@ -1,4 +1,5 @@
 import 'package:elutung/theme/app_theme.dart';
+import 'package:elutung/theme/design_style.dart';
 import 'package:elutung/theme/neo_palette.dart';
 import 'package:elutung/theme/theme_controller.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,32 @@ void main() {
     expect(c.isCustomized(Brightness.dark), isFalse);
     expect(c.paletteFor(Brightness.light), kThemePresets.first.light);
     expect(c.paletteFor(Brightness.dark), kThemePresets.first.dark);
+  });
+
+  test('bawaan: gaya neobrutalism', () {
+    final c = ThemeController();
+    expect(c.styleId, 'brutal');
+    expect(c.style, kDesignStyles.first);
+  });
+
+  test('memilih gaya tidak mengubah warna', () async {
+    final c = ThemeController();
+    await c.applyPreset('biru');
+    await c.setStyle('material');
+
+    expect(c.styleId, 'material');
+    expect(c.presetId, 'biru');
+    expect(c.paletteFor(Brightness.light), presetById('biru').light);
+  });
+
+  test('gaya bertahan setelah dimuat ulang', () async {
+    final pertama = ThemeController();
+    await pertama.setStyle('minimal');
+
+    final kedua = ThemeController();
+    await kedua.load();
+
+    expect(kedua.styleId, 'minimal');
   });
 
   test('memilih preset mengganti warna kedua mode', () async {

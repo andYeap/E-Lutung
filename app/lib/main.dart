@@ -21,6 +21,9 @@ const _taskName = 'elutungWidgetRefresh';
 @pragma('vm:entry-point')
 void widgetCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
+    // Isolate ini terpisah dari main(), jadi intl harus di-init sendiri sebelum
+    // DateFormat dipakai WidgetSync — tanpa ini widget gagal refresh (ditelan).
+    await ensureIntlLocale();
     final db = AppDatabase();
     try {
       // Susulkan dulu transaksi berulang yang terlewat, supaya widget dan

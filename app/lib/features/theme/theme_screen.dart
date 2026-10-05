@@ -24,6 +24,17 @@ class ThemeScreen extends StatefulWidget {
 class _ThemeScreenState extends State<ThemeScreen> {
   /// Mode mana yang sedang disunting warnanya.
   Brightness _edit = Brightness.light;
+  bool _editInit = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Mulai dari mode yang sedang aktif, bukan selalu terang.
+    if (!_editInit) {
+      _editInit = true;
+      _edit = Theme.of(context).brightness;
+    }
+  }
 
   ThemeController get _c => widget.controller ?? ThemeController.instance;
 

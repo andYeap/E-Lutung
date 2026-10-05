@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'features/onboarding_screen.dart';
 import 'features/shell.dart';
 import 'theme/app_theme.dart';
+import 'theme/design_style.dart';
 import 'theme/neo_palette.dart';
 import 'theme/theme_controller.dart';
 import 'util/contrast.dart';
@@ -57,6 +58,7 @@ class _ElutungAppState extends State<ElutungApp> with WidgetsBindingObserver {
         // Token neobrutalism mengikuti tema aktif sebelum widget dibangun.
         final palet = _ctl.paletteFor(_brightness);
         Neo.apply(palet);
+        Neo.applyStyle(_ctl.style);
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: _sistemUi(palet),
           child: MaterialApp(
@@ -78,7 +80,7 @@ class _ElutungAppState extends State<ElutungApp> with WidgetsBindingObserver {
             // pada setelan aksesibilitas ekstrem (NFR aksesibilitas).
             builder: (context, child) {
               final mq = MediaQuery.of(context);
-              return MediaQuery(
+              final konten = MediaQuery(
                 data: mq.copyWith(
                   textScaler: mq.textScaler.clamp(
                     minScaleFactor: 0.8,
@@ -86,6 +88,18 @@ class _ElutungAppState extends State<ElutungApp> with WidgetsBindingObserver {
                   ),
                 ),
                 child: child ?? const SizedBox.shrink(),
+              );
+              // Gaya yang memintanya (glass morphism) memakai latar bergradasi
+              // supaya permukaan tembus pandang punya sesuatu untuk di-blur.
+              final gradient = styleBackgroundGradient(
+                _ctl.style,
+                palet.bg,
+                palet.accent,
+              );
+              if (gradient == null) return konten;
+              return DecoratedBox(
+                decoration: BoxDecoration(gradient: gradient),
+                child: konten,
               );
             },
             home: const OnboardingGate(child: ShellScreen()),

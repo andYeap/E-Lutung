@@ -12,11 +12,13 @@ import '../services/recurring_runner.dart';
 import '../services/widget_sync.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_controller.dart';
+import '../util/contrast.dart';
 import '../widgets/neo.dart';
 import 'accounts_screen.dart';
 import 'budget/budget_screen.dart';
 import 'categories_screen.dart';
 import 'dashboard_screen.dart';
+import 'design_style_screen.dart';
 import 'institutions_screen.dart';
 import 'recap/recap_screen.dart';
 import 'recurring/recurring_screen.dart';
@@ -86,7 +88,11 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   Future<void> _maybeRemindBackup() async {
     final db = ref.read(databaseProvider);
     final adaData =
-        (await (db.select(db.transactions)..limit(1)).get()).isNotEmpty;
+        (await (db.select(db.transactions)
+                  ..where((t) => t.deletedAt.isNull())
+                  ..limit(1))
+                .get())
+            .isNotEmpty;
     if (!await BackupService.shouldRemindBackup(hasData: adaData)) return;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -108,17 +114,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   Widget? _buildFab() {
     if (_index == 2) return null;
 
-    final bentuk = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(Neo.radius),
-      side: BorderSide(color: Neo.ink, width: Neo.borderW),
-    );
+    final bentuk = Neo.buttonShapeBorder();
 
     if (_index == 3) {
       return FloatingActionButton(
         heroTag: 'shell-add-budget',
         tooltip: 'Tambah anggaran',
         backgroundColor: Neo.accent,
-        foregroundColor: Neo.ink,
+        foregroundColor: readableOn(Neo.accent),
         elevation: 0,
         shape: bentuk,
         onPressed: () => showBudgetForm(
@@ -134,7 +137,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       heroTag: 'shell-add-transaction',
       onPressed: () => showAddTransactionSheet(context),
       backgroundColor: Neo.accent,
-      foregroundColor: Neo.ink,
+      foregroundColor: readableOn(Neo.accent),
       elevation: 0,
       shape: bentuk,
       icon: const Icon(Icons.add, size: 18),
@@ -198,7 +201,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           DashboardScreen(),
           TransactionsScreen(),
           RecapScreen(),
-          BudgetScreen(),
+          BudgetScreen(showFab: false),
         ],
       ),
       // Satu tombol tambah milik shell, bukan milik tiap tab.
@@ -314,6 +317,18 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
+          ListenableBuilder(
+            listenable: theme,
+            builder: (context, _) => _SettingsTile(
+              icon: Icons.brush,
+              title: 'Gaya desain',
+              subtitle: theme.style.name,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DesignStyleScreen()),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           _SettingsTile(
             icon: Icons.language,
             title: 'Format & lokalisasi',
@@ -353,9 +368,11 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.ios_share,
             title: 'Ekspor cadangan',
-            subtitle: 'Simpan/bagikan seluruh data (JSON)',
+            subtitle: 'Simpan/bagikan seluruh data (JSON, bisa dikunci)',
             onTap: () async {
-              final ok = await backup.shareBackup();
+              final sandi = await _tanyaSandi(context);
+              if (sandi == null || !context.mounted) return;
+              final ok = await backup.shareBackup(passphrase: sandi);
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -466,12 +483,62 @@ Future<void> _importDialog(BuildContext context, BackupService backup) async {
     ),
   );
   if (mode == null || !context.mounted) return;
-  final n = await backup.importFile(replace: mode == 'replace');
+  final sandi = await _tanyaSandi(
+    context,
+    judul: 'Kata sandi cadangan',
+    petunjuk: 'Isi bila cadangan terkunci; kosongkan bila tidak.',
+  );
+  if (sandi == null || !context.mounted) return;
+  final n = await backup.importFile(replace: mode == 'replace', passphrase: sandi);
   if (!context.mounted) return;
   final msg = n == -1
       ? 'Impor dibatalkan'
-      : (n == 0 ? 'Impor gagal / file tidak valid' : 'Berhasil impor $n baris');
+      : n == -2
+      ? 'Cadangan terkunci — jalankan lagi dan isi kata sandinya'
+      : (n == 0
+            ? 'Impor gagal: file tidak valid atau kata sandi salah'
+            : 'Berhasil impor $n baris');
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+}
+
+/// Dialog kata sandi untuk cadangan. null = dibatalkan; '' = tanpa enkripsi.
+Future<String?> _tanyaSandi(
+  BuildContext context, {
+  String judul = 'Kata sandi cadangan',
+  String petunjuk = 'Kosongkan untuk cadangan tanpa enkripsi.',
+}) async {
+  final ctrl = TextEditingController();
+  final hasil = await showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(judul),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(petunjuk, style: TextStyle(color: Neo.muted, fontSize: 12)),
+          const SizedBox(height: 12),
+          NeoTextField(
+            controller: ctrl,
+            label: 'Kata sandi',
+            hint: 'opsional',
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Batal'),
+        ),
+        NeoButton(
+          label: 'Lanjut',
+          onPressed: () => Navigator.pop(ctx, ctrl.text),
+        ),
+      ],
+    ),
+  );
+  ctrl.dispose();
+  return hasil;
 }
 
 class _SettingsTile extends StatelessWidget {

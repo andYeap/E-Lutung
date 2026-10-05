@@ -21,16 +21,15 @@ double contrastRatio(Color a, Color b) {
 bool meetsWcagAA(Color fg, Color bg, {bool largeText = false}) =>
     contrastRatio(fg, bg) >= (largeText ? 3.0 : 4.5);
 
-/// Warna teks/ikon yang paling terbaca di atas [background]: hitam lembut atau
-/// putih lembut, mana yang rasionya lebih tinggi.
+/// Warna teks/ikon yang paling terbaca di atas [background]: hitam atau putih.
 ///
 /// Dipakai aplikasi untuk memasangkan teks dengan aksen dan bilah atas, supaya
 /// pasangan itu **dijamin** aman dan tidak perlu diperingatkan. Titik silang
-/// kedua pilihan ada di luminance 0.179; rasio terburuknya sekitar 4:1, masih
-/// di atas ambang teks tebal.
+/// kedua pilihan ada di luminance 0.179; hitam/putih murni menjaga rasio
+/// terburuknya di atas ambang WCAG AA (4.5:1) untuk teks normal.
 Color readableOn(Color background) => background.computeLuminance() > 0.179
-    ? const Color(0xFF1A1A1A)
-    : const Color(0xFFF7F7F5);
+    ? Colors.black
+    : Colors.white;
 
 /// Apakah [c] bisa tertukar dengan [target] dari segi makna.
 ///

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'design_style.dart';
 import 'neo_palette.dart';
 
 /// Mode tema dan warna kustom yang tersimpan (Bagian FR-11.5 dan FR-11.6).
@@ -23,6 +24,11 @@ class ThemeController extends ChangeNotifier {
   String _presetId = kThemePresets.first.id;
   String get presetId => _presetId;
   ThemePreset get preset => presetById(_presetId);
+
+  /// Gaya desain (bentuk/border/bayangan), terpisah dari warna.
+  String _styleId = kDesignStyles.first.id;
+  String get styleId => _styleId;
+  DesignStyle get style => designStyleById(_styleId);
 
   NeoPalette? _lightOverride;
   NeoPalette? _darkOverride;
@@ -50,6 +56,8 @@ class ThemeController extends ChangeNotifier {
       if (raw != null && raw.isNotEmpty) {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         _presetId = map['preset'] as String? ?? kThemePresets.first.id;
+        final gaya = map['style'];
+        if (gaya is String) _styleId = designStyleById(gaya).id;
         final light = map['light'];
         final dark = map['dark'];
         if (light is Map<String, dynamic>) {
@@ -76,6 +84,13 @@ class ThemeController extends ChangeNotifier {
     _presetId = presetById(id).id;
     _lightOverride = null;
     _darkOverride = null;
+    notifyListeners();
+    await _save();
+  }
+
+  /// Pilih gaya desain. Tidak menyentuh warna sama sekali.
+  Future<void> setStyle(String id) async {
+    _styleId = designStyleById(id).id;
     notifyListeners();
     await _save();
   }
@@ -110,6 +125,7 @@ class ThemeController extends ChangeNotifier {
         _customKey,
         jsonEncode({
           'preset': _presetId,
+          'style': _styleId,
           if (_lightOverride != null) 'light': _lightOverride!.toJson(),
           if (_darkOverride != null) 'dark': _darkOverride!.toJson(),
         }),

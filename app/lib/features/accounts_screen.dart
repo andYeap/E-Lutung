@@ -5,16 +5,24 @@ import '../data/database.dart';
 import '../data/finance.dart';
 import '../providers.dart';
 import '../theme/app_theme.dart';
+import '../util/contrast.dart';
 import '../util/format.dart';
 import '../widgets/neo.dart';
 
-class AccountsScreen extends ConsumerWidget {
+class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final accRepo = ref.watch(accountRepositoryProvider);
-    final instRepo = ref.watch(institutionRepositoryProvider);
+  ConsumerState<AccountsScreen> createState() => _AccountsScreenState();
+}
+
+class _AccountsScreenState extends ConsumerState<AccountsScreen> {
+  // Stream diambil sekali supaya tidak berlangganan ulang tiap rebuild.
+  late final _instStream = ref.read(institutionRepositoryProvider).watchAll();
+  late final _accStream = ref.read(accountRepositoryProvider).watchAll();
+
+  @override
+  Widget build(BuildContext context) {
     // Saldo berjalan dihitung dari transaksi (Bagian FR-7.2).
     final txs = ref.watch(allTransactionsProvider).value ?? const <Transaction>[];
 
@@ -27,11 +35,11 @@ class AccountsScreen extends ConsumerWidget {
         ),
       ),
       body: StreamBuilder<List<Institution>>(
-        stream: instRepo.watchAll(),
+        stream: _instStream,
         builder: (context, instSnap) {
           final institutions = instSnap.data ?? const <Institution>[];
           return StreamBuilder<List<AccountWithInstitution>>(
-            stream: accRepo.watchAll(),
+            stream: _accStream,
             builder: (context, snap) {
               if (snap.hasError) {
                 return NeoError(message: '${snap.error}');
@@ -102,13 +110,13 @@ class AccountsScreen extends ConsumerWidget {
         },
       ),
       floatingActionButton: StreamBuilder<List<Institution>>(
-        stream: instRepo.watchAll(),
+        stream: _instStream,
         builder: (context, snap) {
           final institutions = snap.data ?? const <Institution>[];
           return FloatingActionButton(
             tooltip: 'Tambah akun',
             backgroundColor: Neo.accent,
-            foregroundColor: Neo.ink,
+            foregroundColor: readableOn(Neo.accent),
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(Neo.radius),
@@ -176,6 +184,7 @@ Future<void> _showForm(
       (institutions.isNotEmpty ? institutions.first.id : '');
   var milikSendiri = initial?.account.milikSendiri ?? true;
   var aktif = initial?.account.aktif ?? true;
+  var saving = false;
 
   await showDialog<void>(
     context: context,
@@ -203,7 +212,7 @@ Future<void> _showForm(
                     side: BorderSide(color: Neo.ink, width: Neo.borderW),
                     labelStyle: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: Neo.ink,
+                      color: selected ? readableOn(Neo.accent) : Neo.ink,
                     ),
                   );
                 }).toList(),
@@ -244,6 +253,7 @@ Future<void> _showForm(
           NeoButton(
             label: 'Simpan',
             onPressed: () async {
+              if (saving) return;
               if (institusiId.isEmpty) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
                   const SnackBar(content: Text('Pilih institusi dulu')),
@@ -251,6 +261,7 @@ Future<void> _showForm(
                 return;
               }
               final saldo = parseRupiah(saldoCtrl.text);
+              saving = true;
               if (initial == null) {
                 await repo.create(
                   institusiId: institusiId,

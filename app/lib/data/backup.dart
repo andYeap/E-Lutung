@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -73,20 +75,24 @@ class BackupService {
     'recurringRules': (await _db.select(_db.recurringRules).get()).map((e) => e.toJson()).toList(),
   };
 
-  Future<File> exportFile() async {
+  Future<File> exportFile({String? passphrase}) async {
     final dir = await getTemporaryDirectory();
     final stamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.').first;
+    final payload = await dump();
+    final data = (passphrase == null || passphrase.isEmpty)
+        ? payload
+        : await encryptBackup(payload, passphrase);
     final file = File('${dir.path}/elutung-backup-$stamp.json');
     await file.writeAsString(
-      const JsonEncoder.withIndent('  ').convert(await dump()),
+      const JsonEncoder.withIndent('  ').convert(data),
     );
     return file;
   }
 
   /// Ekspor lalu buka lembar berbagi sistem. true bila sheet terbuka.
-  Future<bool> shareBackup() async {
+  Future<bool> shareBackup({String? passphrase}) async {
     try {
-      final f = await exportFile();
+      final f = await exportFile(passphrase: passphrase);
       await SharePlus.instance.share(
         ShareParams(files: [XFile(f.path)], subject: 'Cadangan E-Lutung'),
       );
@@ -153,7 +159,10 @@ class BackupService {
   }
 
   /// Impor dari file yang dipilih pengguna.
-  Future<int> importFile({required bool replace}) async {
+  ///
+  /// Mengembalikan -1 (dibatalkan), -2 (butuh kata sandi), 0 (gagal), atau
+  /// jumlah baris yang diimpor.
+  Future<int> importFile({required bool replace, String? passphrase}) async {
     try {
       final picked = await FilePicker.pickFile(
         type: FileType.custom,
@@ -164,7 +173,11 @@ class BackupService {
       if (path == null) return 0;
       final raw = await File(path).readAsString();
       if (raw.isEmpty) return 0;
-      final map = jsonDecode(raw) as Map<String, dynamic>;
+      var map = jsonDecode(raw) as Map<String, dynamic>;
+      if (isEncryptedBackup(map)) {
+        if (passphrase == null || passphrase.isEmpty) return -2;
+        map = await decryptBackup(map, passphrase);
+      }
       return await restore(map, replace: replace);
     } catch (_) {
       return 0;
@@ -175,6 +188,15 @@ class BackupService {
     Map<String, dynamic> map, {
     required bool replace,
   }) async {
+    // Tolak berkas yang jelas bukan cadangan E-Lutung, supaya impor "replace"
+    // tidak menghapus data master untuk berkas asing atau rusak.
+    final version = map['version'];
+    if (version is! int ||
+        map['categories'] is! List ||
+        map['transactions'] is! List) {
+      return 0;
+    }
+
     List<Map<String, dynamic>> rows(String key) =>
         ((map[key] as List?) ?? const []).cast<Map<String, dynamic>>();
 
@@ -227,4 +249,68 @@ class BackupService {
       await _db.delete(_db.accounts).go();
     });
   }
+}
+
+// ---- Enkripsi cadangan (AES-GCM + PBKDF2) ---------------------------------
+
+const String kEncryptedBackupMarker = 'elutungEncrypted';
+
+/// Apakah berkas cadangan ini terkunci kata sandi.
+bool isEncryptedBackup(Map<String, dynamic> map) =>
+    map[kEncryptedBackupMarker] == 1;
+
+/// Membungkus payload cadangan dengan kata sandi pengguna.
+Future<Map<String, dynamic>> encryptBackup(
+  Map<String, dynamic> payload,
+  String passphrase,
+) async {
+  const iterations = 120000;
+  final salt = _randomBytes(16);
+  final key = await _deriveKey(passphrase, salt, iterations);
+  final nonce = _randomBytes(12);
+  final box = await AesGcm.with256bits().encrypt(
+    utf8.encode(jsonEncode(payload)),
+    secretKey: key,
+    nonce: nonce,
+  );
+  return {
+    kEncryptedBackupMarker: 1,
+    'kdf': 'pbkdf2-hmac-sha256',
+    'iterations': iterations,
+    'salt': base64.encode(salt),
+    'nonce': base64.encode(nonce),
+    'mac': base64.encode(box.mac.bytes),
+    'cipher': base64.encode(box.cipherText),
+  };
+}
+
+/// Membuka cadangan terkunci. Melempar bila kata sandinya salah.
+Future<Map<String, dynamic>> decryptBackup(
+  Map<String, dynamic> envelope,
+  String passphrase,
+) async {
+  final salt = base64.decode(envelope['salt'] as String);
+  final nonce = base64.decode(envelope['nonce'] as String);
+  final mac = Mac(base64.decode(envelope['mac'] as String));
+  final cipher = base64.decode(envelope['cipher'] as String);
+  final iterations = (envelope['iterations'] as num?)?.toInt() ?? 120000;
+  final key = await _deriveKey(passphrase, salt, iterations);
+  final clear = await AesGcm.with256bits().decrypt(
+    SecretBox(cipher, nonce: nonce, mac: mac),
+    secretKey: key,
+  );
+  return jsonDecode(utf8.decode(clear)) as Map<String, dynamic>;
+}
+
+Future<SecretKey> _deriveKey(
+  String passphrase,
+  List<int> salt,
+  int iterations,
+) =>
+    Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: iterations, bits: 256)
+        .deriveKey(secretKey: SecretKey(utf8.encode(passphrase)), nonce: salt);
+
+List<int> _randomBytes(int n) {
+  final r = Random.secure();
+  return List<int>.generate(n, (_) => r.nextInt(256));
 }

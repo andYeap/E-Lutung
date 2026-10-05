@@ -1,8 +1,24 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
 import '../util/contrast.dart';
+
+/// Membungkus permukaan dengan blur latar bila gaya aktif memintanya
+/// (glass morphism). Untuk gaya lain, anak dikembalikan apa adanya.
+Widget _glassy(Widget child) {
+  final blur = Neo.blur;
+  if (blur <= 0) return child;
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(Neo.radius),
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+      child: child,
+    ),
+  );
+}
 
 /// Kartu bergaya neobrutalism + efek "press" (Bagian 6b).
 class NeoCard extends StatefulWidget {
@@ -11,13 +27,15 @@ class NeoCard extends StatefulWidget {
     required this.child,
     this.onTap,
     this.color,
-    this.padding = const EdgeInsets.all(14),
+    this.padding,
   });
 
   final Widget child;
   final VoidCallback? onTap;
   final Color? color;
-  final EdgeInsets padding;
+
+  /// Padding kartu; null berarti mengikuti padding bawaan gaya aktif.
+  final EdgeInsets? padding;
 
   @override
   State<NeoCard> createState() => _NeoCardState();
@@ -38,13 +56,23 @@ class _NeoCardState extends State<NeoCard> {
       onTapUp: (_) => _set(false),
       onTapCancel: () => _set(false),
       onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 90),
-        curve: Curves.easeOut,
-        transform: Matrix4.translationValues(_down ? 2 : 0, _down ? 2 : 0, 0),
-        padding: widget.padding,
-        decoration: Neo.box(color: widget.color, shadow: _down ? 2 : 4),
-        child: widget.child,
+      child: _glassy(
+        AnimatedOpacity(
+          duration: const Duration(milliseconds: 90),
+          opacity: Neo.pressOpacity(_down),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 90),
+            curve: Curves.easeOut,
+            transform: Neo.pressTransform(_down),
+            transformAlignment: Alignment.center,
+            padding: widget.padding ?? EdgeInsets.all(Neo.cardPadding),
+            decoration: Neo.box(
+              color: widget.color,
+              shadow: Neo.pressShadow(_down, 4),
+            ),
+            child: widget.child,
+          ),
+        ),
       ),
     );
   }
@@ -92,30 +120,41 @@ class _NeoButtonState extends State<NeoButton> {
       onTapUp: enabled ? (_) => setState(() => _down = false) : null,
       onTapCancel: enabled ? () => setState(() => _down = false) : null,
       onTap: widget.onPressed,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 90),
-        transform: Matrix4.translationValues(_down ? 2 : 0, _down ? 2 : 0, 0),
-        constraints: const BoxConstraints(minHeight: 48),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: Neo.box(color: background, shadow: _down ? 2 : 4),
-        child: Row(
-          mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (widget.icon != null) ...[
-              Icon(widget.icon, size: 18, color: foreground),
-              const SizedBox(width: 8),
-            ],
-            Text(
-              widget.label,
-              style: TextStyle(
-                color: foreground,
-                fontWeight: FontWeight.w800,
-                fontSize: 14,
-              ),
+      child: _glassy(
+        AnimatedOpacity(
+          duration: const Duration(milliseconds: 90),
+          opacity: Neo.pressOpacity(_down),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 90),
+            transform: Neo.pressTransform(_down),
+            transformAlignment: Alignment.center,
+            constraints: const BoxConstraints(minHeight: 48),
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: Neo.buttonBox(
+              color: background,
+              shadow: Neo.pressShadow(_down, 4),
             ),
-          ],
+            child: Row(
+              mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (widget.icon != null) ...[
+                  Icon(widget.icon, size: 18, color: foreground),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: foreground,
+                    fontWeight: Neo.labelWeight,
+                    fontSize: 14,
+                    letterSpacing: Neo.letterSpacing,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -152,7 +191,7 @@ class NeoTextField extends StatelessWidget {
         if (label != null) ...[
           Text(
             label!,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            style: TextStyle(fontWeight: Neo.labelWeight, fontSize: 13),
           ),
           const SizedBox(height: 6),
         ],
@@ -168,14 +207,8 @@ class NeoTextField extends StatelessWidget {
             fillColor: Neo.surface,
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(Neo.radius),
-              borderSide: BorderSide(color: Neo.ink, width: Neo.borderW),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(Neo.radius),
-              borderSide: BorderSide(color: Neo.ink, width: 3),
-            ),
+            enabledBorder: Neo.fieldBorder(),
+            focusedBorder: Neo.fieldBorder(focused: true),
           ),
         ),
       ],
@@ -287,7 +320,11 @@ class NeoSectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-    text,
-    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+    Neo.uppercase ? text.toUpperCase() : text,
+    style: TextStyle(
+      fontWeight: Neo.titleWeight,
+      fontSize: 16,
+      letterSpacing: Neo.letterSpacing,
+    ),
   );
 }

@@ -74,11 +74,53 @@ void main() {
   });
 
   test('impor mode gabung tidak menggandakan id yang sama', () async {
+    final txRepo = TransactionRepository(db);
+    await txRepo.create(
+      tipe: TxType.pengeluaran,
+      nominal: 12345,
+      tanggal: DateTime(2026, 4, 9),
+      kategoriId: 'makanan',
+    );
+
     final dump = await backup.dump();
     await backup.restore(dump, replace: true);
     final count1 = (await db.select(db.transactions).get()).length;
     await backup.restore(dump, replace: false);
     final count2 = (await db.select(db.transactions).get()).length;
     expect(count2, count1);
+    expect(count2, greaterThan(0));
+  });
+
+  test('impor menolak berkas yang bukan cadangan E-Lutung', () async {
+    final txRepo = TransactionRepository(db);
+    await txRepo.create(
+      tipe: TxType.pengeluaran,
+      nominal: 5000,
+      tanggal: DateTime(2026, 4, 1),
+      kategoriId: 'makanan',
+    );
+
+    // Map asing tanpa 'version' ditolak, dan mode ganti tidak menghapus data.
+    final n = await backup.restore({'foo': 'bar'}, replace: true);
+    expect(n, 0);
+    expect((await db.select(db.transactions).get()).length, 1);
+  });
+
+  test('cadangan terenkripsi bisa dibuka dengan kata sandi benar', () async {
+    final payload = await backup.dump();
+    final envelope = await encryptBackup(payload, 'rahasia123');
+
+    expect(isEncryptedBackup(envelope), isTrue);
+    // Amplop tidak memuat data asli secara terbaca.
+    expect(envelope.containsKey('transactions'), isFalse);
+
+    final hasil = await decryptBackup(envelope, 'rahasia123');
+    expect(hasil['version'], payload['version']);
+    expect(hasil['categories'], isNotNull);
+  });
+
+  test('kata sandi salah gagal membuka cadangan', () async {
+    final envelope = await encryptBackup(await backup.dump(), 'benar');
+    await expectLater(decryptBackup(envelope, 'salah'), throwsA(anything));
   });
 }

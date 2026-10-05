@@ -2389,6 +2389,17 @@ class $TransactionsTable extends Transactions
       'REFERENCES recurring_rules (id)',
     ),
   );
+  static const VerificationMeta _strukPathMeta = const VerificationMeta(
+    'strukPath',
+  );
+  @override
+  late final GeneratedColumn<String> strukPath = GeneratedColumn<String>(
+    'struk_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2437,6 +2448,7 @@ class $TransactionsTable extends Transactions
     akunTujuanId,
     biayaAdmin,
     recurringRuleId,
+    strukPath,
     createdAt,
     updatedAt,
     deletedAt,
@@ -2525,6 +2537,12 @@ class $TransactionsTable extends Transactions
         ),
       );
     }
+    if (data.containsKey('struk_path')) {
+      context.handle(
+        _strukPathMeta,
+        strukPath.isAcceptableOrUnknown(data['struk_path']!, _strukPathMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2598,6 +2616,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.string,
         data['${effectivePrefix}recurring_rule_id'],
       ),
+      strukPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}struk_path'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2636,6 +2658,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
 
   /// Terisi bila transaksi ini dibuat otomatis dari jadwal (Bagian 7.6).
   final String? recurringRuleId;
+
+  /// Path foto struk (opsional) bila pengguna memilih menyimpannya saat scan.
+  final String? strukPath;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -2651,6 +2676,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     this.akunTujuanId,
     required this.biayaAdmin,
     this.recurringRuleId,
+    this.strukPath,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -2685,6 +2711,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     if (!nullToAbsent || recurringRuleId != null) {
       map['recurring_rule_id'] = Variable<String>(recurringRuleId);
     }
+    if (!nullToAbsent || strukPath != null) {
+      map['struk_path'] = Variable<String>(strukPath);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || deletedAt != null) {
@@ -2718,6 +2747,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       recurringRuleId: recurringRuleId == null && nullToAbsent
           ? const Value.absent()
           : Value(recurringRuleId),
+      strukPath: strukPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(strukPath),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
@@ -2745,6 +2777,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       akunTujuanId: serializer.fromJson<String?>(json['akunTujuanId']),
       biayaAdmin: serializer.fromJson<int>(json['biayaAdmin']),
       recurringRuleId: serializer.fromJson<String?>(json['recurringRuleId']),
+      strukPath: serializer.fromJson<String?>(json['strukPath']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -2767,6 +2800,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'akunTujuanId': serializer.toJson<String?>(akunTujuanId),
       'biayaAdmin': serializer.toJson<int>(biayaAdmin),
       'recurringRuleId': serializer.toJson<String?>(recurringRuleId),
+      'strukPath': serializer.toJson<String?>(strukPath),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -2785,6 +2819,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     Value<String?> akunTujuanId = const Value.absent(),
     int? biayaAdmin,
     Value<String?> recurringRuleId = const Value.absent(),
+    Value<String?> strukPath = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -2802,6 +2837,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     recurringRuleId: recurringRuleId.present
         ? recurringRuleId.value
         : this.recurringRuleId,
+    strukPath: strukPath.present ? strukPath.value : this.strukPath,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -2829,6 +2865,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       recurringRuleId: data.recurringRuleId.present
           ? data.recurringRuleId.value
           : this.recurringRuleId,
+      strukPath: data.strukPath.present ? data.strukPath.value : this.strukPath,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -2849,6 +2886,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('akunTujuanId: $akunTujuanId, ')
           ..write('biayaAdmin: $biayaAdmin, ')
           ..write('recurringRuleId: $recurringRuleId, ')
+          ..write('strukPath: $strukPath, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt')
@@ -2869,6 +2907,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     akunTujuanId,
     biayaAdmin,
     recurringRuleId,
+    strukPath,
     createdAt,
     updatedAt,
     deletedAt,
@@ -2888,6 +2927,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.akunTujuanId == this.akunTujuanId &&
           other.biayaAdmin == this.biayaAdmin &&
           other.recurringRuleId == this.recurringRuleId &&
+          other.strukPath == this.strukPath &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt);
@@ -2905,6 +2945,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<String?> akunTujuanId;
   final Value<int> biayaAdmin;
   final Value<String?> recurringRuleId;
+  final Value<String?> strukPath;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -2921,6 +2962,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.akunTujuanId = const Value.absent(),
     this.biayaAdmin = const Value.absent(),
     this.recurringRuleId = const Value.absent(),
+    this.strukPath = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -2938,6 +2980,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.akunTujuanId = const Value.absent(),
     this.biayaAdmin = const Value.absent(),
     this.recurringRuleId = const Value.absent(),
+    this.strukPath = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -2958,6 +3001,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<String>? akunTujuanId,
     Expression<int>? biayaAdmin,
     Expression<String>? recurringRuleId,
+    Expression<String>? strukPath,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -2975,6 +3019,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (akunTujuanId != null) 'akun_tujuan_id': akunTujuanId,
       if (biayaAdmin != null) 'biaya_admin': biayaAdmin,
       if (recurringRuleId != null) 'recurring_rule_id': recurringRuleId,
+      if (strukPath != null) 'struk_path': strukPath,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -2994,6 +3039,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<String?>? akunTujuanId,
     Value<int>? biayaAdmin,
     Value<String?>? recurringRuleId,
+    Value<String?>? strukPath,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -3011,6 +3057,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       akunTujuanId: akunTujuanId ?? this.akunTujuanId,
       biayaAdmin: biayaAdmin ?? this.biayaAdmin,
       recurringRuleId: recurringRuleId ?? this.recurringRuleId,
+      strukPath: strukPath ?? this.strukPath,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -3056,6 +3103,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (recurringRuleId.present) {
       map['recurring_rule_id'] = Variable<String>(recurringRuleId.value);
     }
+    if (strukPath.present) {
+      map['struk_path'] = Variable<String>(strukPath.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -3085,6 +3135,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('akunTujuanId: $akunTujuanId, ')
           ..write('biayaAdmin: $biayaAdmin, ')
           ..write('recurringRuleId: $recurringRuleId, ')
+          ..write('strukPath: $strukPath, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -5784,6 +5835,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String?> akunTujuanId,
       Value<int> biayaAdmin,
       Value<String?> recurringRuleId,
+      Value<String?> strukPath,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -5802,6 +5854,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String?> akunTujuanId,
       Value<int> biayaAdmin,
       Value<String?> recurringRuleId,
+      Value<String?> strukPath,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -5936,6 +5989,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<int> get biayaAdmin => $composableBuilder(
     column: $table.biayaAdmin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get strukPath => $composableBuilder(
+    column: $table.strukPath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6109,6 +6167,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get strukPath => $composableBuilder(
+    column: $table.strukPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -6268,6 +6331,9 @@ class $$TransactionsTableAnnotationComposer
     column: $table.biayaAdmin,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get strukPath =>
+      $composableBuilder(column: $table.strukPath, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -6439,6 +6505,7 @@ class $$TransactionsTableTableManager
                 Value<String?> akunTujuanId = const Value.absent(),
                 Value<int> biayaAdmin = const Value.absent(),
                 Value<String?> recurringRuleId = const Value.absent(),
+                Value<String?> strukPath = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -6455,6 +6522,7 @@ class $$TransactionsTableTableManager
                 akunTujuanId: akunTujuanId,
                 biayaAdmin: biayaAdmin,
                 recurringRuleId: recurringRuleId,
+                strukPath: strukPath,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -6473,6 +6541,7 @@ class $$TransactionsTableTableManager
                 Value<String?> akunTujuanId = const Value.absent(),
                 Value<int> biayaAdmin = const Value.absent(),
                 Value<String?> recurringRuleId = const Value.absent(),
+                Value<String?> strukPath = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -6489,6 +6558,7 @@ class $$TransactionsTableTableManager
                 akunTujuanId: akunTujuanId,
                 biayaAdmin: biayaAdmin,
                 recurringRuleId: recurringRuleId,
+                strukPath: strukPath,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,

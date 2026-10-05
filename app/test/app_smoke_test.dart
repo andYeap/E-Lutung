@@ -138,6 +138,7 @@ void main() {
     await pumpBeberapaKali(tester);
     expect(tester.takeException(), isNull);
     expect(find.text('Tema & warna'), findsOneWidget);
+    expect(find.text('Gaya desain'), findsOneWidget);
     expect(find.text('Transaksi berulang'), findsOneWidget);
     expect(find.text('Sampah'), findsOneWidget);
 
@@ -150,9 +151,27 @@ void main() {
     await bereskan(tester);
   });
 
+  testWidgets('Pengaturan membuka layar Gaya desain', (tester) async {
+    await nyalakan(tester);
+    await lolosOnboarding(tester);
+
+    await tester.tap(find.byIcon(Icons.settings));
+    await pumpBeberapaKali(tester);
+
+    await tester.ensureVisible(find.text('Gaya desain'));
+    await tester.tap(find.text('Gaya desain'));
+    await pumpBeberapaKali(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Neomorphism'), findsOneWidget);
+
+    await bereskan(tester);
+  });
+
   testWidgets('mode gelap benar-benar terpasang pada tema', (tester) async {
     await theme.setMode(ThemeMode.dark);
     await nyalakan(tester);
+    await lolosOnboarding(tester);
 
     final ctx = tester.element(find.byType(NavigationBar));
     final aktif = Theme.of(ctx);

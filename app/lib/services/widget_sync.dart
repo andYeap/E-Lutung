@@ -52,9 +52,12 @@ class WidgetSync {
       final accounts = await (db.select(db.accounts)
             ..where((t) => t.deletedAt.isNull()))
           .get();
+      // Urutkan seperti dashboard (`periodeMulai` terbaru dulu) supaya widget
+      // dan dashboard memilih anggaran aktif yang sama saat ada tumpang tindih.
       final budgets = await (db.select(db.budgets)
             ..where((t) => t.deletedAt.isNull()))
           .get();
+      budgets.sort((a, b) => b.periodeMulai.compareTo(a.periodeMulai));
       final categories = await db.select(db.categories).get();
 
       final ownIds = accounts

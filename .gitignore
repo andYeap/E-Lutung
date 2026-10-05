@@ -17,3 +17,6 @@ app/android/key.properties
 # Berkas sementara
 *.log
 *.tmp
+
+# Foto/dokumen yang masuk dari jembatan Telegram
+.telegram-inbox/

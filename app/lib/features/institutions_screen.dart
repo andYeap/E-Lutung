@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/database.dart';
 import '../providers.dart';
 import '../theme/app_theme.dart';
+import '../util/contrast.dart';
 import '../util/labels.dart';
 import '../widgets/neo.dart';
 
@@ -32,6 +33,18 @@ class InstitutionsScreen extends ConsumerWidget {
             return const NeoLoading();
           }
           final items = snap.data!;
+          if (items.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Belum ada institusi. Tekan + untuk menambah.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Neo.muted),
+                ),
+              ),
+            );
+          }
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             itemCount: items.length,
@@ -88,7 +101,7 @@ class _NeoFab extends StatelessWidget {
   Widget build(BuildContext context) => FloatingActionButton(
     tooltip: tooltip,
     backgroundColor: Neo.accent,
-    foregroundColor: Neo.ink,
+    foregroundColor: readableOn(Neo.accent),
     elevation: 0,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(Neo.radius),
@@ -108,6 +121,7 @@ Future<void> _showForm(
   final namaCtrl = TextEditingController(text: initial?.nama ?? '');
   var tipe = initial?.tipe ?? InstitutionType.bank;
   var aktif = initial?.aktif ?? true;
+  var saving = false;
 
   await showDialog<void>(
     context: context,
@@ -141,7 +155,7 @@ Future<void> _showForm(
                     side: BorderSide(color: Neo.ink, width: Neo.borderW),
                     labelStyle: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: Neo.ink,
+                      color: selected ? readableOn(Neo.accent) : Neo.ink,
                     ),
                   );
                 }).toList(),
@@ -167,6 +181,7 @@ Future<void> _showForm(
           NeoButton(
             label: 'Simpan',
             onPressed: () async {
+              if (saving) return;
               final nama = namaCtrl.text.trim();
               if (nama.isEmpty) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
@@ -174,6 +189,7 @@ Future<void> _showForm(
                 );
                 return;
               }
+              saving = true;
               if (initial == null) {
                 await repo.create(nama: nama, tipe: tipe);
               } else {

@@ -65,7 +65,16 @@ class RecurringRunner {
             // bersamaan lalu lolos dari pemeriksaan di atas.
             mode: InsertMode.insertOrIgnore,
           );
-          created++;
+          // Hitung hanya yang benar-benar tersimpan: baris yang diabaikan
+          // indeks unik tidak boleh menggelembungkan laporan.
+          final tersimpan =
+              await (db.select(db.transactions)..where(
+                    (t) =>
+                        t.recurringRuleId.equals(rule.id) &
+                        t.tanggal.equals(tanggal),
+                  ))
+                  .getSingleOrNull();
+          if (tersimpan != null) created++;
         }
 
         await (db.update(db.recurringRules)..where(

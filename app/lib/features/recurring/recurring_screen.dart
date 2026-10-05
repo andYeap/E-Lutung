@@ -7,6 +7,7 @@ import '../../data/recurring.dart';
 import '../../data/repositories/recurring_repository.dart';
 import '../../providers.dart';
 import '../../theme/app_theme.dart';
+import '../../util/contrast.dart';
 import '../../util/format.dart';
 import '../../widgets/neo.dart';
 
@@ -150,7 +151,7 @@ class RecurringScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         tooltip: 'Tambah aturan',
         backgroundColor: Neo.accent,
-        foregroundColor: Neo.ink,
+        foregroundColor: readableOn(Neo.accent),
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Neo.radius),
@@ -218,8 +219,11 @@ Future<void> _showForm(
   var mulai = initial?.mulai ?? DateTime.now();
   var sampai = initial?.sampai;
   var aktif = initial?.aktif ?? true;
-  final activeAccounts = accounts.where((a) => a.account.aktif).toList();
+  final activeAccounts = accounts
+      .where((a) => a.account.aktif && a.institusi.aktif)
+      .toList();
   final activeCategories = categories;
+  var saving = false;
 
   await showDialog<void>(
     context: context,
@@ -291,13 +295,19 @@ Future<void> _showForm(
                     lastDate: DateTime(2100),
                   );
                   if (picked != null) {
-                    setState(() => mulai = DateTime(
-                          picked.year,
-                          picked.month,
-                          picked.day,
-                          mulai.hour,
-                          mulai.minute,
-                        ));
+                    setState(() {
+                      mulai = DateTime(
+                        picked.year,
+                        picked.month,
+                        picked.day,
+                        mulai.hour,
+                        mulai.minute,
+                      );
+                      // Tanggal selesai tak boleh mendahului mulai.
+                      if (sampai != null && sampai!.isBefore(mulai)) {
+                        sampai = mulai;
+                      }
+                    });
                   }
                 },
                 child: Container(
@@ -388,6 +398,7 @@ Future<void> _showForm(
           NeoButton(
             label: 'Simpan',
             onPressed: () async {
+              if (saving) return;
               final nominal = parseRupiah(nominalCtrl.text);
               if (nominal <= 0) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
@@ -401,6 +412,15 @@ Future<void> _showForm(
                 );
                 return;
               }
+              if (sampai != null && sampai!.isBefore(mulai)) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(
+                    content: Text('Tanggal selesai tidak boleh sebelum mulai'),
+                  ),
+                );
+                return;
+              }
+              saving = true;
               final catatan =
                   catatanCtrl.text.trim().isEmpty ? null : catatanCtrl.text.trim();
               if (initial == null) {

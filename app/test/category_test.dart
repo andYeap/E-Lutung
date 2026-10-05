@@ -33,6 +33,37 @@ void main() {
     expect(await categories.usedByTransactions(id), 0);
   });
 
+  test('transfer ke akun sendiri terhitung memakai kategori Transfer & Admin', () async {
+    await db.into(db.institutions).insert(
+      InstitutionsCompanion.insert(
+        id: 'i1',
+        nama: 'Bank',
+        tipe: InstitutionType.bank,
+      ),
+    );
+    await db.into(db.accounts).insert(
+      AccountsCompanion.insert(id: 'a1', institusiId: 'i1'),
+    );
+    await db.into(db.accounts).insert(
+      AccountsCompanion.insert(id: 'a2', institusiId: 'i1'),
+    );
+
+    // Transfer ke akun sendiri dengan kategori lain: pembukuan tetap
+    // "Transfer & Admin" (Bagian 8.1), jadi kategori itu ikut terhitung dipakai.
+    await transactions.create(
+      tipe: TxType.transfer,
+      nominal: 100000,
+      tanggal: DateTime(2026, 4, 3),
+      kategoriId: 'lain2',
+      akunAsalId: 'a1',
+      akunTujuanId: 'a2',
+      biayaAdmin: 2500,
+    );
+
+    expect(await categories.usedByTransactions('transfer_admin'), 1);
+    expect(await categories.usedByTransactions('lain2'), 1);
+  });
+
   test('kategori terhapus hilang dari watchAll tapi tetap terbaca labelnya', () async {
     final id = await categories.create(nama: 'Kategori Historis', warna: '#D98C7A');
     await transactions.create(

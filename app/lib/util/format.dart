@@ -27,7 +27,10 @@ String formatThousands(int value) => _decimal.format(value);
 /// Baca angka dari input berformat apa pun ("Rp 50.000" -> 50000).
 int parseRupiah(String input) {
   final digits = input.replaceAll(RegExp(r'[^0-9]'), '');
-  return digits.isEmpty ? 0 : int.parse(digits);
+  if (digits.isEmpty) return 0;
+  // `tryParse`: input yang sangat panjang (di luar jangkauan int) dianggap 0,
+  // bukan melempar FormatException.
+  return int.tryParse(digits) ?? 0;
 }
 
 /// Waktu relatif untuk daftar transaksi terbaru (FR-1.2), mis. "2 jam lalu".

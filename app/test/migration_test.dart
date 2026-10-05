@@ -56,6 +56,9 @@ void main() {
     await seed.customStatement(
       'ALTER TABLE transactions DROP COLUMN recurring_rule_id',
     );
+    await seed.customStatement(
+      'ALTER TABLE transactions DROP COLUMN struk_path',
+    );
     await seed.customStatement('PRAGMA user_version = 1');
     await seed.close();
 
@@ -74,6 +77,8 @@ void main() {
     expect(await hasEntity(db, 'recurring_rules'), isTrue);
     expect(await hasColumn(db, 'transactions', 'recurring_rule_id'), isTrue);
     expect(await hasEntity(db, 'idx_transactions_recurring_tanggal'), isTrue);
+    // Langkah v4: kolom foto struk.
+    expect(await hasColumn(db, 'transactions', 'struk_path'), isTrue);
 
     await db.close();
   });
@@ -91,6 +96,9 @@ void main() {
     await seed.customStatement('DROP TABLE IF EXISTS recurring_rules');
     await seed.customStatement(
       'ALTER TABLE transactions DROP COLUMN recurring_rule_id',
+    );
+    await seed.customStatement(
+      'ALTER TABLE transactions DROP COLUMN struk_path',
     );
     await seed.customStatement('PRAGMA user_version = 2');
     await seed.close();
@@ -127,7 +135,10 @@ void main() {
         "VALUES (?, 'pengeluaran', 1000, 100, 0, 0, 0, 'r1')";
 
     await db.customStatement(berulang, ['a']);
-    await expectLater(db.customStatement(berulang, ['b']), throwsA(anything));
+    await expectLater(
+      db.customStatement(berulang, ['b']),
+      throwsA(isA<Exception>()),
+    );
 
     // Transaksi biasa (tanpa aturan) tidak dibatasi oleh indeks unik itu.
     const manual =

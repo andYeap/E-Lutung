@@ -7,13 +7,18 @@ import '../../data/finance.dart';
 import '../../providers.dart';
 import '../../theme/app_theme.dart';
 import '../../util/budget.dart';
+import '../../util/contrast.dart';
 import '../../util/format.dart';
 import '../../widgets/neo.dart';
 
 /// Anggaran (Bagian FR-6): batas total & per kategori dengan rentang tanggal,
 /// progressbar berwarna hijau→merah (Bagian 8.2).
 class BudgetScreen extends ConsumerStatefulWidget {
-  const BudgetScreen({super.key});
+  const BudgetScreen({super.key, this.showFab = true});
+
+  /// Saat dibuka mandiri (dari Pengaturan), layar memakai AppBar & FAB sendiri.
+  /// Di tab shell keduanya milik shell.
+  final bool showFab;
 
   @override
   ConsumerState<BudgetScreen> createState() => _BudgetScreenState();
@@ -47,6 +52,18 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     final catById = {for (final c in allCategories) c.id: c};
 
     return Scaffold(
+      appBar: widget.showFab
+          ? AppBar(
+              title: const Text('Anggaran'),
+              bottom: PreferredSize(
+                preferredSize: Size.fromHeight(Neo.borderW),
+                child: SizedBox(
+                  height: Neo.borderW,
+                  child: ColoredBox(color: Neo.ink),
+                ),
+              ),
+            )
+          : null,
       body: budgetsAsync.when(
         loading: () => const NeoLoading(),
         error: (e, _) => NeoError(message: '$e'),
@@ -168,9 +185,19 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
         );
         },
       ),
-      // Tombol tambah dipindah ke shell (lihat `ShellScreen._buildFab`), supaya
-      // FAB dan SnackBar berada di Scaffold yang sama.
-      floatingActionButton: null,
+      // Di tab shell, tombol tambah disediakan shell (lihat `ShellScreen._buildFab`).
+      // Saat dibuka mandiri, layar ini memakai FAB-nya sendiri.
+      floatingActionButton: widget.showFab
+          ? FloatingActionButton(
+              tooltip: 'Tambah anggaran',
+              backgroundColor: Neo.accent,
+              foregroundColor: readableOn(Neo.accent),
+              elevation: 0,
+              shape: Neo.buttonShapeBorder(),
+              onPressed: () => showBudgetForm(context, ref, categories),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 }
@@ -194,6 +221,7 @@ Future<void> showBudgetForm(
   var selesai = initial?.periodeSelesai ??
       DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
   var aktif = initial?.aktif ?? true;
+  var saving = false;
 
   await showDialog<void>(
     context: context,
@@ -286,6 +314,27 @@ Future<void> showBudgetForm(
           if (initial != null)
             TextButton(
               onPressed: () async {
+                if (saving) return;
+                final ok = await showDialog<bool>(
+                  context: ctx,
+                  builder: (dctx) => AlertDialog(
+                    title: const Text('Hapus anggaran?'),
+                    content: const Text('Anggaran dipindah ke Sampah dan bisa dipulihkan.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dctx, false),
+                        child: const Text('Batal'),
+                      ),
+                      NeoButton(
+                        label: 'Hapus',
+                        color: Neo.expense,
+                        onPressed: () => Navigator.pop(dctx, true),
+                      ),
+                    ],
+                  ),
+                );
+                if (ok != true || ctx.mounted == false) return;
+                saving = true;
                 await repo.softDelete(initial.id);
                 if (ctx.mounted) Navigator.pop(ctx);
               },
@@ -295,6 +344,7 @@ Future<void> showBudgetForm(
           NeoButton(
             label: 'Simpan',
             onPressed: () async {
+              if (saving) return;
               final nominal = parseRupiah(nominalCtrl.text);
               if (nominal <= 0) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
@@ -308,6 +358,7 @@ Future<void> showBudgetForm(
                 );
                 return;
               }
+              saving = true;
               if (initial == null) {
                 await repo.create(
                   lingkup: lingkup,

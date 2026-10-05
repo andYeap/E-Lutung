@@ -85,6 +85,9 @@ class Transactions extends Table {
   /// Terisi bila transaksi ini dibuat otomatis dari jadwal (Bagian 7.6).
   TextColumn get recurringRuleId =>
       text().nullable().references(RecurringRules, #id)();
+
+  /// Path foto struk (opsional) bila pengguna memilih menyimpannya saat scan.
+  TextColumn get strukPath => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -153,7 +156,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _open());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -171,6 +174,10 @@ class AppDatabase extends _$AppDatabase {
         // v3: tabel aturan, lalu kolom penanda asal-jadwal di transaksi.
         await m.createTable(recurringRules);
         await m.addColumn(transactions, transactions.recurringRuleId);
+      }
+      if (from < 4) {
+        // v4: kolom path foto struk (fitur scan struk).
+        await m.addColumn(transactions, transactions.strukPath);
       }
       await _createIndexes();
     },
@@ -196,7 +203,19 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  static QueryExecutor _open() => driftDatabase(name: 'elutung');
+  static QueryExecutor _open() => driftDatabase(
+    name: 'elutung',
+    native: DriftNativeOptions(
+      // Satu basis data dipakai dua isolate (aplikasi + WorkManager). Berbagi
+      // koneksi + WAL + busy_timeout mengurangi galat "database is locked"
+      // yang selama ini ditelan diam-diam.
+      shareAcrossIsolates: true,
+      setup: (db) {
+        db.execute('PRAGMA journal_mode = WAL');
+        db.execute('PRAGMA busy_timeout = 5000');
+      },
+    ),
+  );
 
   /// Data awal institusi & kategori (Bagian 7.1 & 7.2).
   Future<void> _seed() async {

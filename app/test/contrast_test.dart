@@ -32,21 +32,21 @@ void main() {
   group('readableOn', () {
     test('memilih teks yang terbaca di atas latar apa pun', () {
       // Menyapu seluruh rentang kecerahan: hasilnya tidak boleh pernah jatuh di
-      // bawah ambang teks tebal (3.0).
+      // bawah ambang WCAG AA (4.5) untuk teks normal.
       for (var i = 0; i <= 100; i++) {
         final latar = Color.fromARGB(255, i * 2, i * 2, i * 2);
         final teks = readableOn(latar);
         expect(
           contrastRatio(teks, latar),
-          greaterThanOrEqualTo(3.0),
+          greaterThanOrEqualTo(4.5),
           reason: 'latar $latar',
         );
       }
     });
 
     test('aksen terang memakai teks gelap, aksen gelap memakai teks terang', () {
-      expect(readableOn(const Color(0xFFF2CE6B)), const Color(0xFF1A1A1A));
-      expect(readableOn(const Color(0xFF2A2C30)), const Color(0xFFF7F7F5));
+      expect(readableOn(const Color(0xFFF2CE6B)), Colors.black);
+      expect(readableOn(const Color(0xFF2A2C30)), Colors.white);
     });
   });
 

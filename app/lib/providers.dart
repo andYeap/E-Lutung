@@ -113,12 +113,15 @@ final monthExpenseByCategoryProvider = StreamProvider.family<
 );
 
 /// Seri masuk/keluar per bulan untuk grafik batang — `GROUP BY` di SQL.
-final monthlySeriesProvider =
-    StreamProvider.family<List<MonthPoint>, ({int months, int year, int month})>(
+/// Ikut terfilter kategori agar sejalan dengan tabel & donut.
+final monthlySeriesProvider = StreamProvider.family<
+    List<MonthPoint>,
+    ({int months, int year, int month, String? kategoriId})>(
   (ref, key) => ref.watch(transactionRepositoryProvider).watchMonthlySeries(
     key.months,
     anchorYear: key.year,
     anchorMonth: key.month,
+    kategoriId: key.kategoriId,
   ),
 );
 

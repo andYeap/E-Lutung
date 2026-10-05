@@ -27,6 +27,7 @@ void main() {
     tester,
   ) async {
     final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
     await pumpScreen(tester, db);
 
     expect(find.text('Belum ada aturan berulang'), findsOneWidget);
@@ -40,6 +41,7 @@ void main() {
     tester,
   ) async {
     final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
     await RecurringRepository(db).create(
       tipe: TxType.pengeluaran,
       nominal: 150000,

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../database.dart';
+import '../finance.dart';
 
 /// Kategori (Bagian 7.2) — CRUD; hapus = arsip.
 class CategoryRepository {
@@ -26,12 +27,26 @@ class CategoryRepository {
   }
 
   /// Berapa transaksi yang masih memakai kategori ini (cegah hapus).
+  ///
+  /// Transfer antar akun sendiri **dibukukan** ke kategori "Transfer & Admin"
+  /// (Bagian 8.1) walau `transactions.kategori_id`-nya kategori lain, jadi
+  /// kategori itu ikut dihitung saat menilai `transfer_admin`.
   Future<int> usedByTransactions(String id) async {
     final c = _db.transactions.id.count();
-    final q = _db.selectOnly(_db.transactions)
+    final t = _db.transactions;
+    var cond = t.kategoriId.equals(id);
+    if (id == kTransferAdminCategoryId) {
+      final ownAccounts = _db.selectOnly(_db.accounts)
+        ..addColumns([_db.accounts.id])
+        ..where(_db.accounts.milikSendiri.equals(true));
+      cond =
+          cond |
+          (t.tipe.equalsValue(TxType.transfer) &
+              t.akunTujuanId.isInQuery(ownAccounts));
+    }
+    final q = _db.selectOnly(t)
       ..addColumns([c])
-      ..where(_db.transactions.kategoriId.equals(id) &
-          _db.transactions.deletedAt.isNull());
+      ..where(cond & t.deletedAt.isNull());
     final row = await q.getSingle();
     return row.read(c) ?? 0;
   }

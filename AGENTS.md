@@ -26,7 +26,7 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
   - `lib/theme/app_theme.dart` — token `Neo` (neobrutalism lembut) + `AppTheme.light()/dark()`.
   - `lib/util/` — `format.dart` (rupiah, `ThousandsInputFormatter`, `ensureIntlLocale`), `budget.dart` (level warna), `color.dart`, `labels.dart`.
   - `lib/widgets/neo.dart` — `NeoCard/NeoButton/NeoTextField`; `charts.dart` — `ExpenseDonut/MonthlyBars/NetTrendChart`.
-  - `android/app/src/main/kotlin/com/elutung/elutung/` — `MainActivity.kt` (harus `FlutterFragmentActivity`), `ElutungWidgetProvider.kt`.
+  - `android/app/src/main/kotlin/com/elutung/elutung/` — `MainActivity.kt` (memakai `FlutterActivity`), `ElutungWidgetProvider.kt`.
   - `android/app/src/main/res/{layout/widget_elutung.xml, xml/widget_elutung_info.xml, drawable/widget_bg.xml}`.
   - `android/app/src/main/res/` juga memuat ikon aplikasi (`mipmap-*/ic_launcher.png` + `mipmap-anydpi-v26/ic_launcher.xml` adaptif, foreground di `drawable-*/ic_launcher_foreground.png`) dan warna splash di `values-v31/` serta `values-night-v31/`.
 
@@ -50,10 +50,14 @@ kategori, anggaran berwarna, widget beranda). **Sumber kebenaran = `./PRD.md`** 
 - **Warna anggaran (Bagian 8.2):** <60% aman, 60–85% waspada, 85–100% menipis, ≥100% lewat batas (`util/budget.dart`).
 - Seed institusi/kategori hanya ditulis saat DB **dibuat** (`onCreate`).
 - **Pengingat cadangan (FR-10.4) tidak boleh menagih.** `BackupService.shouldRemindBackup({hasData})` hanya berbunyi bila sudah ada data, tidak diulang dalam 7 hari (waktu pengingat dicatat di `last_backup_reminder_at`), dan hanya bila belum pernah mencadangkan atau sudah lewat 30 hari. Dulu ia berbunyi di setiap pembukaan selama pengguna belum pernah ekspor.
-- **Skema v3** — v2 membuang `categories.archived`; v3 menambah tabel `recurring_rules` dan kolom `transactions.recurring_rule_id`. `onUpgrade` memakai `m.dropColumn`, `m.createTable`, dan `m.addColumn`, lalu `_createIndexes()`. Uji migrasi nyata (v1 ke v3 dan v2 ke v3, plus indeks unik menolak periode ganda) ada di `test/migration_test.dart`.
+- **Skema v3** — v2 membuang `categories.archived`; v3 menambah tabel `recurring_rules` dan kolom `transactions.recurring_rule_id`. `onUpgrade` memakai `m.dropColumn`, `m.createTable`, dan `m.addColumn`, lalu `_createIndexes()`. Uji migrasi nyata (v1 ke v4 dan v2 ke v4, plus indeks unik menolak periode ganda) ada di `test/migration_test.dart`. v4 menambah kolom `transactions.struk_path` (foto struk).
 - **Transaksi berulang (v1.1)** — aturan di `recurring_rules`; transaksi hasilnya ditandai `recurringRuleId`. Hanya pemasukan/pengeluaran, frekuensi harian/mingguan/bulanan/tahunan. Dibangkitkan otomatis saat aplikasi dibuka dan oleh WorkManager, maksimal 100 per aturan per jalan (sisanya menyusul). Aturan ikut terekspor di cadangan JSON dan ada di layar Sampah.
+- **Scan struk (v1.2)** — foto struk dibaca OCR **di perangkat** (ML Kit, offline) lewat `services/receipt_scanner.dart`, lalu diurai `data/receipt.dart` (nominal/tanggal/merchant). Hasilnya selalu lewat form review (`features/transactions/scan_receipt_screen.dart`), kategori dipilih manual, dan keterangan opsional diisi otomatis dari merchant. Foto boleh disimpan (`services/receipt_storage.dart`, di dokumen aplikasi) atau dibuang; gambar tidak ikut cadangan JSON.
+- **Cadangan bisa dikunci (v1.3)** — ekspor/impor JSON memakai kata sandi opsional (AES-GCM + PBKDF2, `data/backup.dart`). Berkas terkunci ditandai `elutungEncrypted`; tanpa kata sandi, impor mengembalikan `-2`.
+- **Signing rilis & CI** — kredensial rilis dari `android/key.properties` (tidak di-commit; `android/app/release-key.jks`); bila tidak ada, build jatuh ke debug. R8 butuh `android/app/proguard-rules.pro` (ML Kit). CI ada di `.github/workflows/ci.yml` (analyze + test).
+- **Enkripsi basis data belum diterapkan** — paket `sqlcipher_flutter_libs` sudah EOL, jadi enkripsi DB menunggu jalur `sqlite3` 3.x dan uji perangkat. Jangan menebak-nebak.
 - Kategori yang sudah dihapus tetap dipakai untuk **label & warna** transaksi lama lewat `allCategoriesProvider`; `categoriesProvider` (aktif saja) hanya untuk pemilih/filter. Hapus kategori yang masih dipakai transaksi **ditolak** (`CategoryRepository.usedByTransactions`).
-- **Agregasi rekap di SQL** (`watchMonthTotals`, `watchMonthExpenseByCategory`, `watchMonthlySeries`) lewat `CaseWhenExpression` + `SUM`/`GROUP BY`; dipakai layar Rekap via `monthTotalsProvider`/`monthExpenseByCategoryProvider`/`monthlySeriesProvider`. Padanan aturan transfer ada di SQL **dan** `finance.dart` — kesetaraannya dijaga `test/sql_aggregate_test.dart` (dijalankan juga di 3 zona waktu). Jalur yang butuh data per baris (anggaran, saldo akun, widget) tetap memakai `allTransactionsProvider`. Pengelompokan bulan memakai `modify(DateTimeModifier.localTime())` — jangan pakai `strftime` polos (UTC → geser batas bulan).
+- **Agregasi rekap di SQL** (`watchMonthTotals`, `watchMonthExpenseByCategory`, `watchMonthlySeries`) lewat `CaseWhenExpression` + `SUM`/`GROUP BY`; dipakai layar Rekap via `monthTotalsProvider`/`monthExpenseByCategoryProvider`/`monthlySeriesProvider`. Padanan aturan transfer ada di SQL **dan** `finance.dart` — kesetaraannya dijaga `test/sql_aggregate_test.dart`. Jalur yang butuh data per baris (anggaran, saldo akun, widget) tetap memakai `allTransactionsProvider`. Pengelompokan bulan memakai `modify(DateTimeModifier.localTime())` — jangan pakai `strftime` polos (UTC → geser batas bulan).
 
 ## Commands
 
@@ -62,7 +66,7 @@ cd ~/E-Lutung/app
 flutter pub get
 dart run build_runner build        # WAJIB setelah mengubah skema Drift
 flutter analyze                    # harus 0 issue
-flutter test                       # 111 test
+flutter test                       # 139 test
 flutter run
 flutter build apk --release
 flutter build appbundle --release
@@ -97,6 +101,7 @@ flutter build apk --release --split-per-abi
 ## Verifikasi sebelum mengirim
 
 - `flutter analyze` **0 issue**, `flutter test` semua lolos, build APK/AAB sukses.
+- **Pengujian di perangkat dilakukan pemilik proyek di HP-nya sendiri**, bukan oleh agen. Cukup pastikan tiga perintah di atas hijau, lalu serahkan `app/build/app/outputs/flutter-apk/app-release.apk` untuk diuji. Jangan menyalakan emulator untuk pengujian rutin — pemasangan emulator dan system image hanya membuang ruang dan waktunya.
 - `test/app_smoke_test.dart` membangun aplikasi utuh dan menelusuri keempat tab serta Pengaturan; `test/core_flow_test.dart` menguji alur catat transaksi sampai tersimpan. Jalankan keduanya setiap kali menyentuh `app.dart`, `shell.dart`, atau tema.
 - Dua jebakan saat menulis test widget aplikasi utuh: (1) form lebih panjang dari viewport uji, jadi ketuk tombol setelah `ensureVisible`; (2) **SnackBar mengantre** — pengingat cadangan dari shell bisa menutupi SnackBar yang sedang diuji, jadi setel `last_backup_at` di `SharedPreferences.setMockInitialValues`. Dan selalu bongkar tree (`pumpWidget(SizedBox())`) di blok `finally`, karena menutup basis data selagi stream hidup membuat test menggantung.
 - Setelah ubah skema: jalankan `build_runner` dan pastikan `lib/data/database.g.dart` ikut diperbarui.

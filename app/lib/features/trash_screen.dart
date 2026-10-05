@@ -11,18 +11,31 @@ import '../widgets/neo.dart';
 
 /// Sampah — semua item yang dihapus (transaksi, kategori, akun, institusi,
 /// anggaran) bisa dipulihkan dari sini.
-class TrashScreen extends ConsumerWidget {
+class TrashScreen extends ConsumerStatefulWidget {
   const TrashScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final txRepo = ref.watch(transactionRepositoryProvider);
-    final catRepo = ref.watch(categoryRepositoryProvider);
-    final accRepo = ref.watch(accountRepositoryProvider);
-    final instRepo = ref.watch(institutionRepositoryProvider);
-    final budRepo = ref.watch(budgetRepositoryProvider);
-    final recRepo = ref.watch(recurringRepositoryProvider);
+  ConsumerState<TrashScreen> createState() => _TrashScreenState();
+}
 
+class _TrashScreenState extends ConsumerState<TrashScreen> {
+  late final _txRepo = ref.read(transactionRepositoryProvider);
+  late final _catRepo = ref.read(categoryRepositoryProvider);
+  late final _accRepo = ref.read(accountRepositoryProvider);
+  late final _instRepo = ref.read(institutionRepositoryProvider);
+  late final _budRepo = ref.read(budgetRepositoryProvider);
+  late final _recRepo = ref.read(recurringRepositoryProvider);
+
+  // Stream diambil sekali supaya tidak berlangganan ulang tiap rebuild.
+  late final _txDeleted = _txRepo.watchDeleted();
+  late final _catDeleted = _catRepo.watchDeleted();
+  late final _accDeleted = _accRepo.watchDeleted();
+  late final _instDeleted = _instRepo.watchDeleted();
+  late final _budDeleted = _budRepo.watchDeleted();
+  late final _recDeleted = _recRepo.watchDeleted();
+
+  @override
+  Widget build(BuildContext context) {
     final categories =
         ref.watch(allCategoriesProvider).value ?? const <Category>[];
     final catName = {for (final c in categories) c.id: c.nama};
@@ -33,7 +46,7 @@ class TrashScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Sampah'),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(Neo.borderW),
+          preferredSize: Size.fromHeight(Neo.borderW),
           child: SizedBox(height: Neo.borderW, child: ColoredBox(color: Neo.ink)),
         ),
       ),
@@ -48,7 +61,7 @@ class TrashScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           _Section<Transaction>(
             title: 'Transaksi',
-            stream: txRepo.watchDeleted(),
+            stream: _txDeleted,
             label: (t) {
               final judul = t.tipe == TxType.transfer
                   ? 'Transfer'
@@ -56,40 +69,40 @@ class TrashScreen extends ConsumerWidget {
               return '$judul • ${rupiah(t.nominal)} • '
                   '${DateFormat('d MMM yyyy', 'id_ID').format(t.tanggal)}';
             },
-            onRestore: (t) => txRepo.restore(t.id),
+            onRestore: (t) => _txRepo.restore(t.id),
           ),
           _Section<Category>(
             title: 'Kategori',
-            stream: catRepo.watchDeleted(),
+            stream: _catDeleted,
             label: (c) => c.nama,
-            onRestore: (c) => catRepo.restore(c.id),
+            onRestore: (c) => _catRepo.restore(c.id),
           ),
           _Section<Account>(
             title: 'Akun',
-            stream: accRepo.watchDeleted(),
+            stream: _accDeleted,
             label: (a) => 'Akun ${instName[a.institusiId] ?? ''}'.trim(),
-            onRestore: (a) => accRepo.restore(a.id),
+            onRestore: (a) => _accRepo.restore(a.id),
           ),
           _Section<Institution>(
             title: 'Institusi',
-            stream: instRepo.watchDeleted(),
+            stream: _instDeleted,
             label: (i) => i.nama,
-            onRestore: (i) => instRepo.restore(i.id),
+            onRestore: (i) => _instRepo.restore(i.id),
           ),
           _Section<RecurringRule>(
             title: 'Transaksi berulang',
-            stream: recRepo.watchDeleted(),
+            stream: _recDeleted,
             label: (r) =>
                 '${catName[r.kategoriId] ?? 'Tanpa kategori'} • '
                 '${rupiah(r.nominal)} • ${frequencyLabel(r.frekuensi)}',
-            onRestore: (r) => recRepo.restore(r.id),
+            onRestore: (r) => _recRepo.restore(r.id),
           ),
           _Section<Budget>(
             title: 'Anggaran',
-            stream: budRepo.watchDeleted(),
+            stream: _budDeleted,
             label: (b) => '${b.lingkup == BudgetScope.total ? 'Total' : 'Kategori'} • '
                 '${rupiah(b.nominal)}',
-            onRestore: (b) => budRepo.restore(b.id),
+            onRestore: (b) => _budRepo.restore(b.id),
           ),
         ],
       ),

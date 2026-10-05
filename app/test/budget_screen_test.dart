@@ -21,6 +21,7 @@ void main() {
   /// aktif memicu "Cannot add event while adding stream".
   Future<AppDatabase> nyalakan(WidgetTester tester) async {
     final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
     await tester.binding.setSurfaceSize(const Size(1000, 2000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 

@@ -44,6 +44,34 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   bool _saving = false;
   bool _addAgain = false; // FR-2.4
 
+  /// Diizinkan keluar tanpa konfirmasi setelah simpan/hapus berhasil.
+  bool _izinkanKeluar = false;
+
+  bool get _adaIsian =>
+      _nominal.text.trim().isNotEmpty || _catatan.text.trim().isNotEmpty;
+
+  Future<bool> _konfirmasiKeluar() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Buang perubahan?'),
+        content: const Text('Isian yang belum disimpan akan hilang.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          NeoButton(
+            label: 'Buang',
+            color: Neo.expense,
+            onPressed: () => Navigator.pop(ctx, true),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
+  }
+
   @override
   void dispose() {
     _nominal.dispose();
@@ -227,6 +255,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           _akunTujuanId = null;
         });
       } else {
+        _izinkanKeluar = true;
         Navigator.pop(context, true);
       }
     } finally {
@@ -253,6 +282,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
     if (ok != true) return;
     await repo.softDelete(widget.initial!.id);
+    _izinkanKeluar = true;
     if (mounted) Navigator.pop(context, true);
   }
 
@@ -276,7 +306,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       TxType.transfer => 'Catat Transfer',
     };
 
-    return Scaffold(
+    final scaffold = Scaffold(
       appBar: AppBar(
         title: Text(widget.initial == null ? title : 'Ubah Transaksi'),
         actions: [
@@ -414,6 +444,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           ),
         ],
       ),
+    );
+    return PopScope(
+      canPop: !_adaIsian || _izinkanKeluar,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final ok = await _konfirmasiKeluar();
+        if (ok && context.mounted) Navigator.of(context).pop();
+      },
+      child: scaffold,
     );
   }
 }

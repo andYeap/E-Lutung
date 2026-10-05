@@ -6,6 +6,7 @@ import '../data/database.dart';
 import '../data/finance.dart';
 import '../theme/app_theme.dart';
 import '../util/color.dart';
+import '../util/contrast.dart';
 import '../util/format.dart';
 
 /// Palet cadangan bila kategori belum punya warna sendiri.
@@ -148,7 +149,9 @@ class ExpenseDonut extends StatelessWidget {
           titleStyle: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 11,
-            color: Neo.ink,
+            // Teks digambar langsung di atas warna potongan, jadi kontrasnya
+            // dipilih terhadap warna itu, bukan terhadap `ink`.
+            color: readableOn(s.color),
           ),
         ),
       );
@@ -335,7 +338,7 @@ class NetTrendChart extends StatelessWidget {
       if (s.y < minY) minY = s.y;
       if (s.y > maxY) maxY = s.y;
     }
-    final pad = ((maxY - minY).abs() * 0.1) + 1;
+    final pad = ((maxY - minY).abs() * 0.25) + 1;
 
     return Semantics(
       label: 'Grafik garis tren saldo kumulatif. Saldo terakhir ${rupiah(running)}.',

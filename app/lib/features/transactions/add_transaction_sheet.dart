@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/database.dart';
 import '../../theme/app_theme.dart';
+import 'scan_receipt_screen.dart';
 import 'transaction_form_screen.dart';
 
 /// Lembar pilihan tipe transaksi.
@@ -10,7 +11,7 @@ import 'transaction_form_screen.dart';
 /// tombol tambah yang sama. Sebelumnya Riwayat menumpuk tiga FAB sekaligus,
 /// yang menutupi isi daftar.
 Future<void> showAddTransactionSheet(BuildContext context) async {
-  final tipe = await showModalBottomSheet<TxType>(
+  final pilihan = await showModalBottomSheet<Object>(
     context: context,
     backgroundColor: Neo.surface,
     shape: RoundedRectangleBorder(
@@ -21,6 +22,16 @@ Future<void> showAddTransactionSheet(BuildContext context) async {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          ListTile(
+            leading: const Icon(Icons.document_scanner_outlined),
+            title: const Text('Scan struk'),
+            subtitle: const Text(
+              'Foto struk, nominal dibaca otomatis',
+              style: TextStyle(fontSize: 12),
+            ),
+            onTap: () => Navigator.pop(ctx, 'scan'),
+          ),
+          const Divider(height: 1),
           ListTile(
             leading: Icon(Icons.south_west, color: Neo.income),
             title: const Text('Pemasukan'),
@@ -41,8 +52,16 @@ Future<void> showAddTransactionSheet(BuildContext context) async {
     ),
   );
 
-  if (tipe == null || !context.mounted) return;
+  if (pilihan == null || !context.mounted) return;
+  if (pilihan == 'scan') {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ScanReceiptScreen()),
+    );
+    return;
+  }
   await Navigator.of(context).push(
-    MaterialPageRoute(builder: (_) => TransactionFormScreen(tipe: tipe)),
+    MaterialPageRoute(
+      builder: (_) => TransactionFormScreen(tipe: pilihan as TxType),
+    ),
   );
 }

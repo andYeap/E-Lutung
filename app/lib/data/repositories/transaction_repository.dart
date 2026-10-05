@@ -188,10 +188,14 @@ class TransactionRepository {
   /// Dikelompokkan di SQL menurut tahun & bulan **waktu lokal** perangkat
   /// (`modify(localTime())`), supaya transaksi dekat batas bulan tidak
   /// tergeser oleh konversi UTC.
+  ///
+  /// [kategoriId] membatasi ke satu kategori (memakai kategori pembukuan),
+  /// agar grafik ikut filter seperti tabel & donut (FR-4.3/FR-5.5).
   Stream<List<MonthPoint>> watchMonthlySeries(
     int months, {
     required int anchorYear,
     required int anchorMonth,
+    String? kategoriId,
   }) {
     final t = _db.transactions;
     final local = t.tanggal.modify(DateTimeModifier.localTime());
@@ -199,14 +203,16 @@ class TransactionRepository {
     final monthExpr = local.month;
     final income = _incomeAmountExpr().sum();
     final expense = _expenseAmountExpr().sum();
+    var predicate = _rangeFilter(
+      DateTime(anchorYear, anchorMonth - (months - 1), 1),
+      DateTime(anchorYear, anchorMonth + 1, 1),
+    );
+    if (kategoriId != null) {
+      predicate = predicate & _expenseCategoryExpr().equals(kategoriId);
+    }
     final q = _db.selectOnly(t)
       ..addColumns([yearExpr, monthExpr, income, expense])
-      ..where(
-        _rangeFilter(
-          DateTime(anchorYear, anchorMonth - (months - 1), 1),
-          DateTime(anchorYear, anchorMonth + 1, 1),
-        ),
-      )
+      ..where(predicate)
       ..groupBy([yearExpr, monthExpr]);
     return q.watch().map((rows) {
       final byKey = <String, MonthPoint>{};
@@ -262,6 +268,7 @@ class TransactionRepository {
     String? akunAsalId,
     String? akunTujuanId,
     int biayaAdmin = 0,
+    String? strukPath,
   }) async {
     final id = _uuid.v4();
     await _db.into(_db.transactions).insert(
@@ -276,6 +283,7 @@ class TransactionRepository {
         akunAsalId: Value(akunAsalId),
         akunTujuanId: Value(akunTujuanId),
         biayaAdmin: Value(biayaAdmin),
+        strukPath: Value(strukPath),
       ),
     );
     return id;
@@ -292,6 +300,7 @@ class TransactionRepository {
     String? akunAsalId,
     String? akunTujuanId,
     int biayaAdmin = 0,
+    String? strukPath,
   }) {
     return (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
       TransactionsCompanion(
@@ -304,6 +313,9 @@ class TransactionRepository {
         akunAsalId: Value(akunAsalId),
         akunTujuanId: Value(akunTujuanId),
         biayaAdmin: Value(biayaAdmin),
+        // Diabaikan bila tidak diteruskan, supaya edit biasa tidak menghapus
+        // tautan foto struk.
+        strukPath: strukPath == null ? const Value.absent() : Value(strukPath),
         updatedAt: Value(DateTime.now()),
       ),
     );

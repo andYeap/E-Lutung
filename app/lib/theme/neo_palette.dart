@@ -84,8 +84,10 @@ class NeoPalette {
 
   /// Membaca palet tersimpan; field yang hilang atau rusak jatuh ke [fallback].
   factory NeoPalette.fromJson(Map<dynamic, dynamic> json, NeoPalette fallback) {
-    Color baca(String key, Color def) =>
-        tryParseHexColor(json[key] as String?) ?? def;
+    Color baca(String key, Color def) {
+      final v = json[key];
+      return tryParseHexColor(v is String ? v : null) ?? def;
+    }
     return NeoPalette(
       bg: baca('bg', fallback.bg),
       surface: baca('surface', fallback.surface),

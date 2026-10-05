@@ -132,7 +132,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              _BudgetCard(all: all, ownIds: ownIds),
+              _BudgetCard(all: all, ownIds: ownIds, month: _month),
               if (byCat.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 NeoCard(
@@ -178,29 +178,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 }
 
 class _BudgetCard extends ConsumerWidget {
-  const _BudgetCard({required this.all, required this.ownIds});
+  const _BudgetCard({
+    required this.all,
+    required this.ownIds,
+    required this.month,
+  });
   final List<Transaction> all;
   final Set<String> ownIds;
+
+  /// Bulan yang sedang ditampilkan dashboard; kartu anggaran ikut bulan ini,
+  /// bukan selalu bulan berjalan.
+  final DateTime month;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final budgets = ref.watch(budgetsProvider).value ?? const <Budget>[];
-    final now = DateTime.now();
+    final monthStart = DateTime(month.year, month.month, 1);
+    final monthEnd = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
     Budget? found;
     for (final b in budgets) {
       if (!b.aktif || b.lingkup != BudgetScope.total) continue;
-      final end = DateTime(
-        b.periodeSelesai.year,
-        b.periodeSelesai.month,
-        b.periodeSelesai.day,
-        23,
-        59,
-        59,
-      );
-      if (!now.isBefore(b.periodeMulai) && !now.isAfter(end)) {
-        found = b;
-        break;
+      // Anggaran periode apa pun yang beririsan dengan bulan terpilih.
+      if (b.periodeMulai.isAfter(monthEnd) ||
+          b.periodeSelesai.isBefore(monthStart)) {
+        continue;
       }
+      found = b;
+      break;
     }
     if (found == null) {
       return NeoCard(

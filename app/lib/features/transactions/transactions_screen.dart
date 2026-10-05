@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/database.dart';
 import '../../data/finance.dart';
+import '../../data/repositories/transaction_repository.dart';
 import '../../providers.dart';
 import '../../theme/app_theme.dart';
 import '../../util/format.dart';
@@ -24,6 +25,37 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   String? _kategoriId;
   String? _akunId;
   DateTimeRange? _range;
+
+  /// Stream filter di-cache agar tidak berlangganan ulang (dan berkedip
+  /// "memuat") tiap kali layar dibangun ulang — mis. saat mengetik pencarian.
+  Stream<List<Transaction>>? _stream;
+  String? _streamSig;
+
+  Stream<List<Transaction>> _streamFor(TransactionRepository repo) {
+    final to = _range?.end == null
+        ? null
+        : DateTime(
+            _range!.end.year,
+            _range!.end.month,
+            _range!.end.day,
+            23,
+            59,
+            59,
+          );
+    final sig =
+        '$_tipe|$_kategoriId|$_akunId|${_range?.start.toIso8601String()}|$to';
+    if (_stream == null || _streamSig != sig) {
+      _streamSig = sig;
+      _stream = repo.watchFiltered(
+        tipe: _tipe,
+        kategoriId: _kategoriId,
+        akunId: _akunId,
+        from: _range?.start,
+        to: to,
+      );
+    }
+    return _stream!;
+  }
 
   /// Panel filter lanjutan (rentang, kategori, akun) dibuka-tutup.
   bool _filterTerbuka = false;
@@ -74,22 +106,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           const Divider(height: 1),
           Expanded(
             child: StreamBuilder<List<Transaction>>(
-              stream: repo.watchFiltered(
-                tipe: _tipe,
-                kategoriId: _kategoriId,
-                akunId: _akunId,
-                from: _range?.start,
-                to: _range?.end == null
-                    ? null
-                    : DateTime(
-                        _range!.end.year,
-                        _range!.end.month,
-                        _range!.end.day,
-                        23,
-                        59,
-                        59,
-                      ),
-              ),
+              stream: _streamFor(repo),
               builder: (context, snap) {
                 if (snap.hasError) {
                   return NeoError(message: '${snap.error}');

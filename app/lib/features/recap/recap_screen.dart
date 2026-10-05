@@ -75,13 +75,13 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
                 )
                 .value ??
             const <CategoryTotal>[];
-        final now = DateTime.now();
         final series = ref
                 .watch(
                   monthlySeriesProvider((
                     months: 12,
-                    year: now.year,
-                    month: now.month,
+                    year: _month.year,
+                    month: _month.month,
+                    kategoriId: _kategoriId,
                   )),
                 )
                 .value ??
