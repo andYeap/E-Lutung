@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, V2]
+    branches: [main, V2, V3]
   pull_request:
 
 jobs:
@@ -13,6 +13,13 @@ jobs:
         working-directory: app
     steps:
       - uses: actions/checkout@v4
+
+      # Berjalan sebelum pub get, dan menangkap teks rusak lebih awal
+      # daripada menunggu analyze dan test selesai. Override working-directory
+      # karena default job adalah app/, sedangkan skrip ada di root repo.
+      - name: Karakter huruf asing
+        working-directory: .
+        run: ./tool/check-charset.sh
 
       - uses: subosito/flutter-action@v2
         with:

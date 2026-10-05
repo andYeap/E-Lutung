@@ -72,6 +72,9 @@ flutter run
 flutter build apk --release
 flutter build appbundle --release
 flutter build apk --release --split-per-abi
+
+# dari root repo, sebelum commit — menolak huruf asing yang tidak sengaja
+tool/check-charset.sh
 ```
 
 ## Gotchas (dari bug nyata — jangan diulang)
@@ -102,6 +105,7 @@ flutter build apk --release --split-per-abi
 24. **Uang yang diterima ≠ total.** Saat label total sudah pasti ada tetapi nominalnya di baris berikutnya, metode pembayaran **boleh** dipakai (`_tidakSamadenganTotal` = tunai/kembali/sisa/refund), karena yang ditagih kartu sama dengan total. Saat label totalnya **tidak ada** (`_abaikanTotal` = + QRIS/e-wallet/saldo), uang diterima **tidak boleh** jadi nominal — nilainya lebih besar, dan lebih baik kosong daripada mencatat nominal keliru tanpa pengguna sadar.
 25. **Penandaan merchant pakai bentuk berbeda dari pencarian nominal.** `_awalanBarisBukanMerchant` dicocokkan sebagai **awalan dengan batas kata** pada baris mentah, bukan substring pada teks tanpa spasi — "Nova Mart" mengandung "no" dan "rt", jadi pencocokan substring akan membuang nama toko yang sah. `_berlabelDenganNominal` menangkap baris "huruf + nominal di ekor" karena bentuk itu tidak bisa dicatat daftar kata: "TOTA!" sudah tidak punya kata "total" utuh.
 26. **Berkas foto bukan urusan basis data, jadi dua hal harus selalu berpasangan.** (a) `wipeUserData()` menghapus berkas foto lewat `ReceiptStorage.hapusSemua` — kalau hanya baris `transactions` yang dihapus, foto pengguna tetap tertinggal di dokumen aplikasi tanpa jejak dan tanpa layar untuk menemukannya. (b) Impor cadangan mengembalikan `struk_path` tanpa gambarnya, jadi `watchWithReceipt()` **sengaja** mengembalikan path yang menunjuk berkas hilang; jangan "membetulkan" dengan menyembunyikannya, karena layar Foto struk butuh membedakannya dari "tidak ada struk" supaya bisa offer pembersihan lewat `clearReceiptPaths`. `softDelete` sengaja tidak menghapus berkas — transaksinya masih bisa dipulihkan dari Sampah.
+27. **Jangan menulis huruf Han/Hiragana/Katakana/Hangul/Cyrillic di mana pun — kode, komentar, atau pesan commit.** Proyek ini bahasa Indonesia; kemunculan huruf itu selalu berarti teks terganti, bukan gaya penulisan. Jalankan `tool/check-charset.sh` sebelum commit (sudah jadi langkah CI, lebih awal dari `flutter analyze`). Satu-satunya non-ASCII yang sah adalah `Σ` dan `−` di rumus PRD.md — Greek sengaja tidak dilarang karena itu. Kalau memang perlu huruf asing untuk menguji OCR, tambahkan penanda `@charset-allow` di baris yang sama.
 
 ## Verifikasi sebelum mengirim
 
