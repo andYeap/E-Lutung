@@ -282,7 +282,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
             ),
           if (_draft != null &&
               !_memproses &&
-              _draft!.sumber == SumberNominal.pembayaranTunai)
+              _draft!.sumber == SumberNominal.pembayaranTerverifikasi)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Row(

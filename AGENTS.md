@@ -67,7 +67,7 @@ cd ~/E-Lutung/app
 flutter pub get
 dart run build_runner build        # WAJIB setelah mengubah skema Drift
 flutter analyze                    # harus 0 issue
-flutter test                       # 205 test
+flutter test                       # 210 test
 flutter run
 flutter build apk --release
 flutter build appbundle --release
@@ -110,6 +110,8 @@ tool/check-charset.sh
 29. **Struk dua kolom: label dan nominalnya terpisah, jadi jangan cari pasangan lewat baris.** ML Kit sering mengembalikan seluruh label di satu blok dan seluruh nominal di blok lain — `TOTAL : Rp.` tanpa angka, sementara `110.000` berdiri sendiri belasan baris di bawahnya. Pencarian berbasis baris tidak akan pernah menemukan pasangannya. Yang dipakai sebagai gantinya adalah identitas aritmetika pembayaran tunai yang **bisa diuji**: `tunai - kembalian = total`, atau `tunai == total` untuk bayar pas. Lihat `_dariIdentitasTunai`. Kalau identitasnya tidak terpenuhi sementara ada label total tanpa nominal (`labelTanpaNominal`), nominal **harus** dibiarkan null — angka terbesar di blok nominal adalah uang yang terima kasir, dan mengisinya berarti mencatat pengeluaran yang lebih besar tanpa pengguna sadari.
 30. **Struk minimarket menumpuk beberapa baris "Total" — jangan pilih yang terbesar.** Pola `Total Item` / `Total Disc.` / `Total Belanja` berurutan, dan hanya `Total Belanja` yang berisi nominal yang dibayar. Karena itu (a) `total belanja` masuk daftar kata kunci kuat, dan (b) kandidat lemah memakai baris **terakhir**, bukan `max`. `Total Item` nilainya justru paling besar karena masih sebelum diskon, dan itulah sebabnya `max` selalu salah di sini. Buka `test/receipt_test.dart` bagian "Struk minimarket dengan beberapa baris Total" untuk transkripsi lengkap.
 31. **Tanggal: wajib dua digit, dan semua kecocokan harus dipindai.** Dua jebakan yang nyata dari struk minimarket: (a) nomor versi struk `V.2026.7.2` pernah terbaca sebagai tanggal karena bentuknya mirip ISO — deshalb pola ISO wajib `\d{4}-\d{2}-\d{2}`; (b) NPWP `01.336.238.9-054.000` menghasilkan pola mirip tanggal yang tidak valid, dan kalau cuma `firstMatch` yang dicoba, tanggal struk yang sebenarnya di baris bawahnya tidak pernah terbaca — jadi pakai `allMatches` dan ambil kandidat valid pertama. Jangan pakai `firstMatch` untuk pencarian tanggal.
+32. **Perbaikan huruf-angka hanya boleh pada potongan nominal, JANGAN ke seluruh baris label.** `_normalisasiDigit` mengubah `B`→`8`, `I`→`1`, `l`→`1`. Dijalankan ke baris penuh, kata "Total Belanja" menghasilkan `T0ta1 8e1anja` dan nominal 8 dilaporkan dari struk yang benar 43.300 — dan `yakin` pun ikut true karena berasal dari baris berlabel. `_angkaDariLabel` karena itu memotong potongan ekor lebih dulu (`_rapatkanRibuan` → buang mata uang ekor → ambil token`), lalu hanya memperbaikinya kalau token itu **memuat digit asli** atau **seluruh hurufnya bisa jadi digit** (`lO.OOO`). Kata biasa seperti `Belanja`, `Item`, `Harga` ditolak karena huruf aslinya tidak bisa jadi angka.
+33. **Sumber nominal dinamai `pembayaranTerverifikasi`, bukan "tunai".** Identitas yang dipakai berlaku untuk tunai, QRIS, dan kartu alike — nilai yang dibayar selalu sama dengan total kecuali ada kembalian. Nama lamanya "pembayaranTunai" menyesatkan karena struk Alfamart yang memicu perubahan ini dibayar QRIS. Aturannya juga dijaga `adaLabelTotal`: tanpa label total, dua harga barang yang kebetulan sama besar di ujung struk tidak boleh disebut "terbukti".
 
 ## Verifikasi sebelum mengirim
 

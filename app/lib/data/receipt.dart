@@ -6,10 +6,11 @@ enum SumberNominal {
   /// Baris berlabel total/jumlah bayar yang nominalnya terbaca.
   labelTotal,
 
-  /// Nominal tidak menempel pada labelnya, tapi terbukti dari hitungan
-  /// pembayaran tunai: `tunai - kembalian = total`. Karena hubungannya bisa
-  /// diuji aritmetika, hasilnya lebih dapat dipercaya daripada tebakan.
-  pembayaranTunai,
+  /// Nominal tidak menempel pada labelnya, tapi terbukti lewat hubungan
+  /// aritmetika di bagian pembayaran: `tunai - kembalian = total`, atau
+  /// nilai pembayaran sama dengan total untuk QRIS/kartu/bayar pas. Karena
+  /// hubungannya bisa diuji, hasilnya lebih dapat dipercaya daripada tebakan.
+  pembayaranTerverifikasi,
 
   /// Angka terbesar pada baris yang bukan telepon/nomor dokumen.
   tebakanAngka,
@@ -299,7 +300,49 @@ const List<String> _awalanBarisBukanMerchant = [
   'queue',
   'antrian',
   'pos',
+  'bon',
 ];
+
+/// Penanda alamat. Satu penanda saja belum cukup karena "ALFA TOWER LT.12"
+/// hanya memuat satu, jadi dipakai dua penanda atau lebih agar baris alamat
+/// tertangkap tanpa membuang nama toko yang kebetulan memuat satu kata
+/// ("JL. ..." di tengah nama tetap aman).
+const List<String> _penandaAlamat = [
+  'jalan',
+  'jl',
+  'jln',
+  'rt',
+  'rw',
+  'kel',
+  'kec',
+  'kota',
+  'kab',
+  'alamat',
+  'alam',
+  'tower',
+  'lt',
+];
+
+/// Baris yang memuat spesifikasi ukuran produk, seperti "1.5L", "250G",
+/// "770 ML". Baris begini adalah nama barang, bukan nama toko.
+final RegExp _spesifikasiProduk = RegExp(
+  r'\d+(?:[.,]\d+)?\s?(?:ML|KG|GR|PCS|PC|L|G)\b',
+  caseSensitive: false,
+);
+
+/// Apakah baris ini alamat, bukan nama tempat.
+bool _gayaAlamat(String line) {
+  var ketemu = 0;
+  final low = line.toLowerCase();
+  for (final p in _penandaAlamat) {
+    if (RegExp('(^|[^a-z0-9])${RegExp.escape(p)}(?![a-z0-9])')
+        .hasMatch(low)) {
+      ketemu++;
+      if (ketemu >= 2) return true;
+    }
+  }
+  return false;
+}
 
 /// Mengurai teks hasil OCR struk menjadi nominal, tanggal, dan merchant.
 ///
@@ -490,6 +533,8 @@ bool _tidakSamaDenganTotal(String line) =>
   int? terlemah;
   // true bila ada baris berlabel total yang nominalnya tidak menempel (dua kolom).
   var labelTanpaNominal = false;
+  // true bila struk punya baris berlabel total, walau nominalnya terpisah.
+  var adaLabelTotal = false;
   for (var i = 0; i < lines.length; i++) {
     final low = _untukCocok(lines[i]);
     final lowLenting = _untukCocokLenting(lines[i]);
@@ -506,6 +551,7 @@ bool _tidakSamaDenganTotal(String line) =>
         (_mengandungKataKunci(low, lowLenting, _kataKunciTotalLemah) ||
             _mengandungAkar(akar, _kataKunciTotalLemah));
     if (!kuat && !lemah) continue;
+    adaLabelTotal = true;
 
     // Sudah dipastikan baris nominal, jadi huruf tertukar angka boleh
     // diperbaiki tanpa risiko kode barang ikut terbaca.
@@ -560,11 +606,11 @@ bool _tidakSamaDenganTotal(String line) =>
   //
   // Kalau identitasnya tidak terpenuhi, tebakan tetap boleh jalan — tapi hanya
   // kalau kandidat terbesarnya tidak mungkin uang diterima.
-  final dariTunai = _dariIdentitasTunai(lines);
+  final dariTunai = _dariIdentitasPembayaran(lines, adaLabelTotal: adaLabelTotal);
   if (dariTunai != null) {
-    return (nilai: dariTunai, sumber: SumberNominal.pembayaranTunai);
+    return (nilai: dariTunai, sumber: SumberNominal.pembayaranTerverifikasi);
   }
-  final bayar = _nilaiUangDiterima(lines);
+  final bayar = _nilaiPembayaranDiterima(lines);
 
   // Cadangan: angka terbesar pada baris yang bukan nomor telepon/dokumen.
   // Mode tidak agresif di sini supaya kode barang dan nomor seri tidak ikut
@@ -614,36 +660,43 @@ int? _angkaTerbesar(String line) {
 
 /// Angka nominal pada **baris berlabel** seperti "TOTAL : Rp. 110.000".
 ///
-/// Berbeda dengan [_angkaTerbesar], baris label boleh dibaca lebih bebas karena
-/// pemanggil sudah memastikan baris itu bukan daftar barang. Dua perbaikan yang
-/// dimungkinkan justru di sini:
+/// Berbeda dengan [_angkaTerbesar], baris label boleh diperbaiki huruf yang
+/// tertukar angka — tapi **hanya pada potongan nominalnya**, tidak pada seluruh
+/// baris. [_normalisasiDigit] yang dijalankan ke seluruh baris akan mengubah
+/// kata label jadi angka: "Total Belanja" punya huruf `B`, jadi terbaca 8 dan
+/// struk ber-total 43.300 dilaporkan sebagai 8.
 ///
-/// - OCR sering menulis "11O.OOO" untuk "110.000"; tanpa [_normalisasiDigit]
-///   parser hanya melihat digit yang tersisa dan melaporkan nominal jauh lebih
-///   kecil — bahkan nol.
-/// - Nominal boleh tercetak tanpa satu pun digit yang terbaca ("Rp. lO.OOO"),
-///   asal posisinya jelas di ekor baris setelah mata uang.
+/// Potongan dianggap mungkin nominal kalau salah satu berlaku:
+/// - memuat digit asli, sehingga perbaikan huruf yang tertukar angka: "11O.OOO" -> 110.000;
+/// - seluruh hurufnya bisa jadi digit, seperti "lO.OOO" -> 10000. Kalimat biasa
+///   seperti "Belanja" atau "Item" ditolak karena huruf aslinya tidak bisa jadi
+///   angka.
 int? _angkaDariLabel(String line) {
-  // Normalisasi lenient hanya untuk label yang sudah dipastikan; kode barang
-  // tidak pernah sampai ke sini.
-  final normal = _rapatkanRibuan(_normalisasiDigit(line));
-  final dariDigit = _angkaTerbesar(normal);
-  if (dariDigit != null && dariDigit > 0) return dariDigit;
+  // Rapatkan ribuan dulu supaya "TOTAL 1 250 000" tidak terpotong jadi "000".
+  final rapat = _rapatkanRibuan(line);
 
-  // Cadangan: ambil potongan paling kanan yang hanya berisi angka, pemisah, dan
-  // huruf yang bisa jadi digit. "TOTAL : Rp. lO.OOO" -> "lO.OOO" -> 10000.
+  // Mata uang di ekor dibuang supaya tidak ikut terpotong sebagai bagian angka.
+  final tanpaMataUang = rapat.replaceFirst(
+    RegExp(r'\s*(?:rp\.?|idr)\s*$', caseSensitive: false),
+    '',
+  );
+
   final potongan = RegExp(
     r'([0-9OoIlISsBbZz][0-9OoIlISsBbZz.,]*)\s*$',
-  ).firstMatch(line);
+  ).firstMatch(tanpaMataUang);
   if (potongan == null) return null;
-  final kandidat = _rapatkanRibuan(_normalisasiDigit(potongan.group(1)!));
-  // Kalau potongan itu kata biasa ("BAYAR", "HARGA"), normalisasinya menghasilkan
-  // angka palsu. Kata dengan huruf yang tidak bisa jadi digit itu tidak mungkin
-  // nominal, jadi tolak kalau terlalu banyak huruf yang tak terselesaikan.
-  final hurufAsli = potongan.group(1)!.replaceAll(RegExp(r'[^A-Za-z]'), '').length;
-  final hurufTersisa = kandidat.replaceAll(RegExp(r'[^0-9]'), '').length;
-  if (hurufAsli - hurufTersisa > 1) return null;
-  return _angkaTerbesar(kandidat);
+
+  final mentah = potongan.group(1)!;
+  final adaDigitAsli = RegExp(r'\d').hasMatch(mentah);
+  final hurufMentah = mentah.replaceAll(RegExp(r'[^A-Za-z]'), '');
+  final semuaHurufBisaDigit = RegExp(r'[^A-Za-z]').hasMatch(hurufMentah) ||
+      RegExp(r'^[OoIlISsBbZz.]+$').hasMatch(hurufMentah);
+  if (!adaDigitAsli && !semuaHurufBisaDigit) return null;
+
+  final kandidat = _rapatkanRibuan(_normalisasiDigit(mentah));
+  final n = _angkaTerbesar(kandidat);
+  if (n == null || n <= 0) return null;
+  return n;
 }
 
 /// Baris yang isinya **hanya** nominal: angka, pemisah, mata uang, dan
@@ -660,16 +713,23 @@ bool _barisNominalBersama(String line) {
   return RegExp(r'\d').hasMatch(sisa);
 }
 
-/// Nominal dari identitas pembayaran tunai, atau null bila tidak terpenuhi.
+/// Nominal dari identitas aritmetika bagian pembayaran, atau null bila tidak
+/// terpenuhi.
 ///
-/// struk tunai selalu memenuhi `tunai - kembalian = total`, atau `tunai ==
-/// total` bila bayar pas tanpa kembalian. Kalau salah satu hubungan itu terbukti
-/// dari angka-angka di kolom nominal, hasilnya pembuktian, bukan tebakan.
+/// Struk pembayaran selalu memenuhi `tunai - kembalian = total`, atau nilai
+/// pembayaran sama dengan total untuk QRIS, kartu, dan bayar pas. Kalau salah
+/// satu hubungan itu terbukti dari angka-angka di kolom nominal, hasilnya
+/// pembuktian, bukan tebakan.
 ///
 /// Dipakai untuk struk dua kolom, di mana ML Kit mengembalikan label
 /// ("TOTAL : Rp.") terpisah dari nominalnya (110.000 berdiri sendiri di baris
 /// lain). Pencarian label mustahil berhasil di sana.
-int? _dariIdentitasTunai(List<String> lines) {
+///
+/// [adaLabelTotal] wajib true. Tanpa itu, dua harga barang yang kebetulan sama
+/// besar di ujung struk akan dianggap "total terbukti" padahal tidak ada
+/// bagian pembayaran sama sekali di struk itu.
+int? _dariIdentitasPembayaran(List<String> lines, {required bool adaLabelTotal}) {
+  if (!adaLabelTotal) return null;
   final kolom = <int>[];
   for (final line in lines) {
     if (!_barisNominalBersama(line)) continue;
@@ -706,7 +766,7 @@ int? _dariIdentitasTunai(List<String> lines) {
 /// Dipakai sebagai pagar: kalau tebakan "angka terbesar" menyentuh nilai ini,
 /// ia bisa jadi uang yang diterima toko, bukan belanja. Kandidat yang lebih
 /// kecil dari nilai ini aman dipakai, karena uang diterima selalu >= total.
-int? _nilaiUangDiterima(List<String> lines) {
+int? _nilaiPembayaranDiterima(List<String> lines) {
   int? terbesar;
   for (final line in lines) {
     if (!_tidakSamaDenganTotal(line)) continue;
@@ -891,6 +951,8 @@ String? _cariMerchant(List<String> lines) {
     if (_garisPemisah(line)) continue;
     if (_tanpaHuruf(line)) continue;
     if (_berlabelDenganNominal(line)) continue;
+    if (_gayaAlamat(line)) continue;
+    if (_spesifikasiProduk.hasMatch(line)) continue;
     if (_diawaliKata(line, _awalanBarisBukanMerchant)) continue;
 
     final low = _untukCocok(line);

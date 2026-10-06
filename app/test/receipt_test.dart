@@ -475,7 +475,7 @@ INGAT BELANJA *. INGAT .. BORNEO
     final draft = parseReceipt(ocrDuaKolom);
     expect(draft.nominal, 110000);
     expect(draft.yakin, isTrue);
-    expect(draft.sumber, SumberNominal.pembayaranTunai);
+    expect(draft.sumber, SumberNominal.pembayaranTerverifikasi);
     expect(draft.merchant, 'BORNEO SUPERMAKET');
     expect(draft.tanggal, DateTime(2026, 4, 5));
   });
@@ -487,7 +487,7 @@ INGAT BELANJA *. INGAT .. BORNEO
       ocrDuaKolom.replaceAll('150,000', '110,000').replaceAll('40,000\n', ''),
     );
     expect(draft.nominal, 110000);
-    expect(draft.sumber, SumberNominal.pembayaranTunai);
+    expect(draft.sumber, SumberNominal.pembayaranTerverifikasi);
   });
 
   test('struk dua kolom tanpa kembalian tidak menebak TUNAI', () {
@@ -593,5 +593,105 @@ SMS/WA: 08110640888''';
     expect(d.merchant, 'Alfamart');
     expect(d.tanggal, DateTime(2026, 10, 5));
     expect(d.yakin, isTrue);
+  });
+
+  // --- Teks OCR asli dari perangkat (kolom tercampur) ----------------------
+  //
+  // ML Kit tidak sekadar memisahkan label dan nominal; dia mencampur beberapa
+  // kolom sekaligus, sehingga urutan baris tidak lagi mengikuti tampilan struk.
+  // "Total Item", "Total Disc.", dan "Total Belanja" ketiganya berdiri tanpa
+  // nominal, sementara seluruh nominal menumpuk di akhir.
+  const ocrAsli = '''
+ALFA TOWER LT.12, ALAM SUTERA,TANGERANG
+JL. P.M.NOOR RT.018 RW.007 BANJARBARU
+NPWP : 01.336.23 8.9-054.000
+Bon 1GC3-321-0510HV49
+FRESTEA APL1.5L
+ALFAMART P.M.NOOR 2/ 081294659483
+P.M.NOOR 2 [PNO2)
+Disc. -2,000
+VIT AIR 15L
+Disc. -1,700
+3AYAM KNG 200G
+Disc. -l,100
+AJINMT MSG 90
+SASA BMBKARI40G
+Total Item
+Total Disc.
+Total Belanja
+Alfamart
+ORIS CPM BNI
+PPN
+Kembalian
+1
+1
+STAR SPRITE MINT:1
+A-POIN ANDA 15938
+5
+30-Nov-2026
+ALFAGIFT
+Kasir: HASANN
+17,900
+DPP: 41,981
+Tgl. 05-10-2026 21:21:41 V.2026.7.2
+MEMBER: AKHMAD * **
+8,100
+6,100
+5,500
+10,500
+KRITIK&SARAN:1500959
+254 poin Anda akan expired pada
+SMS/WA: 081110640888
+STRUK ANDA AKAN DIKIRIM KE APLIKASI
+Potensi Poin Jika Anda Member 193
+17,900
+8,100
+6,100
+5,500
+10,500
+48,100
+4,800
+43,300
+43,300
+PPN: 4,618''';
+
+  test('OCR kolom tercampur: nominal, tanggal, dan merchant benar', () {
+    final d = parseReceipt(ocrAsli);
+    expect(d.nominal, 43300);
+    expect(d.yakin, isTrue);
+    expect(d.sumber, SumberNominal.pembayaranTerverifikasi);
+    expect(d.tanggal, DateTime(2026, 10, 5));
+    expect(d.merchant, 'ALFAMART P.M.NOOR');
+  });
+
+  test('kata pada baris label tidak pernah jadi angka', () {
+    // Huruf B di "Belanja" dan I di "Item" bisa salah baca jadi 8 dan 1 kalau
+    // perbaikan huruf-angka dijalankan ke seluruh baris. Nominal baris label
+    // tanpa angka harus kosong, bukan 8 atau 1.
+    expect(parseReceipt('Total Belanja').nominal, isNull);
+    expect(parseReceipt('Total Item').nominal, isNull);
+    expect(parseReceipt('Total Harga').nominal, isNull);
+    expect(parseReceipt('Jumlah Bayar').nominal, isNull);
+  });
+
+  test('baris label tanpa nominal tidak menghasilkan nominal', () {
+    // "Total Item 5" di struk kolom tercampur berdiri sendiri tanpa nominal.
+    expect(parseReceipt('Total Item\nTotal Belanja\n48,100\n4,800').nominal, 48100);
+  });
+
+  test('merchant menolak alamat, nomor struk, dan spesifikasi produk', () {
+    expect(
+      parseReceipt(ocrAsli).merchant,
+      isNot(contains('ALAM SUTERA')),
+    );
+    expect(parseReceipt('JL. MERDEKA RT.01 RW.02\nTOKO A\nTOTAL 50.000').merchant, 'TOKO A');
+    expect(parseReceipt('Bon 1GC3-321\nTOKO A\nTOTAL 50.000').merchant, 'TOKO A');
+    expect(parseReceipt('VIT AIR 1.5L\nTOKO A\nTOTAL 50.000').merchant, 'TOKO A');
+  });
+
+  test('dua nominal sama besar tanpa label total tidak disebut terbukti', () {
+    // Dua harga barang yang kebetulan sama besar bukan pembuktian pembayaran.
+    final d = parseReceipt('WARUNG A\nBarang A 25.000\nBarang B 25.000');
+    expect(d.yakin, isFalse);
   });
 }
