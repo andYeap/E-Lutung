@@ -40,6 +40,12 @@ class ReceiptDraft {
 }
 
 /// Kata kunci prioritas tinggi: hampir pasti baris total/jumlah akhir.
+///
+/// "Total Belanja" ikut masuk sini karena struk minimarket Indonesia
+/// mencantumkan tiga baris berlabel "Total" sekaligus — "Total Item",
+/// "Total Disc.", dan "Total Belanja" — dan hanya yang terakhir yang berisi
+/// nominal yang benar-benar dibayar. Kalau semuanya diperlakukan sama, yang
+/// menang adalah "Total Item" (sebelum diskon) dan nominalnya keliru.
 const List<String> _kataKunciTotalKuat = [
   'grand total',
   'total bayar',
@@ -48,6 +54,7 @@ const List<String> _kataKunciTotalKuat = [
   'harus dibayar',
   'total tagihan',
   'total pembayaran',
+  'total belanja',
 ];
 
 /// Kata kunci prioritas lebih rendah (bisa juga judul item).
@@ -83,6 +90,9 @@ const List<String> _abaikanTotal = [
   'servis',
   'diskon',
   'discount',
+  // "Disc." adalah penyingkatan yang lazim di struk minimarket, dan baris
+  // diskon tidak pernah menjadi total yang dibayar.
+  'disc',
   'potongan',
   'voucher',
   'kupon',
@@ -525,7 +535,11 @@ bool _tidakSamaDenganTotal(String line) =>
     if (kuat) {
       terkuat = terkuat == null ? n : math.max(terkuat, n);
     } else {
-      terlemah = terlemah == null ? n : math.max(terlemah, n);
+      // Bukan angka terbesar, tapi baris "Total" TERAKHIR. Struk minimarket
+      // menumpuk beberapa baris total secara berurutan — Total Item, Total
+      // Disc., Total Belanja — dan yang terakhir justru yang benar. Mengambil
+      // max justru memilih Total Item yang nilainya sebelum diskon.
+      terlemah = n;
     }
   }
   if (terkuat != null) {
@@ -735,19 +749,27 @@ DateTime? _cariTanggal(List<String> lines) {
     if (d != null && sekarang == null && _wajar(d, now)) sekarang = d;
   }
 
-  // yyyy-mm-dd (ISO)
-  final iso = RegExp(r'(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})').firstMatch(teks);
-  if (iso != null) {
-    coba(_tanggal(
-      int.parse(iso.group(1)!),
-      int.parse(iso.group(2)!),
-      int.parse(iso.group(3)!),
-    ));
+  // yyyy-mm-dd (ISO). Bulan dan hari wajib dua digit: tanggal ISO yang sungguhan
+  // selalu diberi nol di depan. Tanpa syarat ini, nomor versi struk seperti
+  // "V.2026.7.2" ikut terbaca sebagai tanggal 2 Juli 2026 — dan itu yang
+  // terjadi pada struk minimarket.
+  final iso = RegExp(r'(?<![0-9A-Za-z])(\d{4})[/\-.](\d{2})[/\-.](\d{2})(?![0-9])');
+  for (final m in iso.allMatches(teks)) {
+    coba(
+      _tanggal(
+        int.parse(m.group(1)!),
+        int.parse(m.group(2)!),
+        int.parse(m.group(3)!),
+      ),
+    );
   }
 
-  // dd/mm/yyyy, dd-mm-yy, dd.mm.yyyy
-  final m = RegExp(r'(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})').firstMatch(teks);
-  if (m != null) {
+  // dd/mm/yyyy, dd-mm-yy, dd.mm.yyyy. Semua kecocokan dipindai, bukan hanya
+  // yang pertama: nomor NPWP ("01.336.238.9-054.000") menghasilkan pola mirip
+  // tanggal yang tidak valid, dan kalau hanya yang pertama dicoba, tanggal
+  // struk yang sebenarnya di baris berikutnya tidak pernah sampai dibaca.
+  final polaNumerik = RegExp(r'(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})');
+  for (final m in polaNumerik.allMatches(teks)) {
     final d = int.parse(m.group(1)!);
     final mo = int.parse(m.group(2)!);
     var y = int.parse(m.group(3)!);
@@ -755,10 +777,11 @@ DateTime? _cariTanggal(List<String> lines) {
     coba(_tanggal(y, mo, d));
     // Cadangan untuk format bulan di depan (mm/dd/yyyy).
     if (sekarang == null) coba(_tanggal(y, d, mo));
+    if (sekarang != null) break;
   }
 
   // Delapan digit tanpa pemisah: 20260512 atau 12052026. Baris yang memuat
-  // mata uang dilewati karena eight digit tanpa pemisah lebih mungkin nominal
+  // mata uang dilewati karena delapan digit tanpa pemisah lebih mungkin nominal
   // besar bila dicetak dekat "Rp"/"IDR".
   for (final line in lines) {
     final low = line.toLowerCase();

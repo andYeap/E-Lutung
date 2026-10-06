@@ -512,4 +512,86 @@ INGAT BELANJA *. INGAT .. BORNEO
     // Angka yang terpisah spasi bukan kode, jadi "7 ELEVEN" tetap nama.
     expect(parseReceipt('7 ELEVEN\nTOTAL 50.000').merchant, 'ELEVEN');
   });
+
+  // --- Struk minimarket dengan beberapa baris "Total" ---------------------
+  //
+  // Struk minimarket Indonesia mencantumkan tiga baris berlabel "Total":
+  // Total Item, Total Disc., dan Total Belanja. Hanya yang terakhir yang
+  // berisi nominal yang dibayar. Mengambil angka terbesar di antara mereka
+  // justru memilih Total Item, yang nilainya masih sebelum diskon.
+  //
+  // Ditemukan lewat struk Alfamart: nominal terbaca 48.100, bukan 43.300.
+  const strukMinimarket = '''
+Alfamart
+ALFAMART P.M.NOOR 2 / 081294659483
+ALFA TOWER LT.12, ALAM SUTERA,TANGERANG
+JL. P.M.NOOR RT.018 RW.007 BANJABARU
+NPWP : 01.336.238.9-054.000
+Bon IGC3-321-0510HV49
+Kasir : HASANN
+FRESTEA APL1.5L 1 17,900 17,900
+Disc. -2,000
+VIT AIR 1.5L 1 8,100 8,100
+Disc. -1,700
+3AYAM KNG 200G 1 6,100 6,100
+Disc. -1,100
+AJINMT MSG 90 1 5,500 5,500
+SASA BMBKARI40G 1 10,500 10,500
+Total Item 5 48,100
+Total Disc. 4,800
+Total Belanja 43,300
+QRIS CPM BNI 43,300
+Kembalian 0
+PPN DPP: 41,981 PPN: 4,618
+Tgl. 05-10-2026 21:21:41 V.2026.7.2
+MEMBER : AHMAD ***** ****
+STAR SPRITE MINT : 1
+A-POIN ANDA 15938
+254 poin Anda akan expired pada 30-Nov-2026
+Potensi Poin Jika Anda Member 193
+KRITIK&SARAN:1500959
+SMS/WA: 08110640888''';
+
+  test('Total Belanja menang, bukan Total Item', () {
+    expect(parseReceipt(strukMinimarket).nominal, 43300);
+  });
+
+  test('baris diskon tidak jadi calon total', () {
+    expect(parseReceipt('WARUNG A\nTotal Disc. 4,800\nTotal Belanja 43.300').nominal, 43300);
+    expect(parseReceipt('WARUNG A\nDisc. -2,000\nTotal 43.300').nominal, 43300);
+  });
+
+  test('kandidat total lemah memakai yang terakhir, bukan terbesar', () {
+    // Dua baris berlabel "Total" berurutan; yang akhir adalah yang benar.
+    expect(parseReceipt('TOKO A\nTotal 48.100\nTotal 43.300').nominal, 43300);
+  });
+
+  test('nomor versi struk bukan tanggal', () {
+    // "V.2026.7.2" pernah terbaca sebagai 2 Juli 2026 karena bentuknya mirip
+    // ISO. Tanggal ISOsungguhan selalu dua digit untuk bulan dan hari.
+    final d = parseReceipt('TOKO A\nTotal 50.000\nTgl. 05-10-2026 V.2026.7.2');
+    expect(d.tanggal, DateTime(2026, 10, 5));
+  });
+
+  test('NPWP tidak memblokir tanggal struk', () {
+    // NPWP menghasilkan pola mirip tanggal yang tidak valid dan letaknya jauh
+    // di atas tanggal transaksi. Kalau hanya kecocokan pertama yang dicoba,
+    // tanggal struknya sendiri tidak pernah terbaca.
+    final d = parseReceipt('TOKO A\nNPWP : 01.336.238.9-054.000\nTotal 50.000\nTgl. 05-10-2026');
+    expect(d.tanggal, DateTime(2026, 10, 5));
+  });
+
+  test('tanggal kedaluwarsa poin yang masih akan datang diabaikan', () {
+    // "30-Nov-2026" adalah tanggal kedaluwarsa poin, bukan tanggal belanja.
+    final d = parseReceipt(strukMinimarket);
+    expect(d.tanggal, isNot(DateTime(2026, 11, 30)));
+  });
+
+  test('struk minimarket terbaca utuh', () {
+    final d = parseReceipt(strukMinimarket);
+    expect(d.nominal, 43300);
+    expect(d.merchant, 'Alfamart');
+    expect(d.tanggal, DateTime(2026, 10, 5));
+    expect(d.yakin, isTrue);
+  });
 }
