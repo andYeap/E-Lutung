@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:elutung/app.dart';
 import 'package:elutung/data/database.dart';
+import 'package:elutung/data/repositories/account_repository.dart';
 import 'package:elutung/features/transactions/transaction_form_screen.dart';
 import 'package:elutung/providers.dart';
 import 'package:elutung/theme/theme_controller.dart';
@@ -18,6 +19,7 @@ void main() {
   setUpAll(() async => ensureIntlLocale());
 
   late AppDatabase db;
+  late AccountRepository accounts;
 
   setUp(() async {
     // Tandai sudah mencadangkan baru-baru ini, supaya pengingat cadangan tidak
@@ -26,8 +28,16 @@ void main() {
       'last_backup_at': DateTime.now().toIso8601String(),
     });
     db = AppDatabase(NativeDatabase.memory());
+    accounts = AccountRepository(db);
   });
+
   tearDown(() => db.close());
+
+  Future<String> buatAkun() => accounts.create(
+    institusiId: 'tunai',
+    milikSendiri: true,
+    saldoAwal: 0,
+  );
 
   Future<void> pompa(WidgetTester tester, [int kali = 12]) async {
     for (var i = 0; i < kali; i++) {
@@ -88,6 +98,15 @@ void main() {
     await pompa(tester, 3);
   }
 
+  /// Chip akun memakai nama institusinya ("Tunai" untuk institusi `tunai`).
+  Future<void> pilihAkun(WidgetTester tester, String nama) async {
+    final chip = find.widgetWithText(ChoiceChip, nama);
+    await tester.ensureVisible(chip);
+    await tester.pump();
+    await tester.tap(chip);
+    await pompa(tester, 3);
+  }
+
   /// Form pengeluaran lebih panjang dari viewport uji, jadi tombol simpan harus
   /// digulirkan dulu agar ketukannya benar-benar sampai.
   Future<void> ketukSimpan(WidgetTester tester) async {
@@ -102,6 +121,7 @@ void main() {
     tester,
   ) async {
     try {
+      final akunId = await buatAkun();
       await nyalakan(tester);
       expect(find.text('Data belum ada'), findsOneWidget);
 
@@ -114,6 +134,7 @@ void main() {
       expect(find.text('25.000'), findsOneWidget);
 
       await pilihKategori(tester, 'Makanan & Minuman');
+      await pilihAkun(tester, 'Tunai');
 
       await ketukSimpan(tester);
 
@@ -140,6 +161,7 @@ void main() {
       expect(tersimpan.single.nominal, 25000);
       expect(tersimpan.single.kategoriId, 'makanan');
       expect(tersimpan.single.tipe, TxType.pengeluaran);
+      expect(tersimpan.single.akunId, akunId);
     } finally {
       // Wajib: bongkar tree sebelum tearDown menutup basis data, kalau tidak
       // stream drift masih hidup dan penutupannya menggantung.
@@ -161,6 +183,28 @@ void main() {
 
       // Ditolak, tetap di form, dan tidak ada yang tersimpan.
       expect(find.text('Pilih kategori'), findsOneWidget);
+      expect(find.text('Catat Pengeluaran'), findsOneWidget);
+      expect(await db.select(db.transactions).get(), isEmpty);
+    } finally {
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+  });
+
+  testWidgets('validasi menahan simpan saat akun belum dipilih', (tester) async {
+    try {
+      // Akunnya tersedia, hanya belum dipilih: tanpa akun, uang tidak punya asal
+      // dan saldo akun tidak bisa dicocokkan dengan total bulanan.
+      await buatAkun();
+      await nyalakan(tester);
+      await bukaFormPengeluaran(tester);
+      await isiNominal(tester, '10000');
+      await pilihKategori(tester, 'Makanan & Minuman');
+
+      await ketukSimpan(tester);
+      await pompa(tester, 6);
+
+      expect(find.text('Pilih akun'), findsOneWidget);
       expect(find.text('Catat Pengeluaran'), findsOneWidget);
       expect(await db.select(db.transactions).get(), isEmpty);
     } finally {

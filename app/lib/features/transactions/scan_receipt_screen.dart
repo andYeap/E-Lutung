@@ -135,6 +135,10 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
       _snack('Pilih kategori');
       return;
     }
+    if (_akunId == null) {
+      _snack('Pilih akun');
+      return;
+    }
     setState(() => _menyimpan = true);
     try {
       String? strukPath;
@@ -318,8 +322,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
           _AkunChips(
             items: activeAccounts,
             selectedId: _akunId,
-            onSelected: (id) =>
-                setState(() => _akunId = _akunId == id ? null : id),
+            onSelected: (id) => setState(() => _akunId = id),
           ),
           const SizedBox(height: 16),
           Column(
@@ -437,7 +440,7 @@ class _AkunChips extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       const Text(
-        'Akun (opsional)',
+        'Akun',
         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
       ),
       const SizedBox(height: 6),

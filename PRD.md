@@ -221,7 +221,7 @@ Nama akun **direlasikan** ke `Institution` (tidak lagi menyimpan nama bebas). Fi
 | nominal | int | Jumlah uang yang berpindah |
 | tanggal | datetime | Kapan terjadi |
 | kategoriId | text? | FK → Category. Wajib untuk pemasukan/pengeluaran; opsional untuk transfer |
-| akunId | text? | FK → Account (akun sumber; untuk pemasukan: akun tujuan) |
+| akunId | text? | FK → Account (akun sumber; untuk pemasukan: akun tujuan). **Wajib diisi lewat form** pada pemasukan/pengeluaran; transfer memakai akunAsalId/akunTujuanId |
 | catatan | text? | Note bebas |
 | — khusus transfer — | | |
 | akunAsalId | text? | FK → Account ("dari mana") |
@@ -257,7 +257,7 @@ Aturan transaksi yang dibuat otomatis saat jatuh tempo. Hanya untuk **pemasukan*
 | tipe | enum | `pemasukan` \| `pengeluaran` |
 | nominal | int | Nominal tiap kemunculan |
 | kategoriId | text? | FK → Category (wajib diisi lewat form) |
-| akunId | text? | FK → Account (opsional, seperti transaksi biasa) |
+| akunId | text? | FK → Account (**wajib diisi lewat form**, sama seperti transaksi biasa) |
 | catatan | text? | Note bebas |
 | frekuensi | enum | `harian` \| `mingguan` \| `bulanan` \| `tahunan` |
 | mulai | date | Jatuh tempo pertama, sekaligus tanggal acuan untuk frekuensi bulanan dan tahunan |
@@ -313,19 +313,22 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 ## 9. Fitur & Kebutuhan Fungsional
 
 ### FR-1 Dashboard (Beranda aplikasi)
-- FR-1.1 Menampilkan kartu ringkas bulan berjalan: **total pemasukan**, **total pengeluaran**, **selisih/sisa**, dan **sisa anggaran** dengan warna Bagian 8.2.
+- FR-1.1 Menampilkan kartu ringkas bulan berjalan: **total pemasukan**, **total pengeluaran**, **selisih**, dan **sisa uang** (rincian tiap petak di FR-1.6).
 - FR-1.2 Menampilkan daftar 5 transaksi terbaru (ikon kategori, nama, nominal berwarna, waktu relatif).
 - FR-1.3 Tombol tambah transaksi (FAB) dengan pilihan cepat: Pemasukan / Pengeluaran / Transfer.
 - FR-1.4 Menampilkan donut persentase pengeluaran per kategori bulan berjalan.
 - FR-1.5 Pemilih bulan yang memengaruhi seluruh kartu & grafik di halaman ini.
+- FR-1.6 Kartu ringkas menampilkan empat petak: **pemasukan**, **pengeluaran**, **selisih** (arus bulan itu), dan **sisa** (uang yang tersisa sampai akhir bulan itu, dari saldo seluruh akun milik sendiri). Untuk bulan yang sudah lewat, angkanya adalah sisa saat bulan itu berakhir.
+- FR-1.7 Kartu anggaran hanya menampilkan anggaran yang **sudah terpakai**, diurutkan dari persentase terpakai tertinggi, maksimal tiga baris; sisanya diringkas jadi satu catatan. Anggaran yang belum tersentuh tidak ditampilkan, hanya jumlahnya yang disebut.
 
 ### FR-2 Catat Transaksi
-- FR-2.1 Form pengeluaran: nominal, kategori (wajib), akun, tanggal/waktu (default sekarang), catatan; validasi nominal > 0.
-- FR-2.2 Form pemasukan: nominal, kategori pemasukan (wajib), akun tujuan, tanggal, catatan.
+- FR-2.1 Form pengeluaran: nominal, kategori (wajib), **akun (wajib)**, tanggal/waktu (default sekarang), catatan; validasi nominal > 0.
+- FR-2.2 Form pemasukan: nominal, kategori pemasukan (wajib), **akun tujuan (wajib)**, tanggal, catatan.
 - FR-2.3 Form transfer: nominal, kategori (opsional), **dari akun** (wajib), **ke akun** (wajib), **biaya admin** (default 0), tanggal, note; menerapkan Bagian 8.1.
 - FR-2.4 Simpan cepat: setelah simpan, form reset dan siap untuk input berikutnya; opsi "Simpan & tambah lagi".
 - FR-2.5 Edit & hapus (soft delete) transaksi dari riwayat dan dari detail.
 - FR-2.6 Nominal diinput dengan format ribuan Indonesia (`Rp` dan pemisah titik).
+- FR-2.7 Akun wajib dipilih pada transaksi baru: uang tanpa akun tidak punya asal, dan membuat saldo akun tidak bisa dicocokkan dengan total bulanan. Transaksi lama yang belum berakun tetap dibiarkan apa adanya.
 
 ### FR-3 Riwayat Transaksi
 - FR-3.1 Daftar transaksi dikelompokkan per tanggal, urut terbaru.
@@ -353,6 +356,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-6.3 Tampilkan progress bar per kategori dan total, dengan warna Bagian 8.2 dan teks "sisa Rp… / Rp… (...%)".
 - FR-6.4 Peringatan non-blokir saat transaksi membuat anggaran terlewati (SnackBar/banner).
 - FR-6.5 Halaman anggaran bisa difilter per kategori (konsisten dengan FR-4.3).
+- FR-6.6 Dua kartu ringkasan di atas daftar, di luar saringan: **Sisa periode lalu** (uang yang dibawa masuk ke bulan ini, yaitu saldo akhir bulan lalu) dan **Total anggaran** (anggaran lingkup total bila ada; bila belum disetel, jumlah anggaran kategori yang berlaku). Keduanya bicara uang dan jatah keseluruhan, jadi tidak ikut berubah saat disaring.
 
 ### FR-7 Institusi & Akun (Dompet)
 - FR-7.1 CRUD **Institusi**: nama + tipe (enum `bank`/`ewallet`/`tunai`/`lain`); seed institusi umum (BCA, Mandiri, OVO, GoPay, Dana, Tunai, …).
@@ -389,7 +393,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-11.6 Tema yang dapat disesuaikan (Bagian 6c): pilih preset palet, lalu setel latar, permukaan, border/teks, bilah atas, dan aksen secara terpisah untuk mode terang dan gelap; warna semantik terkunci; ada peringatan kontras dan peringatan warna yang terlalu mirip makna pemasukan/pengeluaran; ada tombol kembali ke preset.
 
 ### FR-12 Transaksi Berulang (v1.1)
-- FR-12.1 CRUD aturan berulang: tipe (pemasukan/pengeluaran), nominal, kategori, akun (opsional), catatan, frekuensi (harian/mingguan/bulanan/tahunan), tanggal mulai, tanggal sampai (opsional), dan status aktif.
+- FR-12.1 CRUD aturan berulang: tipe (pemasukan/pengeluaran), nominal, kategori, **akun (wajib)**, catatan, frekuensi (harian/mingguan/bulanan/tahunan), tanggal mulai, tanggal sampai (opsional), dan status aktif.
 - FR-12.2 Transaksi dibuat **otomatis** saat jatuh tempo: dibangkitkan ketika aplikasi dibuka, dan tugas WorkManager yang sudah ada ikut menyusul periode yang terlewat. Tidak ada langkah persetujuan.
 - FR-12.3 Satu periode tidak pernah tercatat dua kali (idempotent), termasuk bila aplikasi dan WorkManager berjalan bersamaan.
 - FR-12.4 Transaksi hasil jadwal diberi penanda yang terlihat di riwayat, dan dapat diedit atau dihapus seperti transaksi biasa tanpa mengubah aturannya.

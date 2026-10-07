@@ -203,6 +203,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         _snack('Pilih kategori');
         return;
       }
+      // Akun wajib: uang tanpa akun tidak punya asal, dan membuat Sisa (saldo
+      // akun) tidak bisa dicocokkan dengan Selisih.
+      if (_akunId == null) {
+        _snack('Pilih akun');
+        return;
+      }
     }
 
     setState(() => _saving = true);
@@ -397,7 +403,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             ),
             const SizedBox(height: 16),
             _Chips(
-              label: 'Akun (opsional)',
+              label: 'Akun',
               items: activeAccounts,
               selectedId: _akunId,
               onSelected: (id) => setState(() => _akunId = id),

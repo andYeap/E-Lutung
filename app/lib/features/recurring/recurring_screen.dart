@@ -355,7 +355,7 @@ Future<void> _showForm(
                   ),
                 ),
               const SizedBox(height: 14),
-              const Text('Akun (opsional)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+              const Text('Akun', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
               const SizedBox(height: 6),
               if (activeAccounts.isEmpty)
                 Text(
@@ -371,9 +371,7 @@ Future<void> _showForm(
                     return _chip(
                       a.institusi.nama,
                       selected,
-                      () => setState(
-                        () => akunId = selected ? null : a.account.id,
-                      ),
+                      () => setState(() => akunId = a.account.id),
                     );
                   }).toList(),
                 ),
@@ -409,6 +407,14 @@ Future<void> _showForm(
               if (kategoriId == null) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
                   const SnackBar(content: Text('Pilih kategorinya')),
+                );
+                return;
+              }
+              // Akun wajib: transaksi yang dibangkitkan aturan ini harus punya
+              // asal, sama seperti transaksi yang dicatat manual.
+              if (akunId == null) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('Pilih akun')),
                 );
                 return;
               }
