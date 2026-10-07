@@ -223,6 +223,25 @@ class BudgetTotal {
   int get remaining => nominal - used;
 }
 
+/// Anggaran yang berlaku pada suatu bulan: aktif dan periodenya beririsan
+/// dengan bulan itu, jadi rentang seperti 5 Okt sampai 5 Nov tetap terhitung
+/// untuk bulan Oktober.
+///
+/// Satu tempat untuk Dashboard, widget beranda, dan kartu total supaya ketiganya
+/// tidak bisa menyimpang soal anggaran mana yang dianggap berlaku.
+List<Budget> anggaranBerlaku(List<Budget> budgets, DateTime bulan) {
+  final awal = DateTime(bulan.year, bulan.month, 1);
+  final akhir = DateTime(bulan.year, bulan.month + 1, 0, 23, 59, 59);
+  return budgets
+      .where(
+        (b) =>
+            b.aktif &&
+            !b.periodeMulai.isAfter(akhir) &&
+            !b.periodeSelesai.isBefore(awal),
+      )
+      .toList();
+}
+
 BudgetTotal totalAnggaranOf(
   List<Budget> budgets,
   List<Transaction> txs,

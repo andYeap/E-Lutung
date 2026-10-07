@@ -52,12 +52,9 @@ class WidgetSync {
       final accounts = await (db.select(db.accounts)
             ..where((t) => t.deletedAt.isNull()))
           .get();
-      // Urutkan seperti dashboard (`periodeMulai` terbaru dulu) supaya widget
-      // dan dashboard memilih anggaran aktif yang sama saat ada tumpang tindih.
       final budgets = await (db.select(db.budgets)
             ..where((t) => t.deletedAt.isNull()))
           .get();
-      budgets.sort((a, b) => b.periodeMulai.compareTo(a.periodeMulai));
       final categories = await db.select(db.categories).get();
 
       final ownIds = accounts
@@ -80,26 +77,24 @@ class WidgetSync {
         'Keluar: ${rupiah(totals.expense)}',
       );
 
+      // Aturan anggaran yang sama dengan Dashboard: beririsan dengan bulan
+      // berjalan, bukan hanya bila hari ini ada di dalam rentangnya. Kalau
+      // anggaran total belum disetel, dipakai jumlah anggaran kategori, sama
+      // seperti kartu Total anggaran di tab Anggaran.
+      final ringkas = totalAnggaranOf(
+        anggaranBerlaku(budgets, now),
+        txs,
+        ownIds,
+      );
+
       var budgetRemaining = 'Anggaran: belum disetel';
       var budgetPct = '';
       var budgetColorHex = '#3A3934';
-      for (final b in budgets) {
-        if (!b.aktif || b.lingkup != BudgetScope.total) continue;
-        final end = DateTime(
-          b.periodeSelesai.year,
-          b.periodeSelesai.month,
-          b.periodeSelesai.day,
-          23,
-          59,
-          59,
-        );
-        if (now.isBefore(b.periodeMulai) || now.isAfter(end)) continue;
-        final usage = budgetUsageOf(b, txs, ownIds);
-        final level = budgetLevel(usage.fraction);
-        budgetRemaining = 'Sisa ${rupiah(usage.remaining)}';
-        budgetPct = '${(usage.fraction * 100).toStringAsFixed(0)}%';
+      if (!ringkas.kosong) {
+        final level = budgetLevel(ringkas.fraction);
+        budgetRemaining = 'Sisa ${rupiahSigned(ringkas.remaining)}';
+        budgetPct = '${(ringkas.fraction * 100).toStringAsFixed(0)}%';
         budgetColorHex = _hex(budgetColor(level));
-        break;
       }
       await HomeWidget.saveWidgetData<String>(
         'widget_budget_remaining',

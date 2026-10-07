@@ -164,6 +164,60 @@ void main() {
     });
   });
 
+  group('anggaranBerlaku (aturan periode)', () {
+    test('rentang yang mulai tanggal 5 tetap berlaku untuk bulan itu', () {
+      // Kasus yang pernah dilaporkan: hari ini tanggal 4, anggaran mulai
+      // tanggal 5. Aturan lamanya menolak, aturan irisan menerima.
+      final b = budget(
+        lingkup: BudgetScope.total,
+        nominal: 1000000,
+        mulai: DateTime(2026, 10, 5),
+        selesai: DateTime(2026, 11, 5),
+      );
+
+      expect(anggaranBerlaku([b], DateTime(2026, 10, 4)), hasLength(1));
+      expect(anggaranBerlaku([b], DateTime(2026, 10, 31)), hasLength(1));
+      expect(anggaranBerlaku([b], DateTime(2026, 11, 30)), hasLength(1));
+    });
+
+    test('di luar irisan bulan itu tidak berlaku', () {
+      final b = budget(
+        lingkup: BudgetScope.total,
+        nominal: 1000000,
+        mulai: DateTime(2026, 10, 5),
+        selesai: DateTime(2026, 11, 5),
+      );
+
+      expect(anggaranBerlaku([b], DateTime(2026, 9, 30)), isEmpty);
+      expect(anggaranBerlaku([b], DateTime(2026, 12, 1)), isEmpty);
+    });
+
+    test('batas bulan dihitung inklusif di kedua ujungnya', () {
+      final b = budget(
+        lingkup: BudgetScope.total,
+        nominal: 1000000,
+        mulai: DateTime(2026, 10, 1),
+        selesai: DateTime(2026, 10, 31),
+      );
+
+      expect(anggaranBerlaku([b], DateTime(2026, 10, 1)), hasLength(1));
+      expect(anggaranBerlaku([b], DateTime(2026, 10, 31)), hasLength(1));
+      expect(anggaranBerlaku([b], DateTime(2026, 11, 1)), isEmpty);
+    });
+
+    test('anggaran nonaktif tidak pernah berlaku', () {
+      final b = budget(
+        lingkup: BudgetScope.total,
+        nominal: 1000000,
+        aktif: false,
+        mulai: DateTime(2026, 10, 1),
+        selesai: DateTime(2026, 10, 31),
+      );
+
+      expect(anggaranBerlaku([b], DateTime(2026, 10, 7)), isEmpty);
+    });
+  });
+
   group('totalAnggaranOf (Total Anggaran)', () {
     // Transaksi di grup ini tidak memakai akun, jadi daftar akun sendiri kosong.
     const own = <String>{};

@@ -37,7 +37,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     final catName = {for (final c in categories) c.id: c.nama};
     final catById = {for (final c in categories) c.id: c};
-    final accName = {for (final a in accounts) a.account.id: a.institusi.nama};
+    final accName = akunLabels(accounts);
 
     return Scaffold(
       body: txsAsync.when(
@@ -225,19 +225,8 @@ class _BudgetCard extends ConsumerWidget {
           in ref.watch(allCategoriesProvider).value ?? const <Category>[])
         c.id: c.nama,
     };
-    final monthStart = DateTime(month.year, month.month, 1);
-    final monthEnd = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
-
-    // Anggaran yang berlaku bulan ini: aktif dan periodenya beririsan, jadi
-    // rentang seperti 5 Okt - 5 Nov tetap terhitung untuk bulan Oktober.
-    final berlaku = budgets
-        .where(
-          (b) =>
-              b.aktif &&
-              !b.periodeMulai.isAfter(monthEnd) &&
-              !b.periodeSelesai.isBefore(monthStart),
-        )
-        .toList();
+    // Aturan periode yang sama dengan widget beranda dan kartu total.
+    final berlaku = anggaranBerlaku(budgets, month);
 
     if (berlaku.isEmpty) {
       // Tanpa membedakan dua sebab ini, kartu mengaku tidak ada anggaran
