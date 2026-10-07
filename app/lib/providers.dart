@@ -8,11 +8,13 @@ import 'data/repositories/budget_repository.dart';
 import 'data/repositories/category_repository.dart';
 import 'data/repositories/institution_repository.dart';
 import 'data/repositories/recurring_repository.dart';
+import 'data/repositories/debt_repository.dart';
 import 'data/repositories/transaction_repository.dart';
 
 export 'data/backup.dart' show BackupService;
 export 'data/repositories/account_repository.dart'
     show AccountWithInstitution, akunLabel, akunLabels;
+export 'data/repositories/debt_repository.dart' show DebtRepository, DebtWithPaid;
 
 /// Database aplikasi (satu instance, ditutup saat provider dibuang).
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -130,6 +132,16 @@ final monthlySeriesProvider = StreamProvider.family<
     anchorMonth: key.month,
     kategoriId: key.kategoriId,
   ),
+);
+
+/// Catatan utang/piutang beserta jumlah terbayarnya (Bagian 7.7).
+final debtsProvider = StreamProvider<List<DebtWithPaid>>(
+  (ref) => ref.watch(debtRepositoryProvider).watchAll(),
+);
+
+/// Akses data catatan utang/piutang.
+final debtRepositoryProvider = Provider<DebtRepository>(
+  (ref) => DebtRepository(ref.watch(databaseProvider)),
 );
 
 /// Id akun milik sendiri (untuk aturan transfer Bagian 8.1).

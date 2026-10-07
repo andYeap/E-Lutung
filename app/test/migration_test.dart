@@ -60,6 +60,8 @@ void main() {
       'ALTER TABLE transactions DROP COLUMN struk_path',
     );
     await seed.customStatement('ALTER TABLE accounts DROP COLUMN nama');
+    await seed.customStatement('ALTER TABLE transactions DROP COLUMN debt_id');
+    await seed.customStatement('DROP TABLE IF EXISTS debts');
     await seed.customStatement('PRAGMA user_version = 1');
     await seed.close();
 
@@ -82,6 +84,9 @@ void main() {
     expect(await hasColumn(db, 'transactions', 'struk_path'), isTrue);
     // Langkah v5: nama akun yang bisa diisi pengguna.
     expect(await hasColumn(db, 'accounts', 'nama'), isTrue);
+    // Langkah v6: catatan utang/piutang dan kolom penghubungnya.
+    expect(await hasEntity(db, 'debts'), isTrue);
+    expect(await hasColumn(db, 'transactions', 'debt_id'), isTrue);
 
     await db.close();
   });
@@ -104,6 +109,8 @@ void main() {
       'ALTER TABLE transactions DROP COLUMN struk_path',
     );
     await seed.customStatement('ALTER TABLE accounts DROP COLUMN nama');
+    await seed.customStatement('ALTER TABLE transactions DROP COLUMN debt_id');
+    await seed.customStatement('DROP TABLE IF EXISTS debts');
     await seed.customStatement('PRAGMA user_version = 2');
     await seed.close();
 
@@ -113,6 +120,7 @@ void main() {
     expect(await hasEntity(db, 'recurring_rules'), isTrue);
     expect(await hasEntity(db, 'idx_transactions_recurring_tanggal'), isTrue);
     expect(await hasColumn(db, 'accounts', 'nama'), isTrue);
+    expect(await hasEntity(db, 'debts'), isTrue);
 
     // Transaksi lama tetap ada, penandanya masih kosong.
     final rows = await db.select(db.transactions).get();

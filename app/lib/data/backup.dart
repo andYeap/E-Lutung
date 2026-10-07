@@ -73,6 +73,7 @@ class BackupService {
     'accounts': (await _db.select(_db.accounts).get()).map((e) => e.toJson()).toList(),
     'transactions': (await _db.select(_db.transactions).get()).map((e) => e.toJson()).toList(),
     'budgets': (await _db.select(_db.budgets).get()).map((e) => e.toJson()).toList(),
+    'debts': (await _db.select(_db.debts).get()).map((e) => e.toJson()).toList(),
     'recurringRules': (await _db.select(_db.recurringRules).get()).map((e) => e.toJson()).toList(),
   };
 
@@ -208,6 +209,7 @@ class BackupService {
         await _db.delete(_db.transactions).go();
         await _db.delete(_db.budgets).go();
         await _db.delete(_db.recurringRules).go();
+        await _db.delete(_db.debts).go();
         await _db.delete(_db.accounts).go();
         await _db.delete(_db.categories).go();
         await _db.delete(_db.institutions).go();
@@ -226,6 +228,12 @@ class BackupService {
       }
       for (final m in rows('recurringRules')) {
         await _db.into(_db.recurringRules).insertOnConflictUpdate(RecurringRule.fromJson(m));
+        count++;
+      }
+      // Catatan utang lebih dulu daripada transaksi: transaksi pelunasan
+      // menunjuk ke catatannya (FK).
+      for (final m in rows('debts')) {
+        await _db.into(_db.debts).insertOnConflictUpdate(Debt.fromJson(m));
         count++;
       }
       for (final m in rows('transactions')) {
@@ -266,7 +274,10 @@ class BackupService {
 
 /// Nomor versi format cadangan yang ditulis sekarang. Naikkan bila bentuk
 /// cadangannya berubah.
-const int kBackupVersion = 1;
+///
+/// v2 menambahkan daftar catatan utang/piutang; aplikasi versi lama menolaknya
+/// supaya catatan itu tidak hilang diam-diam saat dipulihkan.
+const int kBackupVersion = 2;
 
 /// Apakah cadangan ini bisa dibaca versi aplikasi sekarang.
 ///

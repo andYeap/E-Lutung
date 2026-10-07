@@ -311,6 +311,7 @@ class TransactionRepository {
     String? akunTujuanId,
     int biayaAdmin = 0,
     String? strukPath,
+    String? debtId,
   }) async {
     final id = _uuid.v4();
     await _db.into(_db.transactions).insert(
@@ -326,6 +327,7 @@ class TransactionRepository {
         akunTujuanId: Value(akunTujuanId),
         biayaAdmin: Value(biayaAdmin),
         strukPath: Value(strukPath),
+        debtId: Value(debtId),
       ),
     );
     return id;
@@ -343,6 +345,7 @@ class TransactionRepository {
     String? akunTujuanId,
     int biayaAdmin = 0,
     String? strukPath,
+    String? debtId,
   }) {
     return (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
       TransactionsCompanion(
@@ -358,6 +361,9 @@ class TransactionRepository {
         // Diabaikan bila tidak diteruskan, supaya edit biasa tidak menghapus
         // tautan foto struk.
         strukPath: strukPath == null ? const Value.absent() : Value(strukPath),
+        // Sama seperti foto: tautan ke catatan utang tidak dilepas oleh edit
+        // biasa, karena tidak ada antarmuka untuk memasangnya kembali.
+        debtId: debtId == null ? const Value.absent() : Value(debtId),
         updatedAt: Value(DateTime.now()),
       ),
     );

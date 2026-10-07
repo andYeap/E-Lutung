@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:elutung/data/backup.dart';
 import 'package:elutung/data/database.dart';
+import 'package:elutung/data/repositories/debt_repository.dart';
 import 'package:elutung/data/repositories/recurring_repository.dart';
 import 'package:elutung/data/repositories/transaction_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,26 @@ void main() {
     'categories': <Object>[],
     'transactions': <Object>[],
   };
+
+  test('catatan utang ikut terekspor dan terpulihkan', () async {
+    await DebtRepository(db).create(
+      arah: DebtDirection.piutang,
+      pihak: 'Siti',
+      nominal: 150000,
+      tenggat: DateTime(2026, 5, 1),
+    );
+
+    final dump = await backup.dump();
+    await db.delete(db.debts).go();
+    expect(await db.select(db.debts).get(), isEmpty);
+
+    await backup.restore(dump, replace: false);
+
+    final rows = await db.select(db.debts).get();
+    expect(rows.single.pihak, 'Siti');
+    expect(rows.single.arah, DebtDirection.piutang);
+    expect(rows.single.nominal, 150000);
+  });
 
   group('versi cadangan', () {
     test('dump menuliskan versi yang berlaku sekarang', () async {

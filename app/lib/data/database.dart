@@ -15,6 +15,12 @@ enum BudgetScope { total, kategori }
 /// Frekuensi aturan transaksi berulang (Bagian 7.6 PRD, v1.1).
 enum Frequency { harian, mingguan, bulanan, tahunan }
 
+/// Arah catatan utang (Bagian 7.7 PRD, v1.4).
+///
+/// `utang`  — kita yang berutang, pelunasannya jadi pengeluaran.
+/// `piutang` — orang lain yang berutang, pelunasannya jadi pemasukan.
+enum DebtDirection { utang, piutang }
+
 /// Master institusi — bank, e-wallet, tunai, lain-lain (Bagian 7.1).
 class Institutions extends Table {
   TextColumn get id => text()();
@@ -48,7 +54,30 @@ class Categories extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Akun/dompet; nama diambil dari institusi (Bagian 7.3), tanpa label.
+/// Catatan utang/piutang (Bagian 7.7 PRD, v1.4).
+///
+/// Hanya pokok pinjaman yang disimpan di sini. Pelunasan **tidak** disimpan
+/// sebagai kolom: ia dibaca dari transaksi yang ditautkan (`transactions.debtId`),
+/// supaya uangnya cuma punya satu catatan dan ikut terhitung di saldo.
+class Debts extends Table {
+  TextColumn get id => text()();
+  TextColumn get arah => textEnum<DebtDirection>()();
+
+  /// Nama orang atau pihak yang berurusan.
+  TextColumn get pihak => text()();
+  IntColumn get nominal => integer()();
+  DateTimeColumn get tenggat => dateTime().nullable()();
+  TextColumn get catatan => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Akun/dompet; nama diambil dari institusi (Bagian 7.3), atau nama bebas yang
+/// diisi pengguna bila ada.
 class Accounts extends Table {
   TextColumn get id => text()();
 
@@ -91,6 +120,10 @@ class Transactions extends Table {
 
   /// Path foto struk (opsional) bila pengguna memilih menyimpannya saat scan.
   TextColumn get strukPath => text().nullable()();
+
+  /// Catatan utang yang dilunasi transaksi ini (opsional). Jumlah terbayar
+  /// sebuah catatan dihitung dari transaksi yang menunjuk ke sana.
+  TextColumn get debtId => text().nullable().references(Debts, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -159,7 +192,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _open());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -185,6 +218,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 5) {
         // v5: nama akun yang bisa diisi pengguna (opsional).
         await m.addColumn(accounts, accounts.nama);
+      }
+      if (from < 6) {
+        // v6: catatan utang/piutang, lalu kolom penghubung di transaksi.
+        await m.createTable(debts);
+        await m.addColumn(transactions, transactions.debtId);
       }
       await _createIndexes();
     },

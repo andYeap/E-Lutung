@@ -22,6 +22,7 @@ import 'design_style_screen.dart';
 import 'institutions_screen.dart';
 import 'recap/recap_screen.dart';
 import 'recurring/recurring_screen.dart';
+import 'debts/debt_screen.dart';
 import 'receipts/receipts_screen.dart';
 import 'repair_screen.dart';
 import 'theme/theme_screen.dart';
@@ -404,6 +405,23 @@ class SettingsScreen extends ConsumerWidget {
                     : '$jml catatan lama belum punya akun',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const RepairScreen()),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          Consumer(
+            builder: (context, ref, _) {
+              final daftar = ref.watch(debtsProvider).value ?? const [];
+              final belum = daftar.where((d) => !d.lunas).length;
+              return _SettingsTile(
+                icon: Icons.handshake_outlined,
+                title: 'Utang & piutang',
+                subtitle: belum == 0
+                    ? 'Catatan pinjaman dan pelunasannya'
+                    : '$belum catatan belum lunas',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const DebtsScreen()),
                 ),
               );
             },

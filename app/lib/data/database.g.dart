@@ -2299,6 +2299,567 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
   }
 }
 
+class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DebtsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DebtDirection, String> arah =
+      GeneratedColumn<String>(
+        'arah',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<DebtDirection>($DebtsTable.$converterarah);
+  static const VerificationMeta _pihakMeta = const VerificationMeta('pihak');
+  @override
+  late final GeneratedColumn<String> pihak = GeneratedColumn<String>(
+    'pihak',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nominalMeta = const VerificationMeta(
+    'nominal',
+  );
+  @override
+  late final GeneratedColumn<int> nominal = GeneratedColumn<int>(
+    'nominal',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenggatMeta = const VerificationMeta(
+    'tenggat',
+  );
+  @override
+  late final GeneratedColumn<DateTime> tenggat = GeneratedColumn<DateTime>(
+    'tenggat',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _catatanMeta = const VerificationMeta(
+    'catatan',
+  );
+  @override
+  late final GeneratedColumn<String> catatan = GeneratedColumn<String>(
+    'catatan',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    arah,
+    pihak,
+    nominal,
+    tenggat,
+    catatan,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'debts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Debt> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('pihak')) {
+      context.handle(
+        _pihakMeta,
+        pihak.isAcceptableOrUnknown(data['pihak']!, _pihakMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pihakMeta);
+    }
+    if (data.containsKey('nominal')) {
+      context.handle(
+        _nominalMeta,
+        nominal.isAcceptableOrUnknown(data['nominal']!, _nominalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nominalMeta);
+    }
+    if (data.containsKey('tenggat')) {
+      context.handle(
+        _tenggatMeta,
+        tenggat.isAcceptableOrUnknown(data['tenggat']!, _tenggatMeta),
+      );
+    }
+    if (data.containsKey('catatan')) {
+      context.handle(
+        _catatanMeta,
+        catatan.isAcceptableOrUnknown(data['catatan']!, _catatanMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Debt map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Debt(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      arah: $DebtsTable.$converterarah.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}arah'],
+        )!,
+      ),
+      pihak: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pihak'],
+      )!,
+      nominal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}nominal'],
+      )!,
+      tenggat: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}tenggat'],
+      ),
+      catatan: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}catatan'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $DebtsTable createAlias(String alias) {
+    return $DebtsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<DebtDirection, String, String> $converterarah =
+      const EnumNameConverter<DebtDirection>(DebtDirection.values);
+}
+
+class Debt extends DataClass implements Insertable<Debt> {
+  final String id;
+  final DebtDirection arah;
+
+  /// Nama orang atau pihak yang berurusan.
+  final String pihak;
+  final int nominal;
+  final DateTime? tenggat;
+  final String? catatan;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const Debt({
+    required this.id,
+    required this.arah,
+    required this.pihak,
+    required this.nominal,
+    this.tenggat,
+    this.catatan,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    {
+      map['arah'] = Variable<String>($DebtsTable.$converterarah.toSql(arah));
+    }
+    map['pihak'] = Variable<String>(pihak);
+    map['nominal'] = Variable<int>(nominal);
+    if (!nullToAbsent || tenggat != null) {
+      map['tenggat'] = Variable<DateTime>(tenggat);
+    }
+    if (!nullToAbsent || catatan != null) {
+      map['catatan'] = Variable<String>(catatan);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  DebtsCompanion toCompanion(bool nullToAbsent) {
+    return DebtsCompanion(
+      id: Value(id),
+      arah: Value(arah),
+      pihak: Value(pihak),
+      nominal: Value(nominal),
+      tenggat: tenggat == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tenggat),
+      catatan: catatan == null && nullToAbsent
+          ? const Value.absent()
+          : Value(catatan),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory Debt.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Debt(
+      id: serializer.fromJson<String>(json['id']),
+      arah: $DebtsTable.$converterarah.fromJson(
+        serializer.fromJson<String>(json['arah']),
+      ),
+      pihak: serializer.fromJson<String>(json['pihak']),
+      nominal: serializer.fromJson<int>(json['nominal']),
+      tenggat: serializer.fromJson<DateTime?>(json['tenggat']),
+      catatan: serializer.fromJson<String?>(json['catatan']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'arah': serializer.toJson<String>(
+        $DebtsTable.$converterarah.toJson(arah),
+      ),
+      'pihak': serializer.toJson<String>(pihak),
+      'nominal': serializer.toJson<int>(nominal),
+      'tenggat': serializer.toJson<DateTime?>(tenggat),
+      'catatan': serializer.toJson<String?>(catatan),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  Debt copyWith({
+    String? id,
+    DebtDirection? arah,
+    String? pihak,
+    int? nominal,
+    Value<DateTime?> tenggat = const Value.absent(),
+    Value<String?> catatan = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => Debt(
+    id: id ?? this.id,
+    arah: arah ?? this.arah,
+    pihak: pihak ?? this.pihak,
+    nominal: nominal ?? this.nominal,
+    tenggat: tenggat.present ? tenggat.value : this.tenggat,
+    catatan: catatan.present ? catatan.value : this.catatan,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  Debt copyWithCompanion(DebtsCompanion data) {
+    return Debt(
+      id: data.id.present ? data.id.value : this.id,
+      arah: data.arah.present ? data.arah.value : this.arah,
+      pihak: data.pihak.present ? data.pihak.value : this.pihak,
+      nominal: data.nominal.present ? data.nominal.value : this.nominal,
+      tenggat: data.tenggat.present ? data.tenggat.value : this.tenggat,
+      catatan: data.catatan.present ? data.catatan.value : this.catatan,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Debt(')
+          ..write('id: $id, ')
+          ..write('arah: $arah, ')
+          ..write('pihak: $pihak, ')
+          ..write('nominal: $nominal, ')
+          ..write('tenggat: $tenggat, ')
+          ..write('catatan: $catatan, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    arah,
+    pihak,
+    nominal,
+    tenggat,
+    catatan,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Debt &&
+          other.id == this.id &&
+          other.arah == this.arah &&
+          other.pihak == this.pihak &&
+          other.nominal == this.nominal &&
+          other.tenggat == this.tenggat &&
+          other.catatan == this.catatan &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class DebtsCompanion extends UpdateCompanion<Debt> {
+  final Value<String> id;
+  final Value<DebtDirection> arah;
+  final Value<String> pihak;
+  final Value<int> nominal;
+  final Value<DateTime?> tenggat;
+  final Value<String?> catatan;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const DebtsCompanion({
+    this.id = const Value.absent(),
+    this.arah = const Value.absent(),
+    this.pihak = const Value.absent(),
+    this.nominal = const Value.absent(),
+    this.tenggat = const Value.absent(),
+    this.catatan = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DebtsCompanion.insert({
+    required String id,
+    required DebtDirection arah,
+    required String pihak,
+    required int nominal,
+    this.tenggat = const Value.absent(),
+    this.catatan = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       arah = Value(arah),
+       pihak = Value(pihak),
+       nominal = Value(nominal);
+  static Insertable<Debt> custom({
+    Expression<String>? id,
+    Expression<String>? arah,
+    Expression<String>? pihak,
+    Expression<int>? nominal,
+    Expression<DateTime>? tenggat,
+    Expression<String>? catatan,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (arah != null) 'arah': arah,
+      if (pihak != null) 'pihak': pihak,
+      if (nominal != null) 'nominal': nominal,
+      if (tenggat != null) 'tenggat': tenggat,
+      if (catatan != null) 'catatan': catatan,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DebtsCompanion copyWith({
+    Value<String>? id,
+    Value<DebtDirection>? arah,
+    Value<String>? pihak,
+    Value<int>? nominal,
+    Value<DateTime?>? tenggat,
+    Value<String?>? catatan,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return DebtsCompanion(
+      id: id ?? this.id,
+      arah: arah ?? this.arah,
+      pihak: pihak ?? this.pihak,
+      nominal: nominal ?? this.nominal,
+      tenggat: tenggat ?? this.tenggat,
+      catatan: catatan ?? this.catatan,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (arah.present) {
+      map['arah'] = Variable<String>(
+        $DebtsTable.$converterarah.toSql(arah.value),
+      );
+    }
+    if (pihak.present) {
+      map['pihak'] = Variable<String>(pihak.value);
+    }
+    if (nominal.present) {
+      map['nominal'] = Variable<int>(nominal.value);
+    }
+    if (tenggat.present) {
+      map['tenggat'] = Variable<DateTime>(tenggat.value);
+    }
+    if (catatan.present) {
+      map['catatan'] = Variable<String>(catatan.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DebtsCompanion(')
+          ..write('id: $id, ')
+          ..write('arah: $arah, ')
+          ..write('pihak: $pihak, ')
+          ..write('nominal: $nominal, ')
+          ..write('tenggat: $tenggat, ')
+          ..write('catatan: $catatan, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TransactionsTable extends Transactions
     with TableInfo<$TransactionsTable, Transaction> {
   @override
@@ -2447,6 +3008,18 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _debtIdMeta = const VerificationMeta('debtId');
+  @override
+  late final GeneratedColumn<String> debtId = GeneratedColumn<String>(
+    'debt_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES debts (id)',
+    ),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2496,6 +3069,7 @@ class $TransactionsTable extends Transactions
     biayaAdmin,
     recurringRuleId,
     strukPath,
+    debtId,
     createdAt,
     updatedAt,
     deletedAt,
@@ -2590,6 +3164,12 @@ class $TransactionsTable extends Transactions
         strukPath.isAcceptableOrUnknown(data['struk_path']!, _strukPathMeta),
       );
     }
+    if (data.containsKey('debt_id')) {
+      context.handle(
+        _debtIdMeta,
+        debtId.isAcceptableOrUnknown(data['debt_id']!, _debtIdMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2667,6 +3247,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.string,
         data['${effectivePrefix}struk_path'],
       ),
+      debtId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}debt_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2708,6 +3292,10 @@ class Transaction extends DataClass implements Insertable<Transaction> {
 
   /// Path foto struk (opsional) bila pengguna memilih menyimpannya saat scan.
   final String? strukPath;
+
+  /// Catatan utang yang dilunasi transaksi ini (opsional). Jumlah terbayar
+  /// sebuah catatan dihitung dari transaksi yang menunjuk ke sana.
+  final String? debtId;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -2724,6 +3312,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     required this.biayaAdmin,
     this.recurringRuleId,
     this.strukPath,
+    this.debtId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -2761,6 +3350,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     if (!nullToAbsent || strukPath != null) {
       map['struk_path'] = Variable<String>(strukPath);
     }
+    if (!nullToAbsent || debtId != null) {
+      map['debt_id'] = Variable<String>(debtId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || deletedAt != null) {
@@ -2797,6 +3389,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       strukPath: strukPath == null && nullToAbsent
           ? const Value.absent()
           : Value(strukPath),
+      debtId: debtId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(debtId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
@@ -2825,6 +3420,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       biayaAdmin: serializer.fromJson<int>(json['biayaAdmin']),
       recurringRuleId: serializer.fromJson<String?>(json['recurringRuleId']),
       strukPath: serializer.fromJson<String?>(json['strukPath']),
+      debtId: serializer.fromJson<String?>(json['debtId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -2848,6 +3444,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'biayaAdmin': serializer.toJson<int>(biayaAdmin),
       'recurringRuleId': serializer.toJson<String?>(recurringRuleId),
       'strukPath': serializer.toJson<String?>(strukPath),
+      'debtId': serializer.toJson<String?>(debtId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -2867,6 +3464,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     int? biayaAdmin,
     Value<String?> recurringRuleId = const Value.absent(),
     Value<String?> strukPath = const Value.absent(),
+    Value<String?> debtId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -2885,6 +3483,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
         ? recurringRuleId.value
         : this.recurringRuleId,
     strukPath: strukPath.present ? strukPath.value : this.strukPath,
+    debtId: debtId.present ? debtId.value : this.debtId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -2913,6 +3512,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ? data.recurringRuleId.value
           : this.recurringRuleId,
       strukPath: data.strukPath.present ? data.strukPath.value : this.strukPath,
+      debtId: data.debtId.present ? data.debtId.value : this.debtId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -2934,6 +3534,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('biayaAdmin: $biayaAdmin, ')
           ..write('recurringRuleId: $recurringRuleId, ')
           ..write('strukPath: $strukPath, ')
+          ..write('debtId: $debtId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt')
@@ -2955,6 +3556,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     biayaAdmin,
     recurringRuleId,
     strukPath,
+    debtId,
     createdAt,
     updatedAt,
     deletedAt,
@@ -2975,6 +3577,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.biayaAdmin == this.biayaAdmin &&
           other.recurringRuleId == this.recurringRuleId &&
           other.strukPath == this.strukPath &&
+          other.debtId == this.debtId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt);
@@ -2993,6 +3596,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<int> biayaAdmin;
   final Value<String?> recurringRuleId;
   final Value<String?> strukPath;
+  final Value<String?> debtId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -3010,6 +3614,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.biayaAdmin = const Value.absent(),
     this.recurringRuleId = const Value.absent(),
     this.strukPath = const Value.absent(),
+    this.debtId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -3028,6 +3633,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.biayaAdmin = const Value.absent(),
     this.recurringRuleId = const Value.absent(),
     this.strukPath = const Value.absent(),
+    this.debtId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -3049,6 +3655,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<int>? biayaAdmin,
     Expression<String>? recurringRuleId,
     Expression<String>? strukPath,
+    Expression<String>? debtId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -3067,6 +3674,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (biayaAdmin != null) 'biaya_admin': biayaAdmin,
       if (recurringRuleId != null) 'recurring_rule_id': recurringRuleId,
       if (strukPath != null) 'struk_path': strukPath,
+      if (debtId != null) 'debt_id': debtId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -3087,6 +3695,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<int>? biayaAdmin,
     Value<String?>? recurringRuleId,
     Value<String?>? strukPath,
+    Value<String?>? debtId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -3105,6 +3714,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       biayaAdmin: biayaAdmin ?? this.biayaAdmin,
       recurringRuleId: recurringRuleId ?? this.recurringRuleId,
       strukPath: strukPath ?? this.strukPath,
+      debtId: debtId ?? this.debtId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -3153,6 +3763,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (strukPath.present) {
       map['struk_path'] = Variable<String>(strukPath.value);
     }
+    if (debtId.present) {
+      map['debt_id'] = Variable<String>(debtId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -3183,6 +3796,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('biayaAdmin: $biayaAdmin, ')
           ..write('recurringRuleId: $recurringRuleId, ')
           ..write('strukPath: $strukPath, ')
+          ..write('debtId: $debtId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -3824,6 +4438,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CategoriesTable categories = $CategoriesTable(this);
   late final $AccountsTable accounts = $AccountsTable(this);
   late final $RecurringRulesTable recurringRules = $RecurringRulesTable(this);
+  late final $DebtsTable debts = $DebtsTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $BudgetsTable budgets = $BudgetsTable(this);
   late final Index idxTransactionsTipeTanggalKategori = Index(
@@ -3839,6 +4454,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     categories,
     accounts,
     recurringRules,
+    debts,
     transactions,
     budgets,
     idxTransactionsTipeTanggalKategori,
@@ -5888,6 +6504,376 @@ typedef $$RecurringRulesTableProcessedTableManager =
         bool transactionsRefs,
       })
     >;
+typedef $$DebtsTableCreateCompanionBuilder = DebtsCompanion Function({
+  required String id,
+  required DebtDirection arah,
+  required String pihak,
+  required int nominal,
+  Value<DateTime?> tenggat,
+  Value<String?> catatan,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+typedef $$DebtsTableUpdateCompanionBuilder = DebtsCompanion Function({
+  Value<String> id,
+  Value<DebtDirection> arah,
+  Value<String> pihak,
+  Value<int> nominal,
+  Value<DateTime?> tenggat,
+  Value<String?> catatan,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+
+final class $$DebtsTableReferences
+    extends BaseReferences<_$AppDatabase, $DebtsTable, Debt> {
+  $$DebtsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$TransactionsTable, List<Transaction>>
+  _transactionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.transactions,
+    aliasName: 'debts__id__transactions__debt_id',
+  );
+
+  $$TransactionsTableProcessedTableManager get transactionsRefs {
+    final manager = $$TransactionsTableTableManager(
+      $_db,
+      $_db.transactions,
+    ).filter((f) => f.debtId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_transactionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$DebtsTableFilterComposer extends Composer<_$AppDatabase, $DebtsTable> {
+  $$DebtsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DebtDirection, DebtDirection, String>
+  get arah => $composableBuilder(
+    column: $table.arah,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get pihak => $composableBuilder(
+    column: $table.pihak,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get nominal => $composableBuilder(
+    column: $table.nominal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get tenggat => $composableBuilder(
+    column: $table.tenggat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get catatan => $composableBuilder(
+    column: $table.catatan,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> transactionsRefs(
+    Expression<bool> Function($$TransactionsTableFilterComposer f) f,
+  ) {
+    final $$TransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.debtId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$DebtsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DebtsTable> {
+  $$DebtsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get arah => $composableBuilder(
+    column: $table.arah,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pihak => $composableBuilder(
+    column: $table.pihak,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get nominal => $composableBuilder(
+    column: $table.nominal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get tenggat => $composableBuilder(
+    column: $table.tenggat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get catatan => $composableBuilder(
+    column: $table.catatan,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DebtsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DebtsTable> {
+  $$DebtsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<DebtDirection, String> get arah =>
+      $composableBuilder(column: $table.arah, builder: (column) => column);
+
+  GeneratedColumn<String> get pihak =>
+      $composableBuilder(column: $table.pihak, builder: (column) => column);
+
+  GeneratedColumn<int> get nominal =>
+      $composableBuilder(column: $table.nominal, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get tenggat =>
+      $composableBuilder(column: $table.tenggat, builder: (column) => column);
+
+  GeneratedColumn<String> get catatan =>
+      $composableBuilder(column: $table.catatan, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  Expression<T> transactionsRefs<T extends Object>(
+    Expression<T> Function($$TransactionsTableAnnotationComposer a) f,
+  ) {
+    final $$TransactionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.debtId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$DebtsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DebtsTable,
+          Debt,
+          $$DebtsTableFilterComposer,
+          $$DebtsTableOrderingComposer,
+          $$DebtsTableAnnotationComposer,
+          $$DebtsTableCreateCompanionBuilder,
+          $$DebtsTableUpdateCompanionBuilder,
+          (Debt, $$DebtsTableReferences),
+          Debt,
+          PrefetchHooks Function({bool transactionsRefs})
+        > {
+  $$DebtsTableTableManager(_$AppDatabase db, $DebtsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DebtsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DebtsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DebtsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DebtDirection> arah = const Value.absent(),
+                Value<String> pihak = const Value.absent(),
+                Value<int> nominal = const Value.absent(),
+                Value<DateTime?> tenggat = const Value.absent(),
+                Value<String?> catatan = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DebtsCompanion(
+                id: id,
+                arah: arah,
+                pihak: pihak,
+                nominal: nominal,
+                tenggat: tenggat,
+                catatan: catatan,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required DebtDirection arah,
+                required String pihak,
+                required int nominal,
+                Value<DateTime?> tenggat = const Value.absent(),
+                Value<String?> catatan = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DebtsCompanion.insert(
+                id: id,
+                arah: arah,
+                pihak: pihak,
+                nominal: nominal,
+                tenggat: tenggat,
+                catatan: catatan,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DebtsTable, Debt>(table),
+                  $$DebtsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({transactionsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (transactionsRefs) db.transactions],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (transactionsRefs)
+                    await $_getPrefetchedData<Debt, $DebtsTable, Transaction>(
+                      currentTable: table,
+                      referencedTable: $$DebtsTableReferences
+                          ._transactionsRefsTable(db),
+                      managerFromTypedResult: (p0) => $$DebtsTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).transactionsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.debtId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DebtsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DebtsTable,
+      Debt,
+      $$DebtsTableFilterComposer,
+      $$DebtsTableOrderingComposer,
+      $$DebtsTableAnnotationComposer,
+      $$DebtsTableCreateCompanionBuilder,
+      $$DebtsTableUpdateCompanionBuilder,
+      (Debt, $$DebtsTableReferences),
+      Debt,
+      PrefetchHooks Function({bool transactionsRefs})
+    >;
 typedef $$TransactionsTableCreateCompanionBuilder =
     TransactionsCompanion Function({
       required String id,
@@ -5902,6 +6888,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<int> biayaAdmin,
       Value<String?> recurringRuleId,
       Value<String?> strukPath,
+      Value<String?> debtId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -5921,6 +6908,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<int> biayaAdmin,
       Value<String?> recurringRuleId,
       Value<String?> strukPath,
+      Value<String?> debtId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -6011,6 +6999,23 @@ final class $$TransactionsTableReferences
       $_db.recurringRules,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_recurringRuleIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $DebtsTable _debtIdTable(_$AppDatabase db) =>
+      db.debts.createAlias('transactions__debt_id__debts__id');
+
+  $$DebtsTableProcessedTableManager? get debtId {
+    final $_column = $_itemColumn<String>('debt_id');
+    if ($_column == null) return null;
+    final manager = $$DebtsTableTableManager(
+      $_db,
+      $_db.debts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_debtIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -6184,6 +7189,29 @@ class $$TransactionsTableFilterComposer
           }) => $$RecurringRulesTableFilterComposer(
             $db: $db,
             $table: $db.recurringRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$DebtsTableFilterComposer get debtId {
+    final $$DebtsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.debtId,
+      referencedTable: $db.debts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DebtsTableFilterComposer(
+            $db: $db,
+            $table: $db.debts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -6367,6 +7395,29 @@ class $$TransactionsTableOrderingComposer
     );
     return composer;
   }
+
+  $$DebtsTableOrderingComposer get debtId {
+    final $$DebtsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.debtId,
+      referencedTable: $db.debts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DebtsTableOrderingComposer(
+            $db: $db,
+            $table: $db.debts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TransactionsTableAnnotationComposer
@@ -6524,6 +7575,29 @@ class $$TransactionsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$DebtsTableAnnotationComposer get debtId {
+    final $$DebtsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.debtId,
+      referencedTable: $db.debts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DebtsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.debts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TransactionsTableTableManager
@@ -6545,6 +7619,7 @@ class $$TransactionsTableTableManager
             bool akunAsalId,
             bool akunTujuanId,
             bool recurringRuleId,
+            bool debtId,
           })
         > {
   $$TransactionsTableTableManager(_$AppDatabase db, $TransactionsTable table)
@@ -6572,6 +7647,7 @@ class $$TransactionsTableTableManager
                 Value<int> biayaAdmin = const Value.absent(),
                 Value<String?> recurringRuleId = const Value.absent(),
                 Value<String?> strukPath = const Value.absent(),
+                Value<String?> debtId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -6589,6 +7665,7 @@ class $$TransactionsTableTableManager
                 biayaAdmin: biayaAdmin,
                 recurringRuleId: recurringRuleId,
                 strukPath: strukPath,
+                debtId: debtId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -6608,6 +7685,7 @@ class $$TransactionsTableTableManager
                 Value<int> biayaAdmin = const Value.absent(),
                 Value<String?> recurringRuleId = const Value.absent(),
                 Value<String?> strukPath = const Value.absent(),
+                Value<String?> debtId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -6625,6 +7703,7 @@ class $$TransactionsTableTableManager
                 biayaAdmin: biayaAdmin,
                 recurringRuleId: recurringRuleId,
                 strukPath: strukPath,
+                debtId: debtId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -6645,6 +7724,7 @@ class $$TransactionsTableTableManager
                 akunAsalId = false,
                 akunTujuanId = false,
                 recurringRuleId = false,
+                debtId = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -6720,6 +7800,17 @@ class $$TransactionsTableTableManager
                                 .id,
                           ) as T;
                         }
+                        if (debtId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.debtId,
+                            referencedTable: $$TransactionsTableReferences
+                                ._debtIdTable(db),
+                            referencedColumn: $$TransactionsTableReferences
+                                ._debtIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
                         return state;
                       },
@@ -6750,6 +7841,7 @@ typedef $$TransactionsTableProcessedTableManager =
         bool akunAsalId,
         bool akunTujuanId,
         bool recurringRuleId,
+        bool debtId,
       })
     >;
 typedef $$BudgetsTableCreateCompanionBuilder = BudgetsCompanion Function({
@@ -7177,6 +8269,8 @@ class $AppDatabaseManager {
       $$AccountsTableTableManager(_db, _db.accounts);
   $$RecurringRulesTableTableManager get recurringRules =>
       $$RecurringRulesTableTableManager(_db, _db.recurringRules);
+  $$DebtsTableTableManager get debts =>
+      $$DebtsTableTableManager(_db, _db.debts);
   $$TransactionsTableTableManager get transactions =>
       $$TransactionsTableTableManager(_db, _db.transactions);
   $$BudgetsTableTableManager get budgets =>

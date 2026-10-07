@@ -12,10 +12,22 @@ import '../../widgets/neo.dart';
 /// Form catat/ubah transaksi — mendukung pemasukan, pengeluaran, dan transfer
 /// (Bagian FR-2; aturan transfer Bagian 8.1).
 class TransactionFormScreen extends ConsumerStatefulWidget {
-  const TransactionFormScreen({super.key, required this.tipe, this.initial});
+  const TransactionFormScreen({
+    super.key,
+    required this.tipe,
+    this.initial,
+    this.debtId,
+    this.catatanAwal,
+  });
 
   final TxType tipe;
   final Transaction? initial;
+
+  /// Bila diisi, transaksi ini dicatat sebagai pelunasan catatan utang itu.
+  final String? debtId;
+
+  /// Isian catatan awal, mis. keterangan pelunasan utang.
+  final String? catatanAwal;
 
   @override
   ConsumerState<TransactionFormScreen> createState() =>
@@ -34,8 +46,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         ? ''
         : formatThousands(widget.initial!.biayaAdmin),
   );
-  late final TextEditingController _catatan =
-      TextEditingController(text: widget.initial?.catatan ?? '');
+  late final TextEditingController _catatan = TextEditingController(
+    text: widget.initial?.catatan ?? widget.catatanAwal ?? '',
+  );
   late DateTime _tanggal = widget.initial?.tanggal ?? DateTime.now();
   late String? _kategoriId = widget.initial?.kategoriId;
   late String? _akunId = widget.initial?.akunId;
@@ -225,6 +238,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           akunAsalId: _isTransfer ? _akunAsalId : null,
           akunTujuanId: _isTransfer ? _akunTujuanId : null,
           biayaAdmin: _isTransfer ? admin : 0,
+          debtId: widget.debtId,
         );
       } else {
         await repo.update(
@@ -238,6 +252,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           akunAsalId: _isTransfer ? _akunAsalId : null,
           akunTujuanId: _isTransfer ? _akunTujuanId : null,
           biayaAdmin: _isTransfer ? admin : 0,
+          debtId: widget.debtId,
         );
       }
       if (!mounted) return;
@@ -314,7 +329,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
     final scaffold = Scaffold(
       appBar: AppBar(
-        title: Text(widget.initial == null ? title : 'Ubah Transaksi'),
+        title: Text(
+          widget.initial != null
+              ? 'Ubah Transaksi'
+              : (widget.debtId == null ? title : 'Catat Pembayaran'),
+        ),
         actions: [
           if (widget.initial != null)
             IconButton(

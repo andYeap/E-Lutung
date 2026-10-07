@@ -421,6 +421,14 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-15.2 Terkunci berarti AES-256-GCM dengan kunci turunan PBKDF2-HMAC-SHA256; salt dan nonce acak untuk setiap ekspor, dan kata sandi **tidak pernah disimpan** di mana pun. Jumlah iterasi ikut tercatat di dalam berkasnya, jadi berkas lama tetap terbaca setelah angkanya dinaikkan.
 - FR-15.3 Impor menolak berkas dari **versi format yang lebih baru**, dan menolak berkas asing atau rusak **tanpa menghapus** data yang sudah ada.
 - FR-15.4 Foto struk tidak ikut di dalam cadangan (hanya pathnya), jadi setelah impor di perangkat lain fotonya ditandai hilang dan bisa dibersihkan.
+- FR-15.5 Format cadangan naik ke versi 2 saat catatan utang/piutang ditambahkan: aplikasi versi lama menolak berkas itu alih-alih memulihkannya tanpa catatannya.
+
+### FR-16 Utang & Piutang (v1.4)
+- FR-16.1 Satu catatan menyimpan **arah** (`utang` = kita yang berutang, `piutang` = orang lain berutang kepada kita), **nama pihak**, **nominal pokok**, **tenggat** (opsional), dan catatan. Tersimpan di tabel `debts`, skema v6.
+- FR-16.2 **Pelunasan sebagian** dicatat sebagai transaksi biasa yang **tertaut** ke catatan itu: utang dilunasi dengan pengeluaran, piutang dengan pemasukan. Jumlah terbayar **dihitung dari transaksi yang tertaut**, bukan disimpan sebagai kolom — jadi uangnya hanya punya satu catatan, ikut terhitung di saldo, riwayat, dan rekap, dan tidak ada angka yang perlu dijaga di dua tempat.
+- FR-16.3 Daftar menampilkan sisa tiap catatan dengan bilah kemajuan, yang **belum lunas di atas**, lalu tenggat terdekat; tenggat yang terlewat ditandai. Catatan yang sudah lunas tetap terlihat di bawah.
+- FR-16.4 Hapus catatan bersifat **lunak**: catatannya hilang dari daftar, tetapi transaksi pelunasan yang sudah tercatat tetap ada karena uangnya memang berpindah.
+- FR-16.5 **Bukan** lingkupnya: bunga, denda, dan jadwal angsuran otomatis.
 
 ---
 
@@ -499,6 +507,7 @@ Catatan bukti: kotak di atas ditandai hanya bila ada pemeriksaan otomatis yang m
 - Cadangan terkunci: `test/backup_test.dart` (berkas tanpa nomor versi ditolak, versi lebih baru ditolak tanpa menghapus data, jumlah iterasi diambil dari berkasnya, sandi salah gagal membuka).
 - Aturan akun wajib dan catatan lama tanpa akun: `test/core_flow_test.dart`, `test/repair_screen_test.dart`.
 - Label akun sejenis: `test/accounts_test.dart`.
+- Utang & piutang: `test/debts_test.dart` (jumlah terbayar hanya dari transaksi tertaut, urutan belum lunas di atas, hapus lunak tidak menghapus transaksinya, arah menentukan tipe pembayaran), `test/backup_test.dart` (catatan ikut terekspor dan terpulihkan).
 - Aturan periode anggaran dan sisa uang: `test/budget_test.dart`, `test/dashboard_budget_test.dart`, `test/sisa_uang_test.dart`.
 
 Satu kotak yang masih kosong butuh perangkat: pembaruan widget beranda setelah transaksi ditambahkan.
@@ -580,7 +589,7 @@ Sudah dikerjakan lebih awal dari rencana:
 
 Masih ditunda:
 
-- Utang/piutang dan cicilan. Bentuknya sudah disepakati: **catatan sederhana** — siapa berutang kepada siapa, nominal, tenggat, dan pelunasan sebagian; pembayaran tetap dicatat sebagai transaksi biasa supaya tidak ada model uang kedua.
+- **Utang/piutang** — dikerjakan di v1.4 sebagai catatan sederhana, spesifikasinya di FR-16. Yang masih ditunda hanyalah **cicilan** (jadwal angsuran otomatis) dan bunga.
 - Rollover anggaran (jatah anggaran yang belum terpakai dibawa ke periode berikutnya). Yang sudah ada hanyalah **sisa uang** dari bulan lalu (FR-6.6), dan itu bicara uang nyata, bukan jatah.
 - Sinkronisasi opsional antar-perangkat.
 - Widget iOS (bila aplikasi diperluas ke iOS).
