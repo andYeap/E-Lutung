@@ -11,7 +11,8 @@ import 'data/repositories/recurring_repository.dart';
 import 'data/repositories/transaction_repository.dart';
 
 export 'data/backup.dart' show BackupService;
-export 'data/repositories/account_repository.dart' show AccountWithInstitution;
+export 'data/repositories/account_repository.dart'
+    show AccountWithInstitution, akunLabel, akunLabels;
 
 /// Database aplikasi (satu instance, ditutup saat provider dibuang).
 final databaseProvider = Provider<AppDatabase>((ref) {

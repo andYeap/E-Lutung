@@ -10,7 +10,42 @@ class AccountWithInstitution {
   final Institution institusi;
 }
 
-/// Akses data Akun (Bagian 7.3). Nama diambil dari institusi; tanpa label.
+/// Label tampilan satu akun: nama institusinya, ditambah nomor urut bila
+/// institusi yang sama punya lebih dari satu akun.
+///
+/// Akun memang tidak punya nama sendiri (PRD FR-7.2: namanya diambil dari
+/// institusi), jadi tanpa nomor urut dua akun di bank yang sama tampil identik
+/// dan pengguna bisa membaca saldo atau memilih akun yang keliru.
+///
+/// [semua] harus daftar akun yang lengkap, bukan yang sudah disaring: kalau
+/// daftarnya berbeda-beda, nomor urutnya ikut berbeda antar layar. Urutan
+/// nomornya berdasarkan waktu dibuat lalu id, supaya tetap stabil.
+String akunLabel(List<AccountWithInstitution> semua, String akunId) {
+  AccountWithInstitution? target;
+  for (final a in semua) {
+    if (a.account.id == akunId) target = a;
+  }
+  if (target == null) return '?';
+
+  final nama = target.institusi.nama;
+  final serupa = semua.where((a) => a.institusi.nama == nama).toList()
+    ..sort((a, b) {
+      final urut = a.account.createdAt.compareTo(b.account.createdAt);
+      return urut != 0 ? urut : a.account.id.compareTo(b.account.id);
+    });
+  if (serupa.length <= 1) return nama;
+
+  final nomor = serupa.indexWhere((a) => a.account.id == akunId) + 1;
+  return '$nama ($nomor)';
+}
+
+/// Peta id akun ke label tampilannya, siap dipakai daftar maupun pemilih.
+Map<String, String> akunLabels(List<AccountWithInstitution> semua) => {
+  for (final a in semua) a.account.id: akunLabel(semua, a.account.id),
+};
+
+/// Akses data Akun (Bagian 7.3). Nama diambil dari institusi; label tampilan
+/// dibentuk [akunLabel] supaya akun sejenis tetap bisa dibedakan.
 class AccountRepository {
   AccountRepository(this._db);
   final AppDatabase _db;

@@ -121,7 +121,7 @@ class RecurringScreen extends ConsumerWidget {
                     Text(
                       '${catName[r.kategoriId] ?? 'Tanpa kategori'} • '
                       '${frequencyLabel(r.frekuensi)}'
-                      '${r.akunId == null ? '' : ' • ${_accountName(accounts, r.akunId!)}'}',
+                      '${r.akunId == null ? '' : ' • ${akunLabel(accounts, r.akunId!)}'}',
                       style: TextStyle(color: Neo.muted, fontSize: 12),
                     ),
                     if ((r.catatan ?? '').isNotEmpty)
@@ -162,13 +162,6 @@ class RecurringScreen extends ConsumerWidget {
       ),
     );
   }
-}
-
-String _accountName(List<AccountWithInstitution> accounts, String id) {
-  for (final a in accounts) {
-    if (a.account.id == id) return a.institusi.nama;
-  }
-  return '?';
 }
 
 Future<void> _confirmDelete(
@@ -369,7 +362,7 @@ Future<void> showRecurringForm(
                   children: activeAccounts.map((a) {
                     final selected = a.account.id == akunId;
                     return _chip(
-                      a.institusi.nama,
+                      akunLabel(accounts, a.account.id),
                       selected,
                       () => setState(() => akunId = a.account.id),
                     );

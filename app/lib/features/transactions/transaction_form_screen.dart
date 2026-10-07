@@ -368,6 +368,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             _Chips(
               label: 'Dari akun',
               items: activeAccounts,
+              labels: akunLabels(accounts),
               selectedId: _akunAsalId,
               onSelected: (id) => setState(() => _akunAsalId = id),
             ),
@@ -375,6 +376,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             _Chips(
               label: 'Ke akun',
               items: activeAccounts,
+              labels: akunLabels(accounts),
               selectedId: _akunTujuanId,
               onSelected: (id) => setState(() => _akunTujuanId = id),
             ),
@@ -405,6 +407,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             _Chips(
               label: 'Akun',
               items: activeAccounts,
+              labels: akunLabels(accounts),
               selectedId: _akunId,
               onSelected: (id) => setState(() => _akunId = id),
             ),
@@ -508,12 +511,17 @@ class _Chips extends StatelessWidget {
   const _Chips({
     required this.label,
     required this.items,
+    required this.labels,
     required this.selectedId,
     required this.onSelected,
   });
 
   final String label;
   final List<AccountWithInstitution> items;
+
+  /// Label tiap akun (lihat [akunLabels]); dua akun di bank yang sama harus
+  /// tetap bisa dibedakan saat memilih.
+  final Map<String, String> labels;
   final String? selectedId;
   final ValueChanged<String?> onSelected;
 
@@ -534,7 +542,7 @@ class _Chips extends StatelessWidget {
             children: items.map((a) {
               final selected = a.account.id == selectedId;
               return ChoiceChip(
-                label: Text(a.institusi.nama),
+                label: Text(labels[a.account.id] ?? a.institusi.nama),
                 selected: selected,
                 onSelected: (_) => onSelected(selected ? null : a.account.id),
                 selectedColor: Neo.accent,

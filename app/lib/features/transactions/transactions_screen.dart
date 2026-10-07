@@ -97,7 +97,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final allCategories =
         ref.watch(allCategoriesProvider).value ?? const <Category>[];
     final catName = {for (final c in allCategories) c.id: c.nama};
-    final accName = {for (final a in accounts) a.account.id: a.institusi.nama};
+    final accName = akunLabels(accounts);
 
     return Scaffold(
       body: Column(

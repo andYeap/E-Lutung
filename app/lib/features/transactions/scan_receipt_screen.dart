@@ -321,6 +321,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
           const SizedBox(height: 16),
           _AkunChips(
             items: activeAccounts,
+            labels: akunLabels(accounts),
             selectedId: _akunId,
             onSelected: (id) => setState(() => _akunId = id),
           ),
@@ -427,11 +428,13 @@ class _KategoriChips extends StatelessWidget {
 class _AkunChips extends StatelessWidget {
   const _AkunChips({
     required this.items,
+    required this.labels,
     required this.selectedId,
     required this.onSelected,
   });
 
   final List<AccountWithInstitution> items;
+  final Map<String, String> labels;
   final String? selectedId;
   final ValueChanged<String> onSelected;
 
@@ -456,7 +459,7 @@ class _AkunChips extends StatelessWidget {
           children: items.map((a) {
             final selected = a.account.id == selectedId;
             return ChoiceChip(
-              label: Text(a.institusi.nama),
+              label: Text(labels[a.account.id] ?? a.institusi.nama),
               selected: selected,
               onSelected: (_) => onSelected(a.account.id),
               selectedColor: Neo.accent,

@@ -77,7 +77,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                row.institusi.nama,
+                                akunLabel(items, row.account.id),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 15,
@@ -225,6 +225,13 @@ Future<void> _showForm(
                 prefixText: 'Rp ',
                 keyboardType: TextInputType.number,
                 inputFormatters: const [ThousandsInputFormatter()],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Isi saldo sebelum transaksi pertama yang kamu catat, bukan saldo '
+                'hari ini. Kalau diisi dengan saldo hari ini, sisa uang pada '
+                'bulan-bulan lama akan terlihat lebih besar dari kenyataan.',
+                style: TextStyle(color: Neo.muted, fontSize: 11),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
