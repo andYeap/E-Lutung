@@ -21,10 +21,8 @@ Color budgetColor(BudgetLevel level) => switch (level) {
   BudgetLevel.lewat => Neo.expense,
 };
 
-/// Teks sisa anggaran dengan tanda minus yang sama seperti tampilan transaksi
-/// (U+2212), bukan tanda hubung dari formatter mata uang.
-String sisaAnggaranTeks(int remaining) =>
-    remaining < 0 ? '−${rupiah(-remaining)}' : rupiah(remaining);
+/// Teks sisa anggaran; minus memakai U+2212 lewat [rupiahSigned].
+String sisaAnggaranTeks(int remaining) => rupiahSigned(remaining);
 
 String budgetLevelLabel(BudgetLevel level) => switch (level) {
   BudgetLevel.aman => 'Aman',

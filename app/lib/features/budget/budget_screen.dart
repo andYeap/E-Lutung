@@ -45,6 +45,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     final budgetsAsync = ref.watch(budgetsProvider);
     final txs = ref.watch(allTransactionsProvider).value ?? const <Transaction>[];
     final ownIds = ref.watch(ownAccountIdsProvider);
+    final accounts = ref.watch(accountsProvider).value ?? const [];
     final categories = ref.watch(categoriesProvider).value ?? const <Category>[];
     // Judul anggaran tetap benar walau kategorinya sudah dihapus.
     final allCategories =
@@ -88,9 +89,31 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
               ],
             ),
           );
+          // Satu angka total dari seluruh anggaran yang tampil, supaya pengguna
+          // yang hanya menetapkan batas per kategori tetap melihat totalnya.
+          final ringkas = totalAnggaranOf(budgets, txs, ownIds);
+          // Sisa periode lalu bicara uang, bukan jatah anggaran: saldo akhir
+          // bulan sebelumnya, yaitu bekal yang dibawa masuk ke bulan ini.
+          final sisaPeriodeLalu = sisaUangSampai(
+            accounts.map((a) => a.account).toList(),
+            txs,
+            DateTime(DateTime.now().year, DateTime.now().month, 0),
+          );
+          // Kedua kartu ini bicara uang dan jatah keseluruhan, jadi sengaja
+          // diletakkan di atas filter agar tidak berubah saat disaring.
+          final ringkasan = Column(
+            children: [
+              _SisaPeriodeLaluCard(jumlah: sisaPeriodeLalu),
+              if (!ringkas.kosong) ...[
+                const SizedBox(height: 12),
+                _TotalAnggaranCard(ringkas: ringkas),
+              ],
+            ],
+          );
           if (budgets.isEmpty) {
             return Column(
               children: [
+                Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 0), child: ringkasan),
                 Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 0), child: filter),
                 Expanded(
                   child: Center(
@@ -109,17 +132,10 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
               ],
             );
           }
-          // Satu angka total dari seluruh anggaran yang tampil, supaya pengguna
-          // yang hanya menetapkan batas per kategori tetap melihat totalnya.
-          final ringkas = totalAnggaranOf(budgets, txs, ownIds);
           return Column(
             children: [
+              Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 0), child: ringkasan),
               Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 0), child: filter),
-              if (!ringkas.kosong)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: _TotalAnggaranCard(ringkas: ringkas),
-                ),
               const SizedBox(height: 8),
               Expanded(
                 child: ListView.separated(
@@ -405,6 +421,51 @@ Widget _chip(String label, bool selected, VoidCallback onTap) => ChoiceChip(
   side: BorderSide(color: Neo.ink, width: Neo.borderW),
   labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
 );
+
+/// "Sisa periode lalu": uang yang dibawa masuk ke bulan ini, yaitu saldo akhir
+/// bulan sebelumnya. Berbeda dari kartu total di bawahnya yang bicara jatah
+/// anggaran, kartu ini bicara uang nyata.
+class _SisaPeriodeLaluCard extends StatelessWidget {
+  const _SisaPeriodeLaluCard({required this.jumlah});
+
+  final int jumlah;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = jumlah < 0 ? Neo.expense : Neo.income;
+    return NeoCard(
+      child: Row(
+        children: [
+          Icon(Icons.savings, size: 18, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Sisa periode lalu',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                ),
+                Text(
+                  'uang yang dibawa masuk ke bulan ini (saldo akhir bulan lalu)',
+                  style: TextStyle(color: Neo.muted, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            rupiahSigned(jumlah),
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Satu angka "Total anggaran" dari anggaran yang sedang ditampilkan.
 /// Bila anggaran total belum disetel, angkanya adalah jumlah anggaran kategori,

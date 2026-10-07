@@ -75,6 +75,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               .where((t) => t.tanggal.year == _month.year && t.tanggal.month == _month.month)
               .toList();
           final totals = computeTotals(monthTx, ownIds);
+          // Sisa uang: saldo seluruh akun sendiri sampai akhir bulan terpilih,
+          // jadi untuk bulan yang sudah lewat angkanya adalah sisa saat itu.
+          final sisa = sisaUangSampai(
+            accounts.map((a) => a.account).toList(),
+            all,
+            DateTime(_month.year, _month.month + 1, 0),
+          );
           final byCat = expenseByCategory(monthTx, ownIds);
           // FR-1.5: daftar terbaru ikut bulan terpilih.
           final recent = ([...monthTx]..sort((a, b) => b.tanggal.compareTo(a.tanggal)))
@@ -122,11 +129,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    _Stat(
-                      label: 'Selisih',
-                      value: rupiah(totals.net),
-                      color: Neo.transfer,
-                      icon: Icons.balance,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _Stat(
+                            label: 'Selisih',
+                            value: rupiahSigned(totals.net),
+                            color: Neo.transfer,
+                            icon: Icons.balance,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _Stat(
+                            label: 'Sisa',
+                            value: rupiahSigned(sisa),
+                            // Uang yang tersisa; merah bila sudah minus.
+                            color: sisa < 0 ? Neo.expense : Neo.income,
+                            icon: Icons.savings,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

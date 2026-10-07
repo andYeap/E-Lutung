@@ -135,6 +135,27 @@ int accountBalance(
   return balance;
 }
 
+/// Uang yang tersisa sampai akhir suatu tanggal: jumlah saldo berjalan seluruh
+/// akun milik sendiri.
+///
+/// Dihitung lewat [accountBalance] supaya aturan transfer tetap punya satu
+/// sumber, dengan begitu transfer antar akun sendiri tidak mengubah total.
+/// Akun milik pihak lain tidak dihitung karena uangnya bukan milik pengguna.
+int sisaUangSampai(
+  List<Account> accounts,
+  List<Transaction> txs,
+  DateTime sampai,
+) {
+  final batas = DateTime(sampai.year, sampai.month, sampai.day, 23, 59, 59);
+  final sampaiSini = txs.where((t) => !t.tanggal.isAfter(batas)).toList();
+  var total = 0;
+  for (final a in accounts) {
+    if (!a.aktif || !a.milikSendiri) continue;
+    total += accountBalance(a.id, a.saldoAwal, sampaiSini);
+  }
+  return total;
+}
+
 class BudgetUsage {
   BudgetUsage({required this.budget, required this.used});
   final Budget budget;

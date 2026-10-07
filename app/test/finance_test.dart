@@ -30,6 +30,115 @@ Transaction tx({
 void main() {
   const own = {'a1', 'a2'};
 
+  group('sisaUangSampai (Sisa uang)', () {
+    Account acc({
+      required String id,
+      int saldoAwal = 0,
+      bool milikSendiri = true,
+      bool aktif = true,
+    }) => Account(
+      id: id,
+      institusiId: 'tunai',
+      milikSendiri: milikSendiri,
+      saldoAwal: saldoAwal,
+      aktif: aktif,
+      createdAt: DateTime(2026, 1, 1),
+      updatedAt: DateTime(2026, 1, 1),
+      deletedAt: null,
+    );
+
+    test('saldo awal ditambah pemasukan dikurangi pengeluaran', () {
+      final sisa = sisaUangSampai([acc(id: 'a1', saldoAwal: 1000000)], [
+        tx(
+          tipe: TxType.pemasukan,
+          nominal: 500000,
+          akunId: 'a1',
+          tanggal: DateTime(2026, 1, 10),
+        ),
+        tx(
+          tipe: TxType.pengeluaran,
+          nominal: 200000,
+          akunId: 'a1',
+          tanggal: DateTime(2026, 1, 20),
+        ),
+      ], DateTime(2026, 1, 31));
+
+      expect(sisa, 1300000);
+    });
+
+    test('transaksi sesudah tanggal batas tidak ikut dihitung', () {
+      final sisa = sisaUangSampai([acc(id: 'a1', saldoAwal: 1000000)], [
+        tx(
+          tipe: TxType.pengeluaran,
+          nominal: 200000,
+          akunId: 'a1',
+          tanggal: DateTime(2026, 1, 20),
+        ),
+        tx(
+          tipe: TxType.pengeluaran,
+          nominal: 900000,
+          akunId: 'a1',
+          tanggal: DateTime(2026, 2, 2),
+        ),
+      ], DateTime(2026, 1, 31));
+
+      expect(sisa, 800000);
+    });
+
+    test('hari terakhir ikut terhitung sampai 23:59:59', () {
+      final sisa = sisaUangSampai([acc(id: 'a1', saldoAwal: 1000000)], [
+        tx(
+          tipe: TxType.pengeluaran,
+          nominal: 100000,
+          akunId: 'a1',
+          tanggal: DateTime(2026, 1, 31, 23, 59, 59),
+        ),
+      ], DateTime(2026, 1, 31));
+
+      expect(sisa, 900000);
+    });
+
+    test('akun milik pihak lain tidak dihitung', () {
+      final sisa = sisaUangSampai([
+        acc(id: 'a1', saldoAwal: 500000),
+        acc(id: 'lain', saldoAwal: 9000000, milikSendiri: false),
+      ], [], DateTime(2026, 1, 31));
+
+      expect(sisa, 500000);
+    });
+
+    test('akun nonaktif tidak dihitung', () {
+      final sisa = sisaUangSampai([
+        acc(id: 'a1', saldoAwal: 500000),
+        acc(id: 'a2', saldoAwal: 9000000, aktif: false),
+      ], [], DateTime(2026, 1, 31));
+
+      expect(sisa, 500000);
+    });
+
+    test('transfer antar akun sendiri hanya mengurangi biaya admin', () {
+      final sisa = sisaUangSampai([
+        acc(id: 'a1', saldoAwal: 1000000),
+        acc(id: 'a2'),
+      ], [
+        tx(
+          tipe: TxType.transfer,
+          nominal: 400000,
+          biayaAdmin: 2500,
+          akunAsalId: 'a1',
+          akunTujuanId: 'a2',
+          tanggal: DateTime(2026, 1, 10),
+        ),
+      ], DateTime(2026, 1, 31));
+
+      expect(sisa, 997500);
+    });
+
+    test('tanpa akun sama sekali hasilnya nol', () {
+      expect(sisaUangSampai([], [], DateTime(2026, 1, 31)), 0);
+    });
+  });
+
   group('aturan transfer (Bagian 8.1)', () {
     test('pengeluaran dihitung sebesar nominal', () {
       expect(expenseAmount(tx(tipe: TxType.pengeluaran, nominal: 25000), own), 25000);

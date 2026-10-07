@@ -21,6 +21,11 @@ Future<void> ensureIntlLocale([String locale = 'id_ID']) async {
 /// Format rupiah untuk tampilan (Bagian 6 teknologi: IDR, locale id_ID).
 String rupiah(num value) => _idr.format(value);
 
+/// Uang bertanda: memakai minus U+2212 seperti tampilan transaksi, bukan tanda
+/// hubung dari formatter mata uang.
+String rupiahSigned(int value) =>
+    value < 0 ? '−${rupiah(-value)}' : rupiah(value);
+
 /// Angka dengan pemisah ribuan gaya Indonesia ("25.000").
 String formatThousands(int value) => _decimal.format(value);
 
