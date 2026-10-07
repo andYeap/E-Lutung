@@ -539,6 +539,8 @@ Future<void> _importDialog(BuildContext context, BackupService backup) async {
       ? 'Impor dibatalkan'
       : n == -2
       ? 'Cadangan terkunci — jalankan lagi dan isi kata sandinya'
+      : n == -3
+      ? 'Impor ditolak: cadangan ini dibuat aplikasi versi lebih baru'
       : (n == 0
             ? 'Impor gagal: file tidak valid atau kata sandi salah'
             : 'Berhasil impor $n baris');
@@ -566,6 +568,7 @@ Future<String?> _tanyaSandi(
             controller: ctrl,
             label: 'Kata sandi',
             hint: 'opsional',
+            obscure: true,
           ),
         ],
       ),

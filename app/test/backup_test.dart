@@ -15,6 +15,61 @@ void main() {
   });
   tearDown(() => db.close());
 
+  Map<String, dynamic> cadanganKosong() => {
+    'version': kBackupVersion,
+    'categories': <Object>[],
+    'transactions': <Object>[],
+  };
+
+  group('versi cadangan', () {
+    test('dump menuliskan versi yang berlaku sekarang', () async {
+      expect((await backup.dump())['version'], kBackupVersion);
+    });
+
+    test('berkas dari versi lebih baru ditolak tanpa menghapus data', () async {
+      await TransactionRepository(db).create(
+        tipe: TxType.pengeluaran,
+        nominal: 25000,
+        tanggal: DateTime(2026, 3, 5),
+        kategoriId: 'makanan',
+      );
+
+      final hasil = await backup.restore({
+        'version': kBackupVersion + 1,
+        'categories': <Object>[],
+        'transactions': <Object>[],
+      }, replace: true);
+
+      expect(hasil, 0);
+      expect((await db.select(db.transactions).get()).length, 1);
+    });
+
+    test('versi yang dikenal diterima, yang tanpa nomor ditolak', () {
+      expect(isSupportedBackup({'version': kBackupVersion}), isTrue);
+      expect(isSupportedBackup({'version': 0}), isTrue);
+      expect(isSupportedBackup({'foo': 'bar'}), isFalse);
+    });
+  });
+
+  group('iterasi PBKDF2', () {
+    test('cadangan baru memakai jumlah iterasi yang dinaikkan', () async {
+      final envelope = await encryptBackup(cadanganKosong(), 'sandi');
+
+      expect(envelope['iterations'], kBackupIterations);
+      expect(envelope['kdf'], 'pbkdf2-hmac-sha256');
+      expect((await decryptBackup(envelope, 'sandi'))['version'], kBackupVersion);
+    });
+
+    test('jumlah iterasi diambil dari berkas, bukan dari kode', () async {
+      final envelope = await encryptBackup(cadanganKosong(), 'sandi');
+      // Berkas yang mengaku dibuat dengan 120.000 iterasi tidak akan terbuka,
+      // karena kuncinya memang diturunkan dengan angka di dalam berkas itu.
+      envelope['iterations'] = 120000;
+
+      await expectLater(decryptBackup(envelope, 'sandi'), throwsA(anything));
+    });
+  });
+
   test('ekspor -> hapus -> impor (ganti) menghasilkan data sama', () async {
     final txRepo = TransactionRepository(db);
     await txRepo.create(

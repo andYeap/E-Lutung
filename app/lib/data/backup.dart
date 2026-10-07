@@ -66,7 +66,7 @@ class BackupService {
   }
 
   Future<Map<String, dynamic>> dump() async => {
-    'version': 1,
+    'version': kBackupVersion,
     'exportedAt': DateTime.now().toIso8601String(),
     'institutions': (await _db.select(_db.institutions).get()).map((e) => e.toJson()).toList(),
     'categories': (await _db.select(_db.categories).get()).map((e) => e.toJson()).toList(),
@@ -179,6 +179,7 @@ class BackupService {
         if (passphrase == null || passphrase.isEmpty) return -2;
         map = await decryptBackup(map, passphrase);
       }
+      if (!isSupportedBackup(map)) return -3;
       return await restore(map, replace: replace);
     } catch (_) {
       return 0;
@@ -191,8 +192,7 @@ class BackupService {
   }) async {
     // Tolak berkas yang jelas bukan cadangan E-Lutung, supaya impor "replace"
     // tidak menghapus data master untuk berkas asing atau rusak.
-    final version = map['version'];
-    if (version is! int ||
+    if (!isSupportedBackup(map) ||
         map['categories'] is! List ||
         map['transactions'] is! List) {
       return 0;
@@ -264,9 +264,28 @@ class BackupService {
   }
 }
 
+/// Nomor versi format cadangan yang ditulis sekarang. Naikkan bila bentuk
+/// cadangannya berubah.
+const int kBackupVersion = 1;
+
+/// Apakah cadangan ini bisa dibaca versi aplikasi sekarang.
+///
+/// Impor menolak berkas dari versi yang lebih baru: kolom yang belum dikenal
+/// akan hilang diam-diam, dan pemulihannya tampak berhasil padahal tidak utuh.
+bool isSupportedBackup(Map<String, dynamic> map) {
+  final version = map['version'];
+  return version is int && version <= kBackupVersion;
+}
+
 // ---- Enkripsi cadangan (AES-GCM + PBKDF2) ---------------------------------
 
 const String kEncryptedBackupMarker = 'elutungEncrypted';
+
+/// Iterasi PBKDF2 untuk cadangan terkunci, mengikuti anjuran OWASP untuk
+/// PBKDF2-HMAC-SHA256. Angka 120.000 adalah nilai lama, yang tetap dibaca
+/// karena jumlah iterasinya tersimpan di dalam berkasnya.
+const int kBackupIterations = 600000;
+const int _kIterasiLama = 120000;
 
 /// Apakah berkas cadangan ini terkunci kata sandi.
 bool isEncryptedBackup(Map<String, dynamic> map) =>
@@ -277,7 +296,7 @@ Future<Map<String, dynamic>> encryptBackup(
   Map<String, dynamic> payload,
   String passphrase,
 ) async {
-  const iterations = 120000;
+  const iterations = kBackupIterations;
   final salt = _randomBytes(16);
   final key = await _deriveKey(passphrase, salt, iterations);
   final nonce = _randomBytes(12);
@@ -306,7 +325,7 @@ Future<Map<String, dynamic>> decryptBackup(
   final nonce = base64.decode(envelope['nonce'] as String);
   final mac = Mac(base64.decode(envelope['mac'] as String));
   final cipher = base64.decode(envelope['cipher'] as String);
-  final iterations = (envelope['iterations'] as num?)?.toInt() ?? 120000;
+  final iterations = (envelope['iterations'] as num?)?.toInt() ?? _kIterasiLama;
   final key = await _deriveKey(passphrase, salt, iterations);
   final clear = await AesGcm.with256bits().decrypt(
     SecretBox(cipher, nonce: nonce, mac: mac),

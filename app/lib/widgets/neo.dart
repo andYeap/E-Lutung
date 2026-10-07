@@ -163,7 +163,7 @@ class _NeoButtonState extends State<NeoButton> {
 }
 
 /// Input teks bergaya neobrutalism.
-class NeoTextField extends StatelessWidget {
+class NeoTextField extends StatefulWidget {
   const NeoTextField({
     super.key,
     required this.controller,
@@ -173,6 +173,7 @@ class NeoTextField extends StatelessWidget {
     this.prefixText,
     this.inputFormatters,
     this.onChanged,
+    this.obscure = false,
   });
 
   final TextEditingController controller;
@@ -183,26 +184,49 @@ class NeoTextField extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
 
+  /// Menyamarkan isi untuk kata sandi, dan menampilkan tombol lihat/sembunyi.
+  /// Kata sandi cadangan tidak bisa dipulihkan kalau salah ketik, jadi
+  /// penggunanya perlu bisa memeriksa apa yang sudah ditulis.
+  final bool obscure;
+
+  @override
+  State<NeoTextField> createState() => _NeoTextFieldState();
+}
+
+class _NeoTextFieldState extends State<NeoTextField> {
+  bool _terlihat = false;
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (label != null) ...[
+        if (widget.label != null) ...[
           Text(
-            label!,
+            widget.label!,
             style: TextStyle(fontWeight: Neo.labelWeight, fontSize: 13),
           ),
           const SizedBox(height: 6),
         ],
         TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          onChanged: onChanged,
+          controller: widget.controller,
+          keyboardType: widget.keyboardType,
+          inputFormatters: widget.inputFormatters,
+          onChanged: widget.onChanged,
+          obscureText: widget.obscure && !_terlihat,
           decoration: InputDecoration(
-            hintText: hint,
-            prefixText: prefixText,
+            hintText: widget.hint,
+            prefixText: widget.prefixText,
+            suffixIcon: widget.obscure
+                ? IconButton(
+                    tooltip: _terlihat ? 'Sembunyikan' : 'Lihat',
+                    icon: Icon(
+                      _terlihat ? Icons.visibility_off : Icons.visibility,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _terlihat = !_terlihat),
+                  )
+                : null,
             filled: true,
             fillColor: Neo.surface,
             isDense: true,
