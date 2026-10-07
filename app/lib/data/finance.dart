@@ -171,3 +171,68 @@ BudgetUsage budgetUsageOf(
   return BudgetUsage(budget: b, used: used);
 }
 
+/// Angka "Total Anggaran" gabungan dari sekumpulan anggaran yang berlaku.
+///
+/// Bila ada anggaran lingkup total, itulah totalnya (PRD Bagian 8.2) supaya
+/// anggaran kategori yang berperan sebagai sub-batas tidak terhitung dua kali.
+/// Bila anggaran total belum disetel, seluruh anggaran kategori dijumlahkan
+/// sehingga pengguna yang hanya menetapkan batas per kategori tetap punya satu
+/// angka total. Anggaran nonaktif selalu diabaikan.
+class BudgetTotal {
+  BudgetTotal({
+    required this.nominal,
+    required this.used,
+    required this.jumlahAnggaran,
+    required this.dariKategori,
+  });
+
+  final int nominal;
+  final int used;
+
+  /// Banyaknya anggaran yang diwakili angka ini.
+  final int jumlahAnggaran;
+
+  /// true bila angka ini hasil penjumlahan anggaran kategori.
+  final bool dariKategori;
+
+  bool get kosong => jumlahAnggaran == 0;
+
+  /// Terpakai 0..∞ (>=1 berarti lewat batas).
+  double get fraction => nominal <= 0 ? 0 : used / nominal;
+  int get remaining => nominal - used;
+}
+
+BudgetTotal totalAnggaranOf(
+  List<Budget> budgets,
+  List<Transaction> txs,
+  Set<String> ownAccountIds,
+) {
+  final aktif = budgets.where((b) => b.aktif).toList();
+
+  for (final b in aktif) {
+    if (b.lingkup != BudgetScope.total) continue;
+    return BudgetTotal(
+      nominal: b.nominal,
+      used: budgetUsageOf(b, txs, ownAccountIds).used,
+      jumlahAnggaran: 1,
+      dariKategori: false,
+    );
+  }
+
+  var nominal = 0;
+  var used = 0;
+  var jumlah = 0;
+  for (final b in aktif) {
+    if (b.lingkup != BudgetScope.kategori) continue;
+    nominal += b.nominal;
+    used += budgetUsageOf(b, txs, ownAccountIds).used;
+    jumlah++;
+  }
+  return BudgetTotal(
+    nominal: nominal,
+    used: used,
+    jumlahAnggaran: jumlah,
+    dariKategori: true,
+  );
+}
+

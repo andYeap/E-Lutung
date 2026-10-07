@@ -109,9 +109,17 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
               ],
             );
           }
+          // Satu angka total dari seluruh anggaran yang tampil, supaya pengguna
+          // yang hanya menetapkan batas per kategori tetap melihat totalnya.
+          final ringkas = totalAnggaranOf(budgets, txs, ownIds);
           return Column(
             children: [
               Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 0), child: filter),
+              if (!ringkas.kosong)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: _TotalAnggaranCard(ringkas: ringkas),
+                ),
               const SizedBox(height: 8),
               Expanded(
                 child: ListView.separated(
@@ -397,3 +405,67 @@ Widget _chip(String label, bool selected, VoidCallback onTap) => ChoiceChip(
   side: BorderSide(color: Neo.ink, width: Neo.borderW),
   labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
 );
+
+/// Satu angka "Total anggaran" dari anggaran yang sedang ditampilkan.
+/// Bila anggaran total belum disetel, angkanya adalah jumlah anggaran kategori,
+/// mengikuti aturan di [totalAnggaranOf].
+class _TotalAnggaranCard extends StatelessWidget {
+  const _TotalAnggaranCard({required this.ringkas});
+
+  final BudgetTotal ringkas;
+
+  @override
+  Widget build(BuildContext context) {
+    final level = budgetLevel(ringkas.fraction);
+    final color = budgetColor(level);
+    return NeoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(child: NeoSectionTitle('Total anggaran')),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.18),
+                  border: Border.all(color: Neo.ink, width: 1.5),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  budgetLevelLabel(level),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            ringkas.dariKategori
+                ? 'gabungan ${ringkas.jumlahAnggaran} anggaran kategori · '
+                      'anggaran total belum disetel'
+                : 'dari anggaran total',
+            style: TextStyle(color: Neo.muted, fontSize: 11),
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: ringkas.fraction.clamp(0, 1),
+              minHeight: 12,
+              backgroundColor: Neo.bg,
+              valueColor: AlwaysStoppedAnimation(color),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'terpakai ${rupiah(ringkas.used)} / ${rupiah(ringkas.nominal)} '
+            '(${(ringkas.fraction * 100).toStringAsFixed(0)}%) · '
+            'sisa ${sisaAnggaranTeks(ringkas.remaining)}',
+            style: const TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}

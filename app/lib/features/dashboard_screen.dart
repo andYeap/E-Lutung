@@ -195,28 +195,35 @@ class _BudgetCard extends ConsumerWidget {
     final budgets = ref.watch(budgetsProvider).value ?? const <Budget>[];
     final monthStart = DateTime(month.year, month.month, 1);
     final monthEnd = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
-    Budget? found;
-    for (final b in budgets) {
-      if (!b.aktif || b.lingkup != BudgetScope.total) continue;
-      // Anggaran periode apa pun yang beririsan dengan bulan terpilih.
-      if (b.periodeMulai.isAfter(monthEnd) ||
-          b.periodeSelesai.isBefore(monthStart)) {
-        continue;
-      }
-      found = b;
-      break;
-    }
-    if (found == null) {
+
+    // Anggaran yang berlaku bulan ini: aktif dan periodenya beririsan, jadi
+    // rentang seperti 5 Okt - 5 Nov tetap terhitung untuk bulan Oktober.
+    final berlaku = budgets
+        .where(
+          (b) =>
+              b.aktif &&
+              !b.periodeMulai.isAfter(monthEnd) &&
+              !b.periodeSelesai.isBefore(monthStart),
+        )
+        .toList();
+    final ringkas = totalAnggaranOf(berlaku, all, ownIds);
+
+    if (ringkas.kosong) {
+      // Tanpa membedakan dua sebab ini, kartu mengaku tidak ada anggaran
+      // padahal anggaran aktifnya hanya berada di periode lain.
+      final adaPeriodeLain = budgets.any((b) => b.aktif);
       return NeoCard(
         child: Text(
-          'Belum ada anggaran aktif untuk periode ini. Setel di tab Anggaran.',
+          adaPeriodeLain
+              ? 'Tidak ada anggaran yang mencakup periode ini. Anggaran aktif '
+                    'lainnya ada di periode berbeda, buka tab Anggaran.'
+              : 'Belum ada anggaran aktif untuk periode ini. Setel di tab Anggaran.',
           style: TextStyle(color: Neo.muted, fontSize: 12),
         ),
       );
     }
-    final budget = found;
-    final usage = budgetUsageOf(budget, all, ownIds);
-    final level = budgetLevel(usage.fraction);
+
+    final level = budgetLevel(ringkas.fraction);
     final color = budgetColor(level);
     return NeoCard(
       child: Column(
@@ -224,7 +231,11 @@ class _BudgetCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Expanded(child: NeoSectionTitle('Anggaran aktif')),
+              Expanded(
+                child: NeoSectionTitle(
+                  ringkas.dariKategori ? 'Total anggaran' : 'Anggaran aktif',
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -239,11 +250,19 @@ class _BudgetCard extends ConsumerWidget {
               ),
             ],
           ),
+          if (ringkas.dariKategori) ...[
+            const SizedBox(height: 2),
+            Text(
+              'gabungan ${ringkas.jumlahAnggaran} anggaran kategori · '
+              'anggaran total belum disetel',
+              style: TextStyle(color: Neo.muted, fontSize: 11),
+            ),
+          ],
           const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
-              value: usage.fraction.clamp(0, 1),
+              value: ringkas.fraction.clamp(0, 1),
               minHeight: 12,
               backgroundColor: Neo.bg,
               valueColor: AlwaysStoppedAnimation(color),
@@ -251,8 +270,8 @@ class _BudgetCard extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'sisa ${sisaAnggaranTeks(usage.remaining)} / ${rupiah(budget.nominal)} '
-            '(${(usage.fraction * 100).toStringAsFixed(0)}%)',
+            'sisa ${sisaAnggaranTeks(ringkas.remaining)} / ${rupiah(ringkas.nominal)} '
+            '(${(ringkas.fraction * 100).toStringAsFixed(0)}%)',
             style: const TextStyle(fontSize: 12),
           ),
         ],

@@ -10,14 +10,16 @@ Budget budget({
   required int nominal,
   DateTime? mulai,
   DateTime? selesai,
+  bool aktif = true,
+  String id = 'b1',
 }) => Budget(
-  id: 'b1',
+  id: id,
   lingkup: lingkup,
   kategoriId: kategoriId,
   periodeMulai: mulai ?? DateTime(2026, 1, 5),
   periodeSelesai: selesai ?? DateTime(2026, 1, 10),
   nominal: nominal,
-  aktif: true,
+  aktif: aktif,
   createdAt: DateTime(2026, 1, 1),
   updatedAt: DateTime(2026, 1, 1),
   deletedAt: null,
@@ -159,6 +161,75 @@ void main() {
         tx(tipe: TxType.pengeluaran, nominal: 30000, kategoriId: 'transport'),
       ], own);
       expect(usage.used, 20000);
+    });
+  });
+
+  group('totalAnggaranOf (Total Anggaran)', () {
+    // Transaksi di grup ini tidak memakai akun, jadi daftar akun sendiri kosong.
+    const own = <String>{};
+
+    test('anggaran total dipakai apa adanya, kategori tidak dijumlahkan lagi', () {
+      final r = totalAnggaranOf([
+        budget(lingkup: BudgetScope.total, nominal: 3000000),
+        budget(id: 'b2', lingkup: BudgetScope.kategori, kategoriId: 'makanan', nominal: 500000),
+      ], [
+        tx(tipe: TxType.pengeluaran, nominal: 200000, kategoriId: 'makanan'),
+        tx(tipe: TxType.pengeluaran, nominal: 100000, kategoriId: 'transport'),
+      ], own);
+
+      // Bukan 3.500.000: anggaran kategori hanya sub-batas dari anggaran total.
+      expect(r.nominal, 3000000);
+      expect(r.used, 300000);
+      expect(r.dariKategori, isFalse);
+      expect(r.jumlahAnggaran, 1);
+    });
+
+    test('tanpa anggaran total, seluruh anggaran kategori dijumlahkan', () {
+      final r = totalAnggaranOf([
+        budget(lingkup: BudgetScope.kategori, kategoriId: 'makanan', nominal: 500000),
+        budget(id: 'b2', lingkup: BudgetScope.kategori, kategoriId: 'transport', nominal: 300000),
+      ], [
+        tx(tipe: TxType.pengeluaran, nominal: 200000, kategoriId: 'makanan'),
+        tx(tipe: TxType.pengeluaran, nominal: 100000, kategoriId: 'transport'),
+        // Di luar anggaran mana pun, jadi tidak ikut terhitung.
+        tx(tipe: TxType.pengeluaran, nominal: 999999, kategoriId: 'hiburan'),
+      ], own);
+
+      expect(r.nominal, 800000);
+      expect(r.used, 300000);
+      expect(r.dariKategori, isTrue);
+      expect(r.jumlahAnggaran, 2);
+      expect(r.remaining, 500000);
+      expect(r.fraction, closeTo(0.375, 1e-9));
+    });
+
+    test('anggaran nonaktif tidak ikut dijumlahkan', () {
+      final r = totalAnggaranOf([
+        budget(lingkup: BudgetScope.kategori, kategoriId: 'makanan', nominal: 500000),
+        budget(
+          id: 'b2',
+          lingkup: BudgetScope.kategori,
+          kategoriId: 'transport',
+          nominal: 300000,
+          aktif: false,
+        ),
+      ], [
+        tx(tipe: TxType.pengeluaran, nominal: 200000, kategoriId: 'makanan'),
+        tx(tipe: TxType.pengeluaran, nominal: 100000, kategoriId: 'transport'),
+      ], own);
+
+      expect(r.nominal, 500000);
+      expect(r.used, 200000);
+      expect(r.jumlahAnggaran, 1);
+    });
+
+    test('tanpa anggaran sama sekali menghasilkan angka kosong, bukan NaN', () {
+      final r = totalAnggaranOf([], [], own);
+
+      expect(r.kosong, isTrue);
+      expect(r.nominal, 0);
+      expect(r.remaining, 0);
+      expect(r.fraction, 0);
     });
   });
 }

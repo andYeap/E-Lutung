@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:elutung/data/database.dart';
+import 'package:elutung/data/repositories/budget_repository.dart';
 import 'package:elutung/features/shell.dart';
 import 'package:elutung/providers.dart';
 import 'package:elutung/util/format.dart';
@@ -72,6 +73,44 @@ void main() {
 
     expect(find.text('Tambah Anggaran'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    await bereskan(tester);
+  });
+
+  testWidgets('tab Anggaran menjumlahkan anggaran kategori jadi Total anggaran', (
+    tester,
+  ) async {
+    final db = await nyalakan(tester);
+    final repo = BudgetRepository(db);
+    final now = DateTime.now();
+    for (final (kategori, nominal) in [('makanan', 500000), ('transport', 300000)]) {
+      await repo.create(
+        lingkup: BudgetScope.kategori,
+        kategoriId: kategori,
+        nominal: nominal,
+        periodeMulai: DateTime(now.year, now.month, 1),
+        periodeSelesai: DateTime(now.year, now.month + 1, 0),
+      );
+    }
+
+    await bukaTab(tester, 'Anggaran');
+
+    expect(find.text('Total anggaran'), findsOneWidget);
+    expect(find.textContaining('gabungan 2 anggaran kategori'), findsOneWidget);
+    expect(find.textContaining('Rp 800.000'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await bereskan(tester);
+  });
+
+  testWidgets('tanpa anggaran, tab Anggaran tidak menampilkan kartu total', (
+    tester,
+  ) async {
+    await nyalakan(tester);
+    await bukaTab(tester, 'Anggaran');
+
+    expect(find.text('Total anggaran'), findsNothing);
+    expect(find.textContaining('Belum ada anggaran'), findsOneWidget);
 
     await bereskan(tester);
   });
