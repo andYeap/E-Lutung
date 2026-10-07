@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:elutung/data/backup.dart';
 import 'package:elutung/data/database.dart';
@@ -192,6 +193,41 @@ void main() {
     expect(restored.single.nominal, 99000);
     expect(restored.single.frekuensi, Frequency.bulanan);
     expect(restored.single.mulai, DateTime(2026, 5, 1));
+  });
+
+  test('kebiasaan pedagang ikut terekspor dan terpulihkan', () async {
+    await db.into(db.accounts).insert(
+      AccountsCompanion.insert(id: 'acc-tunai', institusiId: 'tunai'),
+    );
+    await db.into(db.merchantHabits).insert(
+      MerchantHabitsCompanion.insert(
+        pola: 'warung bu ani',
+        kategoriId: const Value('makanan'),
+        akunId: const Value('acc-tunai'),
+      ),
+    );
+
+    final dump = await backup.dump();
+    await db.delete(db.merchantHabits).go();
+    expect(await db.select(db.merchantHabits).get(), isEmpty);
+
+    await backup.restore(dump, replace: false);
+
+    final h = await db.select(db.merchantHabits).getSingle();
+    expect(h.pola, 'warung bu ani');
+    expect(h.kategoriId, 'makanan');
+    expect(h.akunId, 'acc-tunai');
+  });
+
+  test('kebiasaan pedagang yang belum ada dihitung sebagai tambahan', () async {
+    await db.into(db.merchantHabits).insert(
+      MerchantHabitsCompanion.insert(pola: 'warung bu ani'),
+    );
+    final dump = await backup.dump();
+    await db.delete(db.merchantHabits).go();
+
+    final p = await backup.previewRestore(dump, replace: false);
+    expect(p.tambah, greaterThanOrEqualTo(1));
   });
 
   test('impor mode gabung tidak menggandakan id yang sama', () async {

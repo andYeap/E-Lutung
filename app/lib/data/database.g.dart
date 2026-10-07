@@ -4431,6 +4431,388 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
   }
 }
 
+class $MerchantHabitsTable extends MerchantHabits
+    with TableInfo<$MerchantHabitsTable, MerchantHabit> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MerchantHabitsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _polaMeta = const VerificationMeta('pola');
+  @override
+  late final GeneratedColumn<String> pola = GeneratedColumn<String>(
+    'pola',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kategoriIdMeta = const VerificationMeta(
+    'kategoriId',
+  );
+  @override
+  late final GeneratedColumn<String> kategoriId = GeneratedColumn<String>(
+    'kategori_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES categories (id)',
+    ),
+  );
+  static const VerificationMeta _akunIdMeta = const VerificationMeta('akunId');
+  @override
+  late final GeneratedColumn<String> akunId = GeneratedColumn<String>(
+    'akun_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _terakhirDipakaiMeta = const VerificationMeta(
+    'terakhirDipakai',
+  );
+  @override
+  late final GeneratedColumn<DateTime> terakhirDipakai =
+      GeneratedColumn<DateTime>(
+        'terakhir_dipakai',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+        defaultValue: currentDateAndTime,
+      );
+  static const VerificationMeta _jumlahPemakaianMeta = const VerificationMeta(
+    'jumlahPemakaian',
+  );
+  @override
+  late final GeneratedColumn<int> jumlahPemakaian = GeneratedColumn<int>(
+    'jumlah_pemakaian',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    pola,
+    kategoriId,
+    akunId,
+    terakhirDipakai,
+    jumlahPemakaian,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'kebiasaan_merchant';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MerchantHabit> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('pola')) {
+      context.handle(
+        _polaMeta,
+        pola.isAcceptableOrUnknown(data['pola']!, _polaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_polaMeta);
+    }
+    if (data.containsKey('kategori_id')) {
+      context.handle(
+        _kategoriIdMeta,
+        kategoriId.isAcceptableOrUnknown(data['kategori_id']!, _kategoriIdMeta),
+      );
+    }
+    if (data.containsKey('akun_id')) {
+      context.handle(
+        _akunIdMeta,
+        akunId.isAcceptableOrUnknown(data['akun_id']!, _akunIdMeta),
+      );
+    }
+    if (data.containsKey('terakhir_dipakai')) {
+      context.handle(
+        _terakhirDipakaiMeta,
+        terakhirDipakai.isAcceptableOrUnknown(
+          data['terakhir_dipakai']!,
+          _terakhirDipakaiMeta,
+        ),
+      );
+    }
+    if (data.containsKey('jumlah_pemakaian')) {
+      context.handle(
+        _jumlahPemakaianMeta,
+        jumlahPemakaian.isAcceptableOrUnknown(
+          data['jumlah_pemakaian']!,
+          _jumlahPemakaianMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {pola};
+  @override
+  MerchantHabit map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MerchantHabit(
+      pola: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pola'],
+      )!,
+      kategoriId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kategori_id'],
+      ),
+      akunId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}akun_id'],
+      ),
+      terakhirDipakai: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}terakhir_dipakai'],
+      )!,
+      jumlahPemakaian: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}jumlah_pemakaian'],
+      )!,
+    );
+  }
+
+  @override
+  $MerchantHabitsTable createAlias(String alias) {
+    return $MerchantHabitsTable(attachedDatabase, alias);
+  }
+}
+
+class MerchantHabit extends DataClass implements Insertable<MerchantHabit> {
+  /// Nama pedagang ternormalisasi (huruf kecil, tanpa tanda baca). Unik.
+  final String pola;
+  final String? kategoriId;
+  final String? akunId;
+  final DateTime terakhirDipakai;
+  final int jumlahPemakaian;
+  const MerchantHabit({
+    required this.pola,
+    this.kategoriId,
+    this.akunId,
+    required this.terakhirDipakai,
+    required this.jumlahPemakaian,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['pola'] = Variable<String>(pola);
+    if (!nullToAbsent || kategoriId != null) {
+      map['kategori_id'] = Variable<String>(kategoriId);
+    }
+    if (!nullToAbsent || akunId != null) {
+      map['akun_id'] = Variable<String>(akunId);
+    }
+    map['terakhir_dipakai'] = Variable<DateTime>(terakhirDipakai);
+    map['jumlah_pemakaian'] = Variable<int>(jumlahPemakaian);
+    return map;
+  }
+
+  MerchantHabitsCompanion toCompanion(bool nullToAbsent) {
+    return MerchantHabitsCompanion(
+      pola: Value(pola),
+      kategoriId: kategoriId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(kategoriId),
+      akunId: akunId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(akunId),
+      terakhirDipakai: Value(terakhirDipakai),
+      jumlahPemakaian: Value(jumlahPemakaian),
+    );
+  }
+
+  factory MerchantHabit.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MerchantHabit(
+      pola: serializer.fromJson<String>(json['pola']),
+      kategoriId: serializer.fromJson<String?>(json['kategoriId']),
+      akunId: serializer.fromJson<String?>(json['akunId']),
+      terakhirDipakai: serializer.fromJson<DateTime>(json['terakhirDipakai']),
+      jumlahPemakaian: serializer.fromJson<int>(json['jumlahPemakaian']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'pola': serializer.toJson<String>(pola),
+      'kategoriId': serializer.toJson<String?>(kategoriId),
+      'akunId': serializer.toJson<String?>(akunId),
+      'terakhirDipakai': serializer.toJson<DateTime>(terakhirDipakai),
+      'jumlahPemakaian': serializer.toJson<int>(jumlahPemakaian),
+    };
+  }
+
+  MerchantHabit copyWith({
+    String? pola,
+    Value<String?> kategoriId = const Value.absent(),
+    Value<String?> akunId = const Value.absent(),
+    DateTime? terakhirDipakai,
+    int? jumlahPemakaian,
+  }) => MerchantHabit(
+    pola: pola ?? this.pola,
+    kategoriId: kategoriId.present ? kategoriId.value : this.kategoriId,
+    akunId: akunId.present ? akunId.value : this.akunId,
+    terakhirDipakai: terakhirDipakai ?? this.terakhirDipakai,
+    jumlahPemakaian: jumlahPemakaian ?? this.jumlahPemakaian,
+  );
+  MerchantHabit copyWithCompanion(MerchantHabitsCompanion data) {
+    return MerchantHabit(
+      pola: data.pola.present ? data.pola.value : this.pola,
+      kategoriId: data.kategoriId.present
+          ? data.kategoriId.value
+          : this.kategoriId,
+      akunId: data.akunId.present ? data.akunId.value : this.akunId,
+      terakhirDipakai: data.terakhirDipakai.present
+          ? data.terakhirDipakai.value
+          : this.terakhirDipakai,
+      jumlahPemakaian: data.jumlahPemakaian.present
+          ? data.jumlahPemakaian.value
+          : this.jumlahPemakaian,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MerchantHabit(')
+          ..write('pola: $pola, ')
+          ..write('kategoriId: $kategoriId, ')
+          ..write('akunId: $akunId, ')
+          ..write('terakhirDipakai: $terakhirDipakai, ')
+          ..write('jumlahPemakaian: $jumlahPemakaian')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(pola, kategoriId, akunId, terakhirDipakai, jumlahPemakaian);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MerchantHabit &&
+          other.pola == this.pola &&
+          other.kategoriId == this.kategoriId &&
+          other.akunId == this.akunId &&
+          other.terakhirDipakai == this.terakhirDipakai &&
+          other.jumlahPemakaian == this.jumlahPemakaian);
+}
+
+class MerchantHabitsCompanion extends UpdateCompanion<MerchantHabit> {
+  final Value<String> pola;
+  final Value<String?> kategoriId;
+  final Value<String?> akunId;
+  final Value<DateTime> terakhirDipakai;
+  final Value<int> jumlahPemakaian;
+  final Value<int> rowid;
+  const MerchantHabitsCompanion({
+    this.pola = const Value.absent(),
+    this.kategoriId = const Value.absent(),
+    this.akunId = const Value.absent(),
+    this.terakhirDipakai = const Value.absent(),
+    this.jumlahPemakaian = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MerchantHabitsCompanion.insert({
+    required String pola,
+    this.kategoriId = const Value.absent(),
+    this.akunId = const Value.absent(),
+    this.terakhirDipakai = const Value.absent(),
+    this.jumlahPemakaian = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : pola = Value(pola);
+  static Insertable<MerchantHabit> custom({
+    Expression<String>? pola,
+    Expression<String>? kategoriId,
+    Expression<String>? akunId,
+    Expression<DateTime>? terakhirDipakai,
+    Expression<int>? jumlahPemakaian,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (pola != null) 'pola': pola,
+      if (kategoriId != null) 'kategori_id': kategoriId,
+      if (akunId != null) 'akun_id': akunId,
+      if (terakhirDipakai != null) 'terakhir_dipakai': terakhirDipakai,
+      if (jumlahPemakaian != null) 'jumlah_pemakaian': jumlahPemakaian,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MerchantHabitsCompanion copyWith({
+    Value<String>? pola,
+    Value<String?>? kategoriId,
+    Value<String?>? akunId,
+    Value<DateTime>? terakhirDipakai,
+    Value<int>? jumlahPemakaian,
+    Value<int>? rowid,
+  }) {
+    return MerchantHabitsCompanion(
+      pola: pola ?? this.pola,
+      kategoriId: kategoriId ?? this.kategoriId,
+      akunId: akunId ?? this.akunId,
+      terakhirDipakai: terakhirDipakai ?? this.terakhirDipakai,
+      jumlahPemakaian: jumlahPemakaian ?? this.jumlahPemakaian,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (pola.present) {
+      map['pola'] = Variable<String>(pola.value);
+    }
+    if (kategoriId.present) {
+      map['kategori_id'] = Variable<String>(kategoriId.value);
+    }
+    if (akunId.present) {
+      map['akun_id'] = Variable<String>(akunId.value);
+    }
+    if (terakhirDipakai.present) {
+      map['terakhir_dipakai'] = Variable<DateTime>(terakhirDipakai.value);
+    }
+    if (jumlahPemakaian.present) {
+      map['jumlah_pemakaian'] = Variable<int>(jumlahPemakaian.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MerchantHabitsCompanion(')
+          ..write('pola: $pola, ')
+          ..write('kategoriId: $kategoriId, ')
+          ..write('akunId: $akunId, ')
+          ..write('terakhirDipakai: $terakhirDipakai, ')
+          ..write('jumlahPemakaian: $jumlahPemakaian, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4441,6 +4823,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DebtsTable debts = $DebtsTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $BudgetsTable budgets = $BudgetsTable(this);
+  late final $MerchantHabitsTable merchantHabits = $MerchantHabitsTable(this);
   late final Index idxTransactionsTipeTanggalKategori = Index(
     'idx_transactions_tipe_tanggal_kategori',
     'CREATE INDEX idx_transactions_tipe_tanggal_kategori ON transactions (tipe, tanggal, kategori_id)',
@@ -4457,6 +4840,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     debts,
     transactions,
     budgets,
+    merchantHabits,
     idxTransactionsTipeTanggalKategori,
   ];
 }
@@ -4883,6 +5267,24 @@ final class $$CategoriesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$MerchantHabitsTable, List<MerchantHabit>>
+  _merchantHabitsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.merchantHabits,
+    aliasName: 'categories__id__kebiasaan_merchant__kategori_id',
+  );
+
+  $$MerchantHabitsTableProcessedTableManager get merchantHabitsRefs {
+    final manager = $$MerchantHabitsTableTableManager(
+      $_db,
+      $_db.merchantHabits,
+    ).filter((f) => f.kategoriId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_merchantHabitsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$CategoriesTableFilterComposer
@@ -4995,6 +5397,31 @@ class $$CategoriesTableFilterComposer
           }) => $$BudgetsTableFilterComposer(
             $db: $db,
             $table: $db.budgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> merchantHabitsRefs(
+    Expression<bool> Function($$MerchantHabitsTableFilterComposer f) f,
+  ) {
+    final $$MerchantHabitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.merchantHabits,
+      getReferencedColumn: (t) => t.kategoriId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MerchantHabitsTableFilterComposer(
+            $db: $db,
+            $table: $db.merchantHabits,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5154,6 +5581,31 @@ class $$CategoriesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> merchantHabitsRefs<T extends Object>(
+    Expression<T> Function($$MerchantHabitsTableAnnotationComposer a) f,
+  ) {
+    final $$MerchantHabitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.merchantHabits,
+      getReferencedColumn: (t) => t.kategoriId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MerchantHabitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.merchantHabits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$CategoriesTableTableManager
@@ -5173,6 +5625,7 @@ class $$CategoriesTableTableManager
             bool recurringRulesRefs,
             bool transactionsRefs,
             bool budgetsRefs,
+            bool merchantHabitsRefs,
           })
         > {
   $$CategoriesTableTableManager(_$AppDatabase db, $CategoriesTable table)
@@ -5239,6 +5692,7 @@ class $$CategoriesTableTableManager
                 recurringRulesRefs = false,
                 transactionsRefs = false,
                 budgetsRefs = false,
+                merchantHabitsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -5246,6 +5700,7 @@ class $$CategoriesTableTableManager
                     if (recurringRulesRefs) db.recurringRules,
                     if (transactionsRefs) db.transactions,
                     if (budgetsRefs) db.budgets,
+                    if (merchantHabitsRefs) db.merchantHabits,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -5313,6 +5768,27 @@ class $$CategoriesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (merchantHabitsRefs)
+                        await $_getPrefetchedData<
+                          Category,
+                          $CategoriesTable,
+                          MerchantHabit
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CategoriesTableReferences
+                              ._merchantHabitsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CategoriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).merchantHabitsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.kategoriId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -5337,6 +5813,7 @@ typedef $$CategoriesTableProcessedTableManager =
         bool recurringRulesRefs,
         bool transactionsRefs,
         bool budgetsRefs,
+        bool merchantHabitsRefs,
       })
     >;
 typedef $$AccountsTableCreateCompanionBuilder = AccountsCompanion Function({
@@ -5398,6 +5875,24 @@ final class $$AccountsTableReferences
     ).filter((f) => f.akunId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_recurringRulesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$MerchantHabitsTable, List<MerchantHabit>>
+  _merchantHabitsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.merchantHabits,
+    aliasName: 'accounts__id__kebiasaan_merchant__akun_id',
+  );
+
+  $$MerchantHabitsTableProcessedTableManager get merchantHabitsRefs {
+    final manager = $$MerchantHabitsTableTableManager(
+      $_db,
+      $_db.merchantHabits,
+    ).filter((f) => f.akunId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_merchantHabitsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -5492,6 +5987,31 @@ class $$AccountsTableFilterComposer
           }) => $$RecurringRulesTableFilterComposer(
             $db: $db,
             $table: $db.recurringRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> merchantHabitsRefs(
+    Expression<bool> Function($$MerchantHabitsTableFilterComposer f) f,
+  ) {
+    final $$MerchantHabitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.merchantHabits,
+      getReferencedColumn: (t) => t.akunId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MerchantHabitsTableFilterComposer(
+            $db: $db,
+            $table: $db.merchantHabits,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5657,6 +6177,31 @@ class $$AccountsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> merchantHabitsRefs<T extends Object>(
+    Expression<T> Function($$MerchantHabitsTableAnnotationComposer a) f,
+  ) {
+    final $$MerchantHabitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.merchantHabits,
+      getReferencedColumn: (t) => t.akunId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MerchantHabitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.merchantHabits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$AccountsTableTableManager
@@ -5672,7 +6217,11 @@ class $$AccountsTableTableManager
           $$AccountsTableUpdateCompanionBuilder,
           (Account, $$AccountsTableReferences),
           Account,
-          PrefetchHooks Function({bool institusiId, bool recurringRulesRefs})
+          PrefetchHooks Function({
+            bool institusiId,
+            bool recurringRulesRefs,
+            bool merchantHabitsRefs,
+          })
         > {
   $$AccountsTableTableManager(_$AppDatabase db, $AccountsTable table)
     : super(
@@ -5742,11 +6291,16 @@ class $$AccountsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({institusiId = false, recurringRulesRefs = false}) {
+              ({
+                institusiId = false,
+                recurringRulesRefs = false,
+                merchantHabitsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (recurringRulesRefs) db.recurringRules,
+                    if (merchantHabitsRefs) db.merchantHabits,
                   ],
                   addJoins:
                       <
@@ -5801,6 +6355,27 @@ class $$AccountsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (merchantHabitsRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          MerchantHabit
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._merchantHabitsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).merchantHabitsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.akunId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -5821,7 +6396,11 @@ typedef $$AccountsTableProcessedTableManager =
       $$AccountsTableUpdateCompanionBuilder,
       (Account, $$AccountsTableReferences),
       Account,
-      PrefetchHooks Function({bool institusiId, bool recurringRulesRefs})
+      PrefetchHooks Function({
+        bool institusiId,
+        bool recurringRulesRefs,
+        bool merchantHabitsRefs,
+      })
     >;
 typedef $$RecurringRulesTableCreateCompanionBuilder =
     RecurringRulesCompanion Function({
@@ -8257,6 +8836,415 @@ typedef $$BudgetsTableProcessedTableManager =
       Budget,
       PrefetchHooks Function({bool kategoriId})
     >;
+typedef $$MerchantHabitsTableCreateCompanionBuilder =
+    MerchantHabitsCompanion Function({
+      required String pola,
+      Value<String?> kategoriId,
+      Value<String?> akunId,
+      Value<DateTime> terakhirDipakai,
+      Value<int> jumlahPemakaian,
+      Value<int> rowid,
+    });
+typedef $$MerchantHabitsTableUpdateCompanionBuilder =
+    MerchantHabitsCompanion Function({
+      Value<String> pola,
+      Value<String?> kategoriId,
+      Value<String?> akunId,
+      Value<DateTime> terakhirDipakai,
+      Value<int> jumlahPemakaian,
+      Value<int> rowid,
+    });
+
+final class $$MerchantHabitsTableReferences
+    extends BaseReferences<_$AppDatabase, $MerchantHabitsTable, MerchantHabit> {
+  $$MerchantHabitsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $CategoriesTable _kategoriIdTable(_$AppDatabase db) => db.categories
+      .createAlias('kebiasaan_merchant__kategori_id__categories__id');
+
+  $$CategoriesTableProcessedTableManager? get kategoriId {
+    final $_column = $_itemColumn<String>('kategori_id');
+    if ($_column == null) return null;
+    final manager = $$CategoriesTableTableManager(
+      $_db,
+      $_db.categories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_kategoriIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AccountsTable _akunIdTable(_$AppDatabase db) =>
+      db.accounts.createAlias('kebiasaan_merchant__akun_id__accounts__id');
+
+  $$AccountsTableProcessedTableManager? get akunId {
+    final $_column = $_itemColumn<String>('akun_id');
+    if ($_column == null) return null;
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_akunIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MerchantHabitsTableFilterComposer
+    extends Composer<_$AppDatabase, $MerchantHabitsTable> {
+  $$MerchantHabitsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get pola => $composableBuilder(
+    column: $table.pola,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get terakhirDipakai => $composableBuilder(
+    column: $table.terakhirDipakai,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get jumlahPemakaian => $composableBuilder(
+    column: $table.jumlahPemakaian,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CategoriesTableFilterComposer get kategoriId {
+    final $$CategoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.kategoriId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableFilterComposer get akunId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.akunId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MerchantHabitsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MerchantHabitsTable> {
+  $$MerchantHabitsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get pola => $composableBuilder(
+    column: $table.pola,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get terakhirDipakai => $composableBuilder(
+    column: $table.terakhirDipakai,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get jumlahPemakaian => $composableBuilder(
+    column: $table.jumlahPemakaian,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CategoriesTableOrderingComposer get kategoriId {
+    final $$CategoriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.kategoriId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableOrderingComposer get akunId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.akunId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MerchantHabitsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MerchantHabitsTable> {
+  $$MerchantHabitsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get pola =>
+      $composableBuilder(column: $table.pola, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get terakhirDipakai => $composableBuilder(
+    column: $table.terakhirDipakai,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get jumlahPemakaian => $composableBuilder(
+    column: $table.jumlahPemakaian,
+    builder: (column) => column,
+  );
+
+  $$CategoriesTableAnnotationComposer get kategoriId {
+    final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.kategoriId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableAnnotationComposer get akunId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.akunId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MerchantHabitsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MerchantHabitsTable,
+          MerchantHabit,
+          $$MerchantHabitsTableFilterComposer,
+          $$MerchantHabitsTableOrderingComposer,
+          $$MerchantHabitsTableAnnotationComposer,
+          $$MerchantHabitsTableCreateCompanionBuilder,
+          $$MerchantHabitsTableUpdateCompanionBuilder,
+          (MerchantHabit, $$MerchantHabitsTableReferences),
+          MerchantHabit,
+          PrefetchHooks Function({bool kategoriId, bool akunId})
+        > {
+  $$MerchantHabitsTableTableManager(
+    _$AppDatabase db,
+    $MerchantHabitsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MerchantHabitsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MerchantHabitsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MerchantHabitsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> pola = const Value.absent(),
+                Value<String?> kategoriId = const Value.absent(),
+                Value<String?> akunId = const Value.absent(),
+                Value<DateTime> terakhirDipakai = const Value.absent(),
+                Value<int> jumlahPemakaian = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MerchantHabitsCompanion(
+                pola: pola,
+                kategoriId: kategoriId,
+                akunId: akunId,
+                terakhirDipakai: terakhirDipakai,
+                jumlahPemakaian: jumlahPemakaian,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String pola,
+                Value<String?> kategoriId = const Value.absent(),
+                Value<String?> akunId = const Value.absent(),
+                Value<DateTime> terakhirDipakai = const Value.absent(),
+                Value<int> jumlahPemakaian = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MerchantHabitsCompanion.insert(
+                pola: pola,
+                kategoriId: kategoriId,
+                akunId: akunId,
+                terakhirDipakai: terakhirDipakai,
+                jumlahPemakaian: jumlahPemakaian,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$MerchantHabitsTable, MerchantHabit>(table),
+                  $$MerchantHabitsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({kategoriId = false, akunId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (kategoriId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.kategoriId,
+                        referencedTable: $$MerchantHabitsTableReferences
+                            ._kategoriIdTable(db),
+                        referencedColumn: $$MerchantHabitsTableReferences
+                            ._kategoriIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+                    if (akunId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.akunId,
+                        referencedTable: $$MerchantHabitsTableReferences
+                            ._akunIdTable(db),
+                        referencedColumn: $$MerchantHabitsTableReferences
+                            ._akunIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MerchantHabitsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MerchantHabitsTable,
+      MerchantHabit,
+      $$MerchantHabitsTableFilterComposer,
+      $$MerchantHabitsTableOrderingComposer,
+      $$MerchantHabitsTableAnnotationComposer,
+      $$MerchantHabitsTableCreateCompanionBuilder,
+      $$MerchantHabitsTableUpdateCompanionBuilder,
+      (MerchantHabit, $$MerchantHabitsTableReferences),
+      MerchantHabit,
+      PrefetchHooks Function({bool kategoriId, bool akunId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8275,4 +9263,6 @@ class $AppDatabaseManager {
       $$TransactionsTableTableManager(_db, _db.transactions);
   $$BudgetsTableTableManager get budgets =>
       $$BudgetsTableTableManager(_db, _db.budgets);
+  $$MerchantHabitsTableTableManager get merchantHabits =>
+      $$MerchantHabitsTableTableManager(_db, _db.merchantHabits);
 }

@@ -75,6 +75,7 @@ class BackupService {
     'budgets': (await _db.select(_db.budgets).get()).map((e) => e.toJson()).toList(),
     'debts': (await _db.select(_db.debts).get()).map((e) => e.toJson()).toList(),
     'recurringRules': (await _db.select(_db.recurringRules).get()).map((e) => e.toJson()).toList(),
+    'merchantHabits': (await _db.select(_db.merchantHabits).get()).map((e) => e.toJson()).toList(),
   };
 
   Future<File> exportFile({String? passphrase}) async {
@@ -286,6 +287,19 @@ class BackupService {
         r.id: r.deletedAt == null,
     });
 
+    // Kebiasaan pedagang tidak punya `deletedAt`; ia selalu dianggap hidup dan
+    // tidak pernah "dihidupkan kembali". Kuncinya `pola`, bukan `id`.
+    hitung(
+      {
+        for (final m in rows('merchantHabits'))
+          if (m['pola'] is String) m['pola'] as String: true,
+      },
+      {
+        for (final r in await _db.select(_db.merchantHabits).get())
+          r.pola: true,
+      },
+    );
+
     return RestorePreview(
       tambah: tambah,
       timpa: timpa,
@@ -317,6 +331,7 @@ class BackupService {
         await _db.delete(_db.budgets).go();
         await _db.delete(_db.recurringRules).go();
         await _db.delete(_db.debts).go();
+        await _db.delete(_db.merchantHabits).go();
         await _db.delete(_db.accounts).go();
         await _db.delete(_db.categories).go();
         await _db.delete(_db.institutions).go();
@@ -331,6 +346,12 @@ class BackupService {
       }
       for (final m in rows('accounts')) {
         await _db.into(_db.accounts).insertOnConflictUpdate(Account.fromJson(m));
+        count++;
+      }
+      // Kebiasaan pedagang menunjuk kategori & akun, jadi dimasukkan setelah
+      // keduanya ada (FK).
+      for (final m in rows('merchantHabits')) {
+        await _db.into(_db.merchantHabits).insertOnConflictUpdate(MerchantHabit.fromJson(m));
         count++;
       }
       for (final m in rows('recurringRules')) {
@@ -372,6 +393,7 @@ class BackupService {
       await _db.delete(_db.transactions).go();
       await _db.delete(_db.budgets).go();
       await _db.delete(_db.recurringRules).go();
+      await _db.delete(_db.merchantHabits).go();
       await _db.delete(_db.accounts).go();
     });
 
@@ -408,9 +430,10 @@ class RestorePreview {
 /// Nomor versi format cadangan yang ditulis sekarang. Naikkan bila bentuk
 /// cadangannya berubah.
 ///
-/// v2 menambahkan daftar catatan utang/piutang; aplikasi versi lama menolaknya
-/// supaya catatan itu tidak hilang diam-diam saat dipulihkan.
-const int kBackupVersion = 2;
+/// v2 menambahkan daftar catatan utang/piutang; v3 menambahkan kebiasaan
+/// pedagang. Aplikasi versi lama menolak berkas yang lebih baru supaya data
+/// yang belum dikenal itu tidak hilang diam-diam saat dipulihkan.
+const int kBackupVersion = 3;
 
 /// Apakah cadangan ini bisa dibaca versi aplikasi sekarang.
 ///

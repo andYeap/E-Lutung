@@ -62,6 +62,7 @@ void main() {
     await seed.customStatement('ALTER TABLE accounts DROP COLUMN nama');
     await seed.customStatement('ALTER TABLE transactions DROP COLUMN debt_id');
     await seed.customStatement('DROP TABLE IF EXISTS debts');
+    await seed.customStatement('DROP TABLE IF EXISTS kebiasaan_merchant');
     await seed.customStatement('PRAGMA user_version = 1');
     await seed.close();
 
@@ -87,6 +88,8 @@ void main() {
     // Langkah v6: catatan utang/piutang dan kolom penghubungnya.
     expect(await hasEntity(db, 'debts'), isTrue);
     expect(await hasColumn(db, 'transactions', 'debt_id'), isTrue);
+    // Langkah v7: kebiasaan pedagang.
+    expect(await hasEntity(db, 'kebiasaan_merchant'), isTrue);
 
     await db.close();
   });
@@ -111,6 +114,7 @@ void main() {
     await seed.customStatement('ALTER TABLE accounts DROP COLUMN nama');
     await seed.customStatement('ALTER TABLE transactions DROP COLUMN debt_id');
     await seed.customStatement('DROP TABLE IF EXISTS debts');
+    await seed.customStatement('DROP TABLE IF EXISTS kebiasaan_merchant');
     await seed.customStatement('PRAGMA user_version = 2');
     await seed.close();
 
@@ -121,6 +125,7 @@ void main() {
     expect(await hasEntity(db, 'idx_transactions_recurring_tanggal'), isTrue);
     expect(await hasColumn(db, 'accounts', 'nama'), isTrue);
     expect(await hasEntity(db, 'debts'), isTrue);
+    expect(await hasEntity(db, 'kebiasaan_merchant'), isTrue);
 
     // Transaksi lama tetap ada, penandanya masih kosong.
     final rows = await db.select(db.transactions).get();
@@ -160,6 +165,38 @@ void main() {
     await db.customStatement(manual, ['c']);
     await db.customStatement(manual, ['d']);
     expect((await db.select(db.transactions).get()).length, 3);
+
+    await db.close();
+  });
+
+  test('v6 -> v7: tabel kebiasaan pedagang dibuat, data lama selamat', () async {
+    final seed = AppDatabase(NativeDatabase(file));
+    await seed.customStatement(
+      "INSERT INTO transactions (id, tipe, nominal, tanggal, biaya_admin, "
+      "created_at, updated_at) VALUES ('lama', 'pengeluaran', 5000, 0, 0, 0, 0)",
+    );
+    // Skema v6 asli belum punya tabel kebiasaan pedagang sama sekali.
+    await seed.customStatement('DROP TABLE IF EXISTS kebiasaan_merchant');
+    await seed.customStatement('PRAGMA user_version = 6');
+    await seed.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+
+    expect(await hasEntity(db, 'kebiasaan_merchant'), isTrue);
+    // Data lama tidak tersentuh.
+    final rows = await db.select(db.transactions).get();
+    expect(rows.length, 1);
+    expect(rows.single.nominal, 5000);
+
+    // Kolom tabel baru benar-benar bisa dipakai.
+    await db.customStatement(
+      "INSERT INTO kebiasaan_merchant "
+      "(pola, kategori_id, akun_id, terakhir_dipakai, jumlah_pemakaian) "
+      "VALUES ('warung bu ani', 'makanan', NULL, 0, 1)",
+    );
+    final habit = await db.select(db.merchantHabits).getSingle();
+    expect(habit.pola, 'warung bu ani');
+    expect(habit.kategoriId, 'makanan');
 
     await db.close();
   });

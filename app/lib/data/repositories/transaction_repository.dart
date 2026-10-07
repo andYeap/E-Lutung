@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../database.dart';
 import '../finance.dart';
+import '../merchant.dart';
 
 String _monthKey(int year, int month) =>
     '$year-${month.toString().padLeft(2, '0')}';
@@ -330,7 +331,74 @@ class TransactionRepository {
         debtId: Value(debtId),
       ),
     );
+    await _catatKebiasaan(
+      tipe: tipe,
+      catatan: catatan,
+      kategoriId: kategoriId,
+      akunId: akunId,
+    );
     return id;
+  }
+
+  /// Catat/mutakhirkan kebiasaan pedagang → kategori & akun (v1.5).
+  ///
+  /// Dipanggil setiap transaksi pengeluaran disimpan, baik dari form biasa
+  /// maupun dari scan. Tidak pernah menyimpan apa pun yang belum dipilih
+  /// pengguna: tanpa keterangan atau tanpa kategori, tidak ada yang dicatat.
+  ///
+  /// Pilihan **terakhir** yang menang. Bila pemetaan berubah, hitungannya
+  /// mulai lagi dari satu supaya angka "(Nx)" di layar berarti pemetaan yang
+  /// sedang berlaku, bukan total transaksi pada pedagang itu.
+  Future<void> _catatKebiasaan({
+    required TxType tipe,
+    required String? catatan,
+    required String? kategoriId,
+    required String? akunId,
+  }) async {
+    // Saran hanya muncul saat scan pengeluaran, jadi hanya itu yang berguna
+    // dicatat — pemasukan tidak punya pedagang.
+    if (tipe != TxType.pengeluaran) return;
+    if (kategoriId == null) return;
+    final pola = polaMerchant(catatan);
+    if (pola == null) return;
+
+    final lama = await (_db.select(_db.merchantHabits)
+          ..where((h) => h.pola.equals(pola)))
+        .getSingleOrNull();
+    final sekarang = DateTime.now();
+    if (lama == null) {
+      await _db.into(_db.merchantHabits).insert(
+        MerchantHabitsCompanion.insert(
+          pola: pola,
+          kategoriId: Value(kategoriId),
+          akunId: Value(akunId),
+          terakhirDipakai: Value(sekarang),
+          jumlahPemakaian: const Value(1),
+        ),
+      );
+      return;
+    }
+    final sama = lama.kategoriId == kategoriId && lama.akunId == akunId;
+    await (_db.update(_db.merchantHabits)..where((h) => h.pola.equals(pola)))
+        .write(
+      MerchantHabitsCompanion(
+        kategoriId: Value(kategoriId),
+        akunId: Value(akunId),
+        terakhirDipakai: Value(sekarang),
+        jumlahPemakaian: Value(sama ? lama.jumlahPemakaian + 1 : 1),
+      ),
+    );
+  }
+
+  /// Kebiasaan pedagang untuk [catatan], atau null bila belum pernah dicatat.
+  ///
+  /// Dipakai layar scan untuk mengusulkan kategori & akun. Ini hanya saran:
+  /// pemanggil tetap harus menampilkannya dan pengguna tetap harus menyimpan.
+  Future<MerchantHabit?> cariKebiasaan(String? catatan) {
+    final pola = polaMerchant(catatan);
+    if (pola == null) return Future.value(null);
+    return (_db.select(_db.merchantHabits)..where((h) => h.pola.equals(pola)))
+        .getSingleOrNull();
   }
 
   Future<void> update({

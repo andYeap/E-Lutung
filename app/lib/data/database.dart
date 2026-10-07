@@ -76,6 +76,29 @@ class Debts extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Kebiasaan pedagang (v1.5, skema v7).
+///
+/// Pola nama pedagang ternormalisasi dipetakan ke kategori & akun, supaya
+/// pilihan yang pernah dipakai bisa **diusulkan** saat scan struk. Tabel ini
+/// hanya berisi pilihan yang memang pernah disimpan pengguna; ia tidak pernah
+/// menyimpan apa pun sendiri, dan saran selalu bisa dihapus.
+class MerchantHabits extends Table {
+  @override
+  String get tableName => 'kebiasaan_merchant';
+
+  /// Nama pedagang ternormalisasi (huruf kecil, tanpa tanda baca). Unik.
+  TextColumn get pola => text()();
+  TextColumn get kategoriId =>
+      text().nullable().references(Categories, #id)();
+  TextColumn get akunId => text().nullable().references(Accounts, #id)();
+  DateTimeColumn get terakhirDipakai =>
+      dateTime().withDefault(currentDateAndTime)();
+  IntColumn get jumlahPemakaian => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {pola};
+}
+
 /// Akun/dompet; nama diambil dari institusi (Bagian 7.3), atau nama bebas yang
 /// diisi pengguna bila ada.
 class Accounts extends Table {
@@ -185,6 +208,8 @@ class Budgets extends Table {
     Transactions,
     Budgets,
     RecurringRules,
+    Debts,
+    MerchantHabits,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -192,7 +217,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _open());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -223,6 +248,10 @@ class AppDatabase extends _$AppDatabase {
         // v6: catatan utang/piutang, lalu kolom penghubung di transaksi.
         await m.createTable(debts);
         await m.addColumn(transactions, transactions.debtId);
+      }
+      if (from < 7) {
+        // v7: kebiasaan pedagang -> kategori & akun (saran saat scan struk).
+        await m.createTable(merchantHabits);
       }
       await _createIndexes();
     },

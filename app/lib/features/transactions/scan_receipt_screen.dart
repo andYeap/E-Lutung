@@ -41,6 +41,10 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   String? _kategoriId;
   String? _akunId;
 
+  /// Saran kategori & akun dari kebiasaan pedagang (v1.5). Hanya saran:
+  /// terlihat, bisa dihapus, dan tidak pernah menyimpan sendiri.
+  MerchantHabit? _saran;
+
   bool get _adaIsian =>
       _imagePath != null ||
       _nominal.text.trim().isNotEmpty ||
@@ -100,11 +104,41 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
           _keterangan.text = draft.merchant!;
         }
       });
+      await _terapkanSaran(draft.merchant);
     } catch (e) {
       if (!mounted) return;
       setState(() => _memproses = false);
       _snack('Gagal membaca struk: $e. Isi nominalnya manual.');
     }
+  }
+
+  /// Isi kategori & akun dari kebiasaan pedagang, bila ada.
+  ///
+  /// Hanya **saran**: nilai tetap lewat validasi yang sama, selalu terlihat di
+  /// layar, dan tombol hapus mengembalikannya ke pilihan manual. Kalau
+  /// kategorinya sudah tidak ada atau akunnya tidak aktif, saran tidak dipakai.
+  Future<void> _terapkanSaran(String? merchant) async {
+    final habit =
+        await ref.read(transactionRepositoryProvider).cariKebiasaan(merchant);
+    if (!mounted) return;
+    if (habit == null) {
+      if (_saran != null) setState(() => _saran = null);
+      return;
+    }
+    final kategoriAda =
+        (ref.read(categoriesProvider).value ?? const <Category>[])
+            .any((c) => c.id == habit.kategoriId);
+    if (!kategoriAda) return;
+    final akunAktif = (ref.read(accountsProvider).value ?? const [])
+        .where((a) => a.account.aktif && a.institusi.aktif)
+        .map((a) => a.account.id)
+        .toSet();
+    final akunPakai = habit.akunId != null && akunAktif.contains(habit.akunId);
+    setState(() {
+      _saran = habit;
+      _kategoriId = habit.kategoriId;
+      if (akunPakai) _akunId = habit.akunId;
+    });
   }
 
   Future<void> _pilihTanggal() async {
@@ -305,6 +339,43 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          if (_saran != null &&
+              _kategoriId == _saran!.kategoriId &&
+              (_saran!.akunId == null || _akunId == _saran!.akunId))
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+                decoration: Neo.box(
+                  color: Color.alphaBlend(
+                    Neo.income.withValues(alpha: 0.10),
+                    Neo.surface,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.history, size: 18, color: Neo.muted),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Kategori & akun diisi dari catatan sebelumnya '
+                        '(${_saran!.jumlahPemakaian}x untuk pedagang ini). '
+                        'Bisa kamu ubah atau hapus.',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() {
+                        _saran = null;
+                        _kategoriId = null;
+                        _akunId = null;
+                      }),
+                      child: const Text('Hapus'),
+                    ),
+                  ],
+                ),
               ),
             ),
           const SizedBox(height: 16),
