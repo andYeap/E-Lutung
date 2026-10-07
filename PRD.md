@@ -360,10 +360,10 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 
 ### FR-7 Institusi & Akun (Dompet)
 - FR-7.1 CRUD **Institusi**: nama + tipe (enum `bank`/`ewallet`/`tunai`/`lain`); seed institusi umum (BCA, Mandiri, OVO, GoPay, Dana, Tunai, …).
-- FR-7.2 CRUD **Akun**: pilih institusi (wajib), tanda "milik saya"/"pihak lain", saldo awal. Tanpa nama/ikon/warna — nama diambil dari institusi. **Saldo awal** diisi saldo sebelum transaksi pertama yang dicatat, karena saldo berjalan dihitung dari angka itu ditambah seluruh transaksi.
+- FR-7.2 CRUD **Akun**: institusi (wajib), **nama bebas (opsional** — kosong berarti memakai nama institusi), tanda "milik saya"/"pihak lain", saldo awal. Tanpa ikon dan warna. **Saldo awal** diisi saldo sebelum transaksi pertama yang dicatat, karena saldo berjalan dihitung dari angka itu ditambah seluruh transaksi.
 - FR-7.3 Menampilkan saldo berjalan per akun (saldo awal + pemasukan − pengeluaran ± transfer).
 - FR-7.4 Institusi/akun nonaktif tidak muncul di pilihan form baru, tapi tetap tampil di riwayat lama.
-- FR-7.5 **Akun sejenis dibedakan** dengan nomor urut pada tampilan (mis. "BCA (2)"), dihitung dari daftar akun yang lengkap supaya nomornya sama di setiap layar. Tanpa ini dua akun di bank yang sama tampil identik, dan saldo bisa dibaca atau akun bisa dipilih secara keliru.
+- FR-7.5 Label akun memakai **nama yang diisi pengguna** bila ada, kalau tidak nama institusinya. Nomor urut ditambahkan **hanya bila labelnya tetap sama** dengan akun lain (dua akun di institusi yang sama, atau dua nama yang sama), mis. "BCA (2)". Dihitung dari daftar akun yang lengkap supaya nomornya sama di setiap layar; tanpa ini akun yang tampil identik bisa dibaca atau dipilih secara keliru.
 
 ### FR-8 Kategori
 - FR-8.1 CRUD kategori: nama, ikon, warna (tanpa field `jenis`).
@@ -578,9 +578,8 @@ Sudah dikerjakan lebih awal dari rencana:
 
 Masih ditunda:
 
-- Utang/piutang dan cicilan.
+- Utang/piutang dan cicilan. Bentuknya sudah disepakati: **catatan sederhana** — siapa berutang kepada siapa, nominal, tenggat, dan pelunasan sebagian; pembayaran tetap dicatat sebagai transaksi biasa supaya tidak ada model uang kedua.
 - Rollover anggaran (jatah anggaran yang belum terpakai dibawa ke periode berikutnya). Yang sudah ada hanyalah **sisa uang** dari bulan lalu (FR-6.6), dan itu bicara uang nyata, bukan jatah.
 - Sinkronisasi opsional antar-perangkat.
 - Widget iOS (bila aplikasi diperluas ke iOS).
-- Nama akun yang bisa diisi pengguna. Yang ada sekarang hanya nomor urut otomatis untuk akun sejenis (FR-7.6).
-- Font display kustom (mis. Space Grotesk) bila ingin tampilan neobrutalism lebih khas.
+- Font display kustom — **diputuskan tidak dikerjakan**: tipografinya sengaja dibekukan tanpa font kustom agar tetap nyaman dibaca.

@@ -16,11 +16,43 @@ void main() {
   });
   tearDown(() => db.close());
 
-  Future<void> buatAkun(String institusiId) => accounts.create(
+  Future<void> buatAkun(String institusiId, {String? nama}) => accounts.create(
     institusiId: institusiId,
     milikSendiri: true,
     saldoAwal: 0,
+    nama: nama,
   );
+
+  test('nama dari pengguna dipakai bila diisi', () async {
+    await buatAkun('bca', nama: 'Gaji bulanan');
+    final semua = await accounts.watchAll().first;
+
+    expect(akunLabel(semua, semua.single.account.id), 'Gaji bulanan');
+  });
+
+  test('nama yang hanya spasi dianggap kosong', () async {
+    await buatAkun('bca', nama: '   ');
+    final semua = await accounts.watchAll().first;
+
+    expect(semua.single.account.nama, isNull);
+    expect(akunLabel(semua, semua.single.account.id), 'BCA');
+  });
+
+  test('nama yang sama tetap dibedakan nomor urut', () async {
+    await buatAkun('bca', nama: 'Dompet');
+    await buatAkun('mandiri', nama: 'Dompet');
+    final semua = await accounts.watchAll().first;
+
+    expect(akunLabels(semua).values.toSet(), {'Dompet (1)', 'Dompet (2)'});
+  });
+
+  test('nama berbeda tidak perlu nomor urut', () async {
+    await buatAkun('bca', nama: 'Gaji');
+    await buatAkun('bca', nama: 'Tabungan');
+    final semua = await accounts.watchAll().first;
+
+    expect(akunLabels(semua).values.toSet(), {'Gaji', 'Tabungan'});
+  });
 
   test('satu akun per institusi: labelnya nama institusi saja', () async {
     await buatAkun('bca');

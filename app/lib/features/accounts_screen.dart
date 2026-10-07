@@ -179,6 +179,7 @@ Future<void> _showForm(
   AccountWithInstitution? initial,
 }) async {
   final repo = ref.read(accountRepositoryProvider);
+  final namaCtrl = TextEditingController(text: initial?.account.nama ?? '');
   final saldoCtrl = TextEditingController(
     text: initial == null || initial.account.saldoAwal == 0
         ? ''
@@ -220,6 +221,14 @@ Future<void> _showForm(
                     ),
                   );
                 }).toList(),
+              ),
+              const SizedBox(height: 14),
+              // Nama bebas supaya dua akun di bank yang sama bisa dibedakan
+              // tanpa mengandalkan nomor urut otomatis.
+              NeoTextField(
+                controller: namaCtrl,
+                label: 'Nama akun (opsional)',
+                hint: 'Kosongkan untuk memakai nama institusi',
               ),
               const SizedBox(height: 14),
               NeoTextField(
@@ -278,6 +287,7 @@ Future<void> _showForm(
                   institusiId: institusiId,
                   milikSendiri: milikSendiri,
                   saldoAwal: saldo,
+                  nama: namaCtrl.text,
                 );
               } else {
                 await repo.update(
@@ -286,6 +296,7 @@ Future<void> _showForm(
                   milikSendiri: milikSendiri,
                   saldoAwal: saldo,
                   aktif: aktif,
+                  nama: namaCtrl.text,
                 );
               }
               if (ctx.mounted) Navigator.pop(ctx);
@@ -295,6 +306,7 @@ Future<void> _showForm(
       ),
     ),
   );
+  namaCtrl.dispose();
   saldoCtrl.dispose();
 }
 

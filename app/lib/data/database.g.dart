@@ -921,6 +921,15 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _namaMeta = const VerificationMeta('nama');
+  @override
+  late final GeneratedColumn<String> nama = GeneratedColumn<String>(
+    'nama',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _institusiIdMeta = const VerificationMeta(
     'institusiId',
   );
@@ -1013,6 +1022,7 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    nama,
     institusiId,
     milikSendiri,
     saldoAwal,
@@ -1037,6 +1047,12 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
+    }
+    if (data.containsKey('nama')) {
+      context.handle(
+        _namaMeta,
+        nama.isAcceptableOrUnknown(data['nama']!, _namaMeta),
+      );
     }
     if (data.containsKey('institusi_id')) {
       context.handle(
@@ -1101,6 +1117,10 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
+      nama: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nama'],
+      ),
       institusiId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}institusi_id'],
@@ -1140,6 +1160,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
 
 class Account extends DataClass implements Insertable<Account> {
   final String id;
+
+  /// Nama bebas dari pengguna. Kosong berarti namanya diambil dari institusi.
+  final String? nama;
   final String institusiId;
   final bool milikSendiri;
   final int saldoAwal;
@@ -1149,6 +1172,7 @@ class Account extends DataClass implements Insertable<Account> {
   final DateTime? deletedAt;
   const Account({
     required this.id,
+    this.nama,
     required this.institusiId,
     required this.milikSendiri,
     required this.saldoAwal,
@@ -1161,6 +1185,9 @@ class Account extends DataClass implements Insertable<Account> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    if (!nullToAbsent || nama != null) {
+      map['nama'] = Variable<String>(nama);
+    }
     map['institusi_id'] = Variable<String>(institusiId);
     map['milik_sendiri'] = Variable<bool>(milikSendiri);
     map['saldo_awal'] = Variable<int>(saldoAwal);
@@ -1176,6 +1203,7 @@ class Account extends DataClass implements Insertable<Account> {
   AccountsCompanion toCompanion(bool nullToAbsent) {
     return AccountsCompanion(
       id: Value(id),
+      nama: nama == null && nullToAbsent ? const Value.absent() : Value(nama),
       institusiId: Value(institusiId),
       milikSendiri: Value(milikSendiri),
       saldoAwal: Value(saldoAwal),
@@ -1195,6 +1223,7 @@ class Account extends DataClass implements Insertable<Account> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Account(
       id: serializer.fromJson<String>(json['id']),
+      nama: serializer.fromJson<String?>(json['nama']),
       institusiId: serializer.fromJson<String>(json['institusiId']),
       milikSendiri: serializer.fromJson<bool>(json['milikSendiri']),
       saldoAwal: serializer.fromJson<int>(json['saldoAwal']),
@@ -1209,6 +1238,7 @@ class Account extends DataClass implements Insertable<Account> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'nama': serializer.toJson<String?>(nama),
       'institusiId': serializer.toJson<String>(institusiId),
       'milikSendiri': serializer.toJson<bool>(milikSendiri),
       'saldoAwal': serializer.toJson<int>(saldoAwal),
@@ -1221,6 +1251,7 @@ class Account extends DataClass implements Insertable<Account> {
 
   Account copyWith({
     String? id,
+    Value<String?> nama = const Value.absent(),
     String? institusiId,
     bool? milikSendiri,
     int? saldoAwal,
@@ -1230,6 +1261,7 @@ class Account extends DataClass implements Insertable<Account> {
     Value<DateTime?> deletedAt = const Value.absent(),
   }) => Account(
     id: id ?? this.id,
+    nama: nama.present ? nama.value : this.nama,
     institusiId: institusiId ?? this.institusiId,
     milikSendiri: milikSendiri ?? this.milikSendiri,
     saldoAwal: saldoAwal ?? this.saldoAwal,
@@ -1241,6 +1273,7 @@ class Account extends DataClass implements Insertable<Account> {
   Account copyWithCompanion(AccountsCompanion data) {
     return Account(
       id: data.id.present ? data.id.value : this.id,
+      nama: data.nama.present ? data.nama.value : this.nama,
       institusiId: data.institusiId.present
           ? data.institusiId.value
           : this.institusiId,
@@ -1259,6 +1292,7 @@ class Account extends DataClass implements Insertable<Account> {
   String toString() {
     return (StringBuffer('Account(')
           ..write('id: $id, ')
+          ..write('nama: $nama, ')
           ..write('institusiId: $institusiId, ')
           ..write('milikSendiri: $milikSendiri, ')
           ..write('saldoAwal: $saldoAwal, ')
@@ -1273,6 +1307,7 @@ class Account extends DataClass implements Insertable<Account> {
   @override
   int get hashCode => Object.hash(
     id,
+    nama,
     institusiId,
     milikSendiri,
     saldoAwal,
@@ -1286,6 +1321,7 @@ class Account extends DataClass implements Insertable<Account> {
       identical(this, other) ||
       (other is Account &&
           other.id == this.id &&
+          other.nama == this.nama &&
           other.institusiId == this.institusiId &&
           other.milikSendiri == this.milikSendiri &&
           other.saldoAwal == this.saldoAwal &&
@@ -1297,6 +1333,7 @@ class Account extends DataClass implements Insertable<Account> {
 
 class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<String> id;
+  final Value<String?> nama;
   final Value<String> institusiId;
   final Value<bool> milikSendiri;
   final Value<int> saldoAwal;
@@ -1307,6 +1344,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<int> rowid;
   const AccountsCompanion({
     this.id = const Value.absent(),
+    this.nama = const Value.absent(),
     this.institusiId = const Value.absent(),
     this.milikSendiri = const Value.absent(),
     this.saldoAwal = const Value.absent(),
@@ -1318,6 +1356,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   });
   AccountsCompanion.insert({
     required String id,
+    this.nama = const Value.absent(),
     required String institusiId,
     this.milikSendiri = const Value.absent(),
     this.saldoAwal = const Value.absent(),
@@ -1330,6 +1369,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
        institusiId = Value(institusiId);
   static Insertable<Account> custom({
     Expression<String>? id,
+    Expression<String>? nama,
     Expression<String>? institusiId,
     Expression<bool>? milikSendiri,
     Expression<int>? saldoAwal,
@@ -1341,6 +1381,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (nama != null) 'nama': nama,
       if (institusiId != null) 'institusi_id': institusiId,
       if (milikSendiri != null) 'milik_sendiri': milikSendiri,
       if (saldoAwal != null) 'saldo_awal': saldoAwal,
@@ -1354,6 +1395,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
 
   AccountsCompanion copyWith({
     Value<String>? id,
+    Value<String?>? nama,
     Value<String>? institusiId,
     Value<bool>? milikSendiri,
     Value<int>? saldoAwal,
@@ -1365,6 +1407,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   }) {
     return AccountsCompanion(
       id: id ?? this.id,
+      nama: nama ?? this.nama,
       institusiId: institusiId ?? this.institusiId,
       milikSendiri: milikSendiri ?? this.milikSendiri,
       saldoAwal: saldoAwal ?? this.saldoAwal,
@@ -1381,6 +1424,9 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (nama.present) {
+      map['nama'] = Variable<String>(nama.value);
     }
     if (institusiId.present) {
       map['institusi_id'] = Variable<String>(institusiId.value);
@@ -1413,6 +1459,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   String toString() {
     return (StringBuffer('AccountsCompanion(')
           ..write('id: $id, ')
+          ..write('nama: $nama, ')
           ..write('institusiId: $institusiId, ')
           ..write('milikSendiri: $milikSendiri, ')
           ..write('saldoAwal: $saldoAwal, ')
@@ -4678,6 +4725,7 @@ typedef $$CategoriesTableProcessedTableManager =
     >;
 typedef $$AccountsTableCreateCompanionBuilder = AccountsCompanion Function({
   required String id,
+  Value<String?> nama,
   required String institusiId,
   Value<bool> milikSendiri,
   Value<int> saldoAwal,
@@ -4689,6 +4737,7 @@ typedef $$AccountsTableCreateCompanionBuilder = AccountsCompanion Function({
 });
 typedef $$AccountsTableUpdateCompanionBuilder = AccountsCompanion Function({
   Value<String> id,
+  Value<String?> nama,
   Value<String> institusiId,
   Value<bool> milikSendiri,
   Value<int> saldoAwal,
@@ -4750,6 +4799,11 @@ class $$AccountsTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nama => $composableBuilder(
+    column: $table.nama,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4846,6 +4900,11 @@ class $$AccountsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get nama => $composableBuilder(
+    column: $table.nama,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get milikSendiri => $composableBuilder(
     column: $table.milikSendiri,
     builder: (column) => ColumnOrderings(column),
@@ -4911,6 +4970,9 @@ class $$AccountsTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nama =>
+      $composableBuilder(column: $table.nama, builder: (column) => column);
 
   GeneratedColumn<bool> get milikSendiri => $composableBuilder(
     column: $table.milikSendiri,
@@ -5010,6 +5072,7 @@ class $$AccountsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
+                Value<String?> nama = const Value.absent(),
                 Value<String> institusiId = const Value.absent(),
                 Value<bool> milikSendiri = const Value.absent(),
                 Value<int> saldoAwal = const Value.absent(),
@@ -5020,6 +5083,7 @@ class $$AccountsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => AccountsCompanion(
                 id: id,
+                nama: nama,
                 institusiId: institusiId,
                 milikSendiri: milikSendiri,
                 saldoAwal: saldoAwal,
@@ -5032,6 +5096,7 @@ class $$AccountsTableTableManager
           createCompanionCallback:
               ({
                 required String id,
+                Value<String?> nama = const Value.absent(),
                 required String institusiId,
                 Value<bool> milikSendiri = const Value.absent(),
                 Value<int> saldoAwal = const Value.absent(),
@@ -5042,6 +5107,7 @@ class $$AccountsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => AccountsCompanion.insert(
                 id: id,
+                nama: nama,
                 institusiId: institusiId,
                 milikSendiri: milikSendiri,
                 saldoAwal: saldoAwal,

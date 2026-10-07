@@ -51,6 +51,9 @@ class Categories extends Table {
 /// Akun/dompet; nama diambil dari institusi (Bagian 7.3), tanpa label.
 class Accounts extends Table {
   TextColumn get id => text()();
+
+  /// Nama bebas dari pengguna. Kosong berarti namanya diambil dari institusi.
+  TextColumn get nama => text().nullable()();
   TextColumn get institusiId => text().references(Institutions, #id)();
   BoolColumn get milikSendiri => boolean().withDefault(const Constant(true))();
   IntColumn get saldoAwal => integer().withDefault(const Constant(0))();
@@ -156,7 +159,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _open());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -178,6 +181,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 4) {
         // v4: kolom path foto struk (fitur scan struk).
         await m.addColumn(transactions, transactions.strukPath);
+      }
+      if (from < 5) {
+        // v5: nama akun yang bisa diisi pengguna (opsional).
+        await m.addColumn(accounts, accounts.nama);
       }
       await _createIndexes();
     },
