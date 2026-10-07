@@ -12,7 +12,8 @@ jobs:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
+      # v7: v4 masih menargetkan Node.js 20 yang sudah usang di runner GitHub.
+      - uses: actions/checkout@v7
 
       # Berjalan sebelum pub get, dan menangkap teks rusak lebih awal
       # daripada menunggu analyze dan test selesai. Override working-directory
