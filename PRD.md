@@ -152,7 +152,9 @@ Pengguna boleh mengganti warna tampilan, tidak lagi terpaku pada palet Bagian 6b
 - `income`, `expense`, dan `transfer` tetap **terkunci**. Ketiganya pembawa makna, dan membiarkannya diubah membuat warna berhenti bisa dipercaya.
 - `muted` (teks sekunder) **diturunkan** dari `ink` dan `bg` dengan transparansi, bukan token tersendiri, supaya selalu ikut menyesuaikan dan tidak bisa jadi tak terbaca.
 
-**Preset dan penyesuaian.** Tersedia beberapa palet bawaan sebagai titik awal, masing-masing dengan pasangan terang dan gelap. Setelah memilih preset, tiap token di atas masih bisa disetel sendiri. Satu tombol mengembalikan mode yang sedang disunting ke preset-nya.
+**Preset dan penyesuaian.** Tersedia delapan palet bawaan sebagai titik awal — Krem (bawaan), Biru Langit, Ungu Lembut, Teal Tenang, Abu Netral, Malam Hangat, Grafit Sejuk, dan Tinta Lembut — masing-masing dengan pasangan terang dan gelap. Setelah memilih preset, tiap token di atas masih bisa disetel sendiri. Satu tombol mengembalikan mode yang sedang disunting ke preset-nya.
+
+**Kenyamanan mode gelap.** Varian gelap sengaja tidak memakai latar hitam pekat berpasangan dengan teks putih murni: pasangan itu menghasilkan kontras di atas 13:1 dan melelahkan mata pada pemakaian lama. Kontras teksnya ditahan sekitar 8-10:1, latarnya dinaikkan sedikit dari hitam, dan aksennya dijinakkan (kejenuhan serta kecerahannya diturunkan) supaya tidak menyala. Batas nyaman ini dikunci `test/contrast_test.dart`.
 
 **Pengaman (wajib):**
 

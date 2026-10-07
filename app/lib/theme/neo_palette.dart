@@ -117,6 +117,13 @@ class ThemePreset {
 ///
 /// Aksennya sengaja dijauhkan dari hijau pemasukan dan merah pengeluaran
 /// supaya aturan Bagian 6b tetap terasa pada pilihan bawaan.
+///
+/// **Varian gelap.** Latarnya sengaja bukan hitam pekat dan teksnya bukan putih
+/// murni: pasangan hitam-putih menghasilkan kontras di atas 13:1, dan dalam
+/// pemakaian lama itu melelahkan mata. Angka di sini dijaga sekitar 8-10:1 —
+/// masih di atas ambang WCAG AAA (7:1) tetapi jauh lebih nyaman. Aksennya juga
+/// dijinakkan (kejenuhan dan kecerahannya diturunkan) supaya tidak menyala di
+/// atas latar gelap. Semuanya dikunci `test/contrast_test.dart`.
 const List<ThemePreset> kThemePresets = [
   ThemePreset(
     id: 'krem',
@@ -129,11 +136,11 @@ const List<ThemePreset> kThemePresets = [
       accent: Color(0xFFF2CE6B),
     ),
     dark: NeoPalette(
-      bg: Color(0xFF1E1F22),
-      surface: Color(0xFF2A2C30),
-      ink: Color(0xFFE8E7E3),
-      appBar: Color(0xFF2A2C30),
-      accent: Color(0xFFF2CE6B),
+      bg: Color(0xFF26231E),
+      surface: Color(0xFF302C26),
+      ink: Color(0xFFCFC8BA),
+      appBar: Color(0xFF302C26),
+      accent: Color(0xFFD9BC72),
     ),
   ),
   ThemePreset(
@@ -149,11 +156,11 @@ const List<ThemePreset> kThemePresets = [
       accent: Color(0xFF7FC4D6),
     ),
     dark: NeoPalette(
-      bg: Color(0xFF161C22),
-      surface: Color(0xFF222B33),
-      ink: Color(0xFFE3EAF1),
-      appBar: Color(0xFF222B33),
-      accent: Color(0xFF6FAFBF),
+      bg: Color(0xFF1E242A),
+      surface: Color(0xFF28313A),
+      ink: Color(0xFFC3CED9),
+      appBar: Color(0xFF28313A),
+      accent: Color(0xFF7FA3B5),
     ),
   ),
   ThemePreset(
@@ -167,11 +174,11 @@ const List<ThemePreset> kThemePresets = [
       accent: Color(0xFFB9A5D9),
     ),
     dark: NeoPalette(
-      bg: Color(0xFF1C1822),
-      surface: Color(0xFF292331),
-      ink: Color(0xFFEDE8F3),
-      appBar: Color(0xFF292331),
-      accent: Color(0xFFA98FCB),
+      bg: Color(0xFF24202B),
+      surface: Color(0xFF2E2937),
+      ink: Color(0xFFCDC6D9),
+      appBar: Color(0xFF2E2937),
+      accent: Color(0xFFA08CC0),
     ),
   ),
   ThemePreset(
@@ -185,11 +192,11 @@ const List<ThemePreset> kThemePresets = [
       accent: Color(0xFF8FC7C0),
     ),
     dark: NeoPalette(
-      bg: Color(0xFF151F1E),
-      surface: Color(0xFF212D2C),
-      ink: Color(0xFFE1EFED),
-      appBar: Color(0xFF212D2C),
-      accent: Color(0xFF7FB5AE),
+      bg: Color(0xFF1F2927),
+      surface: Color(0xFF293432),
+      ink: Color(0xFFC5D1CE),
+      appBar: Color(0xFF293432),
+      accent: Color(0xFF7FAAA3),
     ),
   ),
   ThemePreset(
@@ -203,11 +210,65 @@ const List<ThemePreset> kThemePresets = [
       accent: Color(0xFFC9C9CE),
     ),
     dark: NeoPalette(
-      bg: Color(0xFF1B1B1D),
-      surface: Color(0xFF27272A),
-      ink: Color(0xFFE9E9EB),
-      appBar: Color(0xFF27272A),
-      accent: Color(0xFFB4B4BA),
+      bg: Color(0xFF242427),
+      surface: Color(0xFF2E2E32),
+      ink: Color(0xFFCDCDD2),
+      appBar: Color(0xFF2E2E32),
+      accent: Color(0xFFA6A6AE),
+    ),
+  ),
+  ThemePreset(
+    id: 'malam-hangat',
+    name: 'Malam Hangat',
+    light: NeoPalette(
+      bg: Color(0xFFFAF4EE),
+      surface: Color(0xFFFFFCF8),
+      ink: Color(0xFF3C322A),
+      appBar: Color(0xFFC9A87C),
+      accent: Color(0xFFC9A87C),
+    ),
+    dark: NeoPalette(
+      bg: Color(0xFF262220),
+      surface: Color(0xFF302B27),
+      ink: Color(0xFFCFC6BE),
+      appBar: Color(0xFF302B27),
+      accent: Color(0xFFB99C74),
+    ),
+  ),
+  ThemePreset(
+    id: 'grafit-sejuk',
+    name: 'Grafit Sejuk',
+    light: NeoPalette(
+      bg: Color(0xFFF1F4F6),
+      surface: Color(0xFFFCFDFE),
+      ink: Color(0xFF2F383E),
+      appBar: Color(0xFF93A7B2),
+      accent: Color(0xFF93A7B2),
+    ),
+    dark: NeoPalette(
+      bg: Color(0xFF22262A),
+      surface: Color(0xFF2C3237),
+      ink: Color(0xFFC7CFD5),
+      appBar: Color(0xFF2C3237),
+      accent: Color(0xFF8199A6),
+    ),
+  ),
+  ThemePreset(
+    id: 'tinta-lembut',
+    name: 'Tinta Lembut',
+    light: NeoPalette(
+      bg: Color(0xFFF2F4F7),
+      surface: Color(0xFFFCFDFF),
+      ink: Color(0xFF343B44),
+      appBar: Color(0xFFA8B2C0),
+      accent: Color(0xFFA8B2C0),
+    ),
+    dark: NeoPalette(
+      bg: Color(0xFF212429),
+      surface: Color(0xFF2B2F35),
+      ink: Color(0xFFC6CCD3),
+      appBar: Color(0xFF2B2F35),
+      accent: Color(0xFF8C97A8),
     ),
   ),
 ];

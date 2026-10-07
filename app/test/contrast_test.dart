@@ -86,7 +86,33 @@ void main() {
       }
     });
 
-    test('kontras rendah memunculkan peringatan', () {
+    test('varian gelap bawaan nyaman: tidak hitam pekat, kontrasnya tidak ekstrem', () {
+    for (final preset in kThemePresets) {
+      final gelap = preset.dark;
+      // Latar hitam pekat membuat teks terang terasa menyala di mata.
+      expect(
+        gelap.bg.computeLuminance(),
+        greaterThan(0.012),
+        reason: '${preset.id}: latar terlalu pekat',
+      );
+
+      // Ambang bawah demi keterbacaan, ambang atas demi kenyamanan: di atas
+      // sekitar 12:1 huruf terang di latar gelap mulai melelahkan.
+      final rasio = contrastRatio(gelap.ink, gelap.bg);
+      expect(
+        rasio,
+        greaterThanOrEqualTo(4.5),
+        reason: '${preset.id}: teks terlalu redup (${rasio.toStringAsFixed(1)}:1)',
+      );
+      expect(
+        rasio,
+        lessThanOrEqualTo(11),
+        reason: '${preset.id}: teks terlalu menyala (${rasio.toStringAsFixed(1)}:1)',
+      );
+    }
+  });
+
+  test('kontras rendah memunculkan peringatan', () {
       const p = NeoPalette(
         bg: Color(0xFFF6F5F1),
         surface: Color(0xFFFCFCFA),
