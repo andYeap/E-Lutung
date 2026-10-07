@@ -6,6 +6,11 @@
 # sudah ada di sistem.
 #
 # Pemakaian: tool/prd-ke-pdf.sh        (dari mana saja)
+#
+# Catatan: setiap pencetakan menghasilkan berkas yang berbeda byte-nya karena
+# chromium menuliskan waktu pembuatan, jadi PRD.pdf akan selalu tampak berubah
+# di git walau isinya sama. Bandingkan isinya (mis. dengan pdftotext) sebelum
+# menganggap ada perubahan sungguhan.
 
 set -euo pipefail
 

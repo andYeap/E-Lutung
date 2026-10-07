@@ -69,6 +69,7 @@ dart run build_runner build        # WAJIB setelah mengubah skema Drift
 flutter analyze                    # harus 0 issue
 flutter test                       # seluruh test otomatis
 flutter run
+./tool/prd-ke-pdf.sh               # cetak ulang PRD.pdf setelah menyunting PRD.md
 flutter build apk --release
 flutter build appbundle --release
 flutter build apk --release --split-per-abi
