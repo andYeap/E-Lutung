@@ -135,4 +135,67 @@ void main() {
 
     await bereskan(tester);
   });
+
+  /// Nilai sebuah petak statistik di Dashboard, dicari lewat labelnya. Nominal
+  /// yang sama juga muncul di daftar transaksi terbaru, jadi mencari langsung
+  /// berdasarkan teks nominal akan salah sasaran.
+  String nilaiStat(WidgetTester tester, String label) {
+    final kolom = find
+        .ancestor(of: find.text(label), matching: find.byType(Column))
+        .first;
+    return tester
+        .widget<Text>(
+          find.descendant(of: kolom, matching: find.textContaining('Rp')),
+        )
+        .data!;
+  }
+
+  Future<void> catatPemasukanDanPengeluaran(
+    DateTime now,
+    String akunId,
+  ) async {
+    await transactions.create(
+      tipe: TxType.pemasukan,
+      nominal: 100000,
+      tanggal: now,
+      akunId: akunId,
+    );
+    await transactions.create(
+      tipe: TxType.pengeluaran,
+      nominal: 50000,
+      tanggal: now,
+      kategoriId: 'makanan',
+      akunId: akunId,
+    );
+  }
+
+  testWidgets('saldo awal nol: Sisa sama dengan Selisih', (tester) async {
+    final now = DateTime.now();
+    final akunId = await buatAkun(0);
+    await catatPemasukanDanPengeluaran(now, akunId);
+
+    await nyalakan(tester);
+
+    // Arus bulan ini (100.000 - 50.000) sekaligus stok akhir bulan, karena
+    // saldo awalnya nol dan belum ada transaksi sebelumnya. Karena itu keduanya
+    // memang harus sama.
+    expect(nilaiStat(tester, 'Selisih'), 'Rp 50.000');
+    expect(nilaiStat(tester, 'Sisa'), 'Rp 50.000');
+
+    await bereskan(tester);
+  });
+
+  testWidgets('ada saldo awal: Sisa berbeda dari Selisih', (tester) async {
+    final now = DateTime.now();
+    final akunId = await buatAkun(1000000);
+    await catatPemasukanDanPengeluaran(now, akunId);
+
+    await nyalakan(tester);
+
+    // Selisih bulan ini 50.000, tetapi uang yang tersisa 1.050.000.
+    expect(nilaiStat(tester, 'Selisih'), 'Rp 50.000');
+    expect(nilaiStat(tester, 'Sisa'), 'Rp 1.050.000');
+
+    await bereskan(tester);
+  });
 }
