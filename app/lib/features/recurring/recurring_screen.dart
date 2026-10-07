@@ -77,7 +77,7 @@ class RecurringScreen extends ConsumerWidget {
               );
               final pengeluaran = r.tipe == TxType.pengeluaran;
               return NeoCard(
-                onTap: () => _showForm(
+                onTap: () => showRecurringForm(
                   context,
                   ref,
                   categories,
@@ -157,7 +157,7 @@ class RecurringScreen extends ConsumerWidget {
           borderRadius: BorderRadius.circular(Neo.radius),
           side: BorderSide(color: Neo.ink, width: Neo.borderW),
         ),
-        onPressed: () => _showForm(context, ref, categories, accounts),
+        onPressed: () => showRecurringForm(context, ref, categories, accounts),
         child: const Icon(Icons.add),
       ),
     );
@@ -200,7 +200,7 @@ Future<void> _confirmDelete(
   if (ok == true) await repo.softDelete(r.id);
 }
 
-Future<void> _showForm(
+Future<void> showRecurringForm(
   BuildContext context,
   WidgetRef ref,
   List<Category> categories,

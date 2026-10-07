@@ -23,6 +23,7 @@ import 'institutions_screen.dart';
 import 'recap/recap_screen.dart';
 import 'recurring/recurring_screen.dart';
 import 'receipts/receipts_screen.dart';
+import 'repair_screen.dart';
 import 'theme/theme_screen.dart';
 import 'transactions/add_transaction_sheet.dart';
 import 'transactions/transaction_form_screen.dart';
@@ -379,6 +380,30 @@ class SettingsScreen extends ConsumerWidget {
                         : '$jml foto tersimpan di perangkat',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ReceiptsScreen()),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          Consumer(
+            builder: (context, ref, _) {
+              final txs =
+                  ref.watch(allTransactionsProvider).value ??
+                  const <Transaction>[];
+              final rules =
+                  ref.watch(recurringRulesProvider).value ??
+                  const <RecurringRule>[];
+              final jml =
+                  transaksiTanpaAkun(txs).length +
+                  aturanTanpaAkun(rules).length;
+              return _SettingsTile(
+                icon: Icons.build_outlined,
+                title: 'Perlu dibenahi',
+                subtitle: jml == 0
+                    ? 'Semua catatan sudah punya akun'
+                    : '$jml catatan lama belum punya akun',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const RepairScreen()),
                 ),
               );
             },

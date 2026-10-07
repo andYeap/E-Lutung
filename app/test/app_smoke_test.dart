@@ -187,6 +187,27 @@ void main() {
     await bereskan(tester);
   });
 
+  testWidgets('Pengaturan membuka layar Perlu dibenahi', (tester) async {
+    await nyalakan(tester);
+    await lolosOnboarding(tester);
+
+    await tester.tap(find.byIcon(Icons.settings));
+    await pumpBeberapaKali(tester);
+
+    await tester.ensureVisible(find.text('Perlu dibenahi'));
+    await tester.tap(find.text('Perlu dibenahi'));
+    await pumpBeberapaKali(tester);
+
+    expect(tester.takeException(), isNull);
+    // Basis data kosong, jadi tidak ada catatan lama yang perlu dibetulkan.
+    expect(
+      find.textContaining('Tidak ada yang perlu dibenahi'),
+      findsOneWidget,
+    );
+
+    await bereskan(tester);
+  });
+
   testWidgets('mode gelap benar-benar terpasang pada tema', (tester) async {
     await theme.setMode(ThemeMode.dark);
     await nyalakan(tester);
