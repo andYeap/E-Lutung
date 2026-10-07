@@ -213,9 +213,18 @@ class _BudgetCard extends ConsumerWidget {
   /// bukan selalu bulan berjalan.
   final DateTime month;
 
+  /// Maksimal baris anggaran terpakai yang ditampilkan; sisanya diringkas jadi
+  /// satu catatan supaya kartu di Dashboard tidak memanjang.
+  static const _maksBaris = 3;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final budgets = ref.watch(budgetsProvider).value ?? const <Budget>[];
+    final catName = {
+      for (final c
+          in ref.watch(allCategoriesProvider).value ?? const <Category>[])
+        c.id: c.nama,
+    };
     final monthStart = DateTime(month.year, month.month, 1);
     final monthEnd = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
 
@@ -229,9 +238,8 @@ class _BudgetCard extends ConsumerWidget {
               !b.periodeSelesai.isBefore(monthStart),
         )
         .toList();
-    final ringkas = totalAnggaranOf(berlaku, all, ownIds);
 
-    if (ringkas.kosong) {
+    if (berlaku.isEmpty) {
       // Tanpa membedakan dua sebab ini, kartu mengaku tidak ada anggaran
       // padahal anggaran aktifnya hanya berada di periode lain.
       final adaPeriodeLain = budgets.any((b) => b.aktif);
@@ -246,59 +254,109 @@ class _BudgetCard extends ConsumerWidget {
       );
     }
 
-    final level = budgetLevel(ringkas.fraction);
-    final color = budgetColor(level);
+    // Hanya anggaran yang sudah terpakai yang ditampilkan, dan yang paling
+    // terkuras lebih dulu: itu yang perlu ditindak. Anggaran yang belum
+    // tersentuh tidak perlu memakan ruang di Dashboard.
+    final terpakai = <(Budget, BudgetUsage)>[];
+    for (final b in berlaku) {
+      final usage = budgetUsageOf(b, all, ownIds);
+      if (usage.used > 0) terpakai.add((b, usage));
+    }
+    terpakai.sort((a, b) => b.$2.fraction.compareTo(a.$2.fraction));
+    final belumTerpakai = berlaku.length - terpakai.length;
+
+    if (terpakai.isEmpty) {
+      return NeoCard(
+        child: Text(
+          'Belum ada anggaran yang terpakai untuk periode ini. '
+          '$belumTerpakai anggaran sudah disetel, buka tab Anggaran.',
+          style: TextStyle(color: Neo.muted, fontSize: 12),
+        ),
+      );
+    }
+
+    final tampil = terpakai.take(_maksBaris).toList();
+    final sisaTerpakai = terpakai.length - tampil.length;
+
     return NeoCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: NeoSectionTitle(
-                  ringkas.dariKategori ? 'Total anggaran' : 'Anggaran aktif',
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.18),
-                  border: Border.all(color: Neo.ink, width: 1.5),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  budgetLevelLabel(level),
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
-                ),
-              ),
-            ],
-          ),
-          if (ringkas.dariKategori) ...[
-            const SizedBox(height: 2),
+          const NeoSectionTitle('Anggaran terpakai'),
+          for (final (budget, usage) in tampil) ...[
+            const SizedBox(height: 12),
+            _BarisAnggaran(
+              nama: budget.lingkup == BudgetScope.total
+                  ? 'Total pengeluaran'
+                  : (catName[budget.kategoriId] ?? 'Kategori'),
+              usage: usage,
+            ),
+          ],
+          if (sisaTerpakai > 0 || belumTerpakai > 0) ...[
+            const SizedBox(height: 10),
             Text(
-              'gabungan ${ringkas.jumlahAnggaran} anggaran kategori · '
-              'anggaran total belum disetel',
+              [
+                if (sisaTerpakai > 0) '+$sisaTerpakai anggaran terpakai lain',
+                if (belumTerpakai > 0)
+                  '$belumTerpakai anggaran lain belum terpakai',
+              ].join(' · '),
               style: TextStyle(color: Neo.muted, fontSize: 11),
             ),
           ],
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: ringkas.fraction.clamp(0, 1),
-              minHeight: 12,
-              backgroundColor: Neo.bg,
-              valueColor: AlwaysStoppedAnimation(color),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'sisa ${sisaAnggaranTeks(ringkas.remaining)} / ${rupiah(ringkas.nominal)} '
-            '(${(ringkas.fraction * 100).toStringAsFixed(0)}%)',
-            style: const TextStyle(fontSize: 12),
-          ),
         ],
       ),
+    );
+  }
+}
+
+/// Satu baris anggaran di kartu Dashboard: nama, persentase terpakai, bar, dan
+/// sisa. Warnanya mengikuti Bagian 8.2 lewat [budgetColor].
+class _BarisAnggaran extends StatelessWidget {
+  const _BarisAnggaran({required this.nama, required this.usage});
+
+  final String nama;
+  final BudgetUsage usage;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = budgetColor(budgetLevel(usage.fraction));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                nama,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+              ),
+            ),
+            Text(
+              '${(usage.fraction * 100).toStringAsFixed(0)}%',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: usage.fraction.clamp(0, 1),
+            minHeight: 10,
+            backgroundColor: Neo.bg,
+            valueColor: AlwaysStoppedAnimation(color),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'sisa ${sisaAnggaranTeks(usage.remaining)} / ${rupiah(usage.budget.nominal)}',
+          style: TextStyle(color: Neo.muted, fontSize: 11),
+        ),
+      ],
     );
   }
 }
