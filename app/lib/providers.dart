@@ -11,7 +11,7 @@ import 'data/repositories/recurring_repository.dart';
 import 'data/repositories/debt_repository.dart';
 import 'data/repositories/transaction_repository.dart';
 
-export 'data/backup.dart' show BackupService;
+export 'data/backup.dart' show BackupService, RestorePreview;
 export 'data/repositories/account_repository.dart'
     show AccountWithInstitution, akunLabel, akunLabels;
 export 'data/repositories/debt_repository.dart' show DebtRepository, DebtWithPaid;

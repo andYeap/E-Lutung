@@ -422,6 +422,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-15.3 Impor menolak berkas dari **versi format yang lebih baru**, dan menolak berkas asing atau rusak **tanpa menghapus** data yang sudah ada.
 - FR-15.4 Foto struk tidak ikut di dalam cadangan (hanya pathnya), jadi setelah impor di perangkat lain fotonya ditandai hilang dan bisa dibersihkan.
 - FR-15.5 Format cadangan naik ke versi 2 saat catatan utang/piutang ditambahkan: aplikasi versi lama menolak berkas itu alih-alih memulihkannya tanpa catatannya.
+- FR-15.6 Sebelum memulihkan, berkasnya dibaca lebih dulu **tanpa mengubah data apa pun** dan dampaknya ditampilkan: berapa baris yang ditambah, ditimpa, dan dihidupkan kembali karena pernah dihapus, serta pada mode Ganti berapa baris yang akan dihapus lebih dulu termasuk kategori dan institusi. Pengguna bisa membatalkan dari dialog itu.
 
 ### FR-16 Utang & Piutang (v1.4)
 - FR-16.1 Satu catatan menyimpan **arah** (`utang` = kita yang berutang, `piutang` = orang lain berutang kepada kita), **nama pihak**, **nominal pokok**, **tenggat** (opsional), dan catatan. Tersimpan di tabel `debts`, skema v6.

@@ -551,19 +551,87 @@ Future<void> _importDialog(BuildContext context, BackupService backup) async {
     petunjuk: 'Isi bila cadangan terkunci; kosongkan bila tidak.',
   );
   if (sandi == null || !context.mounted) return;
-  final n = await backup.importFile(replace: mode == 'replace', passphrase: sandi);
+  final ganti = mode == 'replace';
+
+  // Dibaca dulu tanpa mengubah apa pun, supaya akibatnya bisa ditunjukkan
+  // sebelum data benar-benar dipulihkan.
+  final berkas = await backup.bacaBerkas(passphrase: sandi);
   if (!context.mounted) return;
-  final msg = n == -1
-      ? 'Impor dibatalkan'
-      : n == -2
-      ? 'Cadangan terkunci — jalankan lagi dan isi kata sandinya'
-      : n == -3
-      ? 'Impor ditolak: cadangan ini dibuat aplikasi versi lebih baru'
-      : (n == 0
-            ? 'Impor gagal: file tidak valid atau kata sandi salah'
-            : 'Berhasil impor $n baris');
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  if (berkas is int) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(_pesanImpor(berkas))));
+    return;
+  }
+
+  final pratinjau = await backup.previewRestore(
+    berkas as Map<String, dynamic>,
+    replace: ganti,
+  );
+  if (!context.mounted) return;
+  final lanjut = await _konfirmasiImpor(context, pratinjau, ganti: ganti);
+  if (lanjut != true) return;
+
+  final n = await backup.restore(berkas, replace: ganti);
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(_pesanImpor(n))));
 }
+
+/// Pesan hasil impor. Angka positif berarti jumlah baris yang dipulihkan.
+String _pesanImpor(int kode) => switch (kode) {
+  -1 => 'Impor dibatalkan',
+  -2 => 'Cadangan terkunci — jalankan lagi dan isi kata sandinya',
+  -3 => 'Impor ditolak: cadangan ini dibuat aplikasi versi lebih baru',
+  0 => 'Impor gagal: file tidak valid atau kata sandi salah',
+  _ => 'Berhasil impor $kode baris',
+};
+
+/// Menunjukkan dampak impor sebelum dijalankan.
+Future<bool?> _konfirmasiImpor(
+  BuildContext context,
+  RestorePreview p, {
+  required bool ganti,
+}) => showDialog<bool>(
+  context: context,
+  builder: (ctx) => AlertDialog(
+    title: const Text('Periksa dulu'),
+    content: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Cadangan ini akan:\n'
+            '• menambah ${p.tambah} baris\n'
+            '• menimpa ${p.timpa} baris yang id-nya sama'
+            '${p.hidupkan > 0 ? '\n• menghidupkan lagi ${p.hidupkan} baris yang pernah dihapus' : ''}'
+            '${ganti ? '\n• menghapus ${p.dihapus} baris di perangkat ini lebih dulu, termasuk kategori dan institusi yang tidak ada di cadangan' : ''}',
+            style: const TextStyle(fontSize: 13),
+          ),
+          if (p.hidupkan > 0) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Baris yang pernah kamu hapus akan muncul kembali di riwayat.',
+              style: TextStyle(color: Neo.muted, fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(ctx, false),
+        child: const Text('Batal'),
+      ),
+      NeoButton(
+        label: 'Lanjutkan',
+        onPressed: () => Navigator.pop(ctx, true),
+      ),
+    ],
+  ),
+);
 
 /// Dialog kata sandi untuk cadangan. null = dibatalkan; '' = tanpa enkripsi.
 Future<String?> _tanyaSandi(

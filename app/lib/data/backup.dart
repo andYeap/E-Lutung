@@ -164,6 +164,36 @@ class BackupService {
   ///
   /// Mengembalikan -1 (dibatalkan), -2 (butuh kata sandi), 0 (gagal), atau
   /// jumlah baris yang diimpor.
+  ///
+  /// Memilih dan membaca berkas cadangan **tanpa mengubah data apa pun**.
+  ///
+  /// Mengembalikan peta cadangan bila berhasil, atau kode galat yang sama
+  /// dengan [importFile] (-1 dibatalkan, -2 butuh kata sandi, -3 versi lebih
+  /// baru, 0 berkas tidak valid). Dipakai alur impor supaya dampaknya bisa
+  /// ditunjukkan lebih dulu.
+  Future<Object> bacaBerkas({String? passphrase}) async {
+    try {
+      final picked = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+      if (picked == null) return -1;
+      final path = picked.path;
+      if (path == null) return 0;
+      final raw = await File(path).readAsString();
+      if (raw.isEmpty) return 0;
+      var map = jsonDecode(raw) as Map<String, dynamic>;
+      if (isEncryptedBackup(map)) {
+        if (passphrase == null || passphrase.isEmpty) return -2;
+        map = await decryptBackup(map, passphrase);
+      }
+      if (!isSupportedBackup(map)) return -3;
+      return map;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   Future<int> importFile({required bool replace, String? passphrase}) async {
     try {
       final picked = await FilePicker.pickFile(
