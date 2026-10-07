@@ -34,6 +34,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           child: SizedBox(height: Neo.borderW, child: ColoredBox(color: Neo.ink)),
         ),
       ),
+      // Ruang untuk bilah navigasi sistem; tanpa ini daftar terbawah tertutup.
+      bottomNavigationBar: SizedBox(
+        height: MediaQuery.viewPaddingOf(context).bottom,
+      ),
       body: StreamBuilder<List<Institution>>(
         stream: _instStream,
         builder: (context, instSnap) {

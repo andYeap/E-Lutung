@@ -328,6 +328,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           child: SizedBox(height: Neo.borderW, child: ColoredBox(color: Neo.ink)),
         ),
       ),
+      // Ruang untuk bilah navigasi sistem. Aplikasi menggambar sampai tepi
+      // layar (targetSdk Android 15 memaksa edge-to-edge), jadi tanpa ini tombol
+      // paling bawah form bisa tertutup bilah navigasi HP.
+      bottomNavigationBar: SizedBox(
+        height: MediaQuery.viewPaddingOf(context).bottom,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

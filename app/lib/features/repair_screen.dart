@@ -69,6 +69,10 @@ class RepairScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Perlu dibenahi')),
+      // Ruang untuk bilah navigasi sistem; tanpa ini kartu terbawah tertutup.
+      bottomNavigationBar: SizedBox(
+        height: MediaQuery.viewPaddingOf(context).bottom,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

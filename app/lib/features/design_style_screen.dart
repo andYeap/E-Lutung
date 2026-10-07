@@ -42,6 +42,10 @@ class _DesignStyleScreenState extends State<DesignStyleScreen> {
               ),
             ),
           ),
+          // Ruang untuk bilah navigasi sistem; tanpa ini kartu terbawah tertutup.
+          bottomNavigationBar: SizedBox(
+            height: MediaQuery.viewPaddingOf(context).bottom,
+          ),
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [

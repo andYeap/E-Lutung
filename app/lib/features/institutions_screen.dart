@@ -23,6 +23,10 @@ class InstitutionsScreen extends ConsumerWidget {
           child: SizedBox(height: Neo.borderW, child: ColoredBox(color: Neo.ink)),
         ),
       ),
+      // Ruang untuk bilah navigasi sistem; tanpa ini daftar terbawah tertutup.
+      bottomNavigationBar: SizedBox(
+        height: MediaQuery.viewPaddingOf(context).bottom,
+      ),
       body: StreamBuilder<List<Institution>>(
         stream: repo.watchAll(),
         builder: (context, snap) {

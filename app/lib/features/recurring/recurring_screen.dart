@@ -31,6 +31,10 @@ class RecurringScreen extends ConsumerWidget {
           child: SizedBox(height: Neo.borderW, child: ColoredBox(color: Neo.ink)),
         ),
       ),
+      // Ruang untuk bilah navigasi sistem; tanpa ini tombol terbawah tertutup.
+      bottomNavigationBar: SizedBox(
+        height: MediaQuery.viewPaddingOf(context).bottom,
+      ),
       body: rulesAsync.when(
         loading: () => const NeoLoading(),
         error: (e, _) => NeoError(message: '$e'),

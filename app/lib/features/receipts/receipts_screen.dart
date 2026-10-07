@@ -34,6 +34,10 @@ class ReceiptsScreen extends ConsumerWidget {
           child: SizedBox(height: Neo.borderW, child: ColoredBox(color: Neo.ink)),
         ),
       ),
+      // Ruang untuk bilah navigasi sistem; tanpa ini kartu terbawah tertutup.
+      bottomNavigationBar: SizedBox(
+        height: MediaQuery.viewPaddingOf(context).bottom,
+      ),
       body: async.when(
         loading: () => const NeoLoading(message: 'Memuat foto struk…'),
         error: (e, _) => NeoError(message: 'Gagal memuat: $e'),

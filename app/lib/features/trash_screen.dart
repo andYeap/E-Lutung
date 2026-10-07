@@ -50,6 +50,10 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
           child: SizedBox(height: Neo.borderW, child: ColoredBox(color: Neo.ink)),
         ),
       ),
+      // Ruang untuk bilah navigasi sistem; tanpa ini daftar terbawah tertutup.
+      bottomNavigationBar: SizedBox(
+        height: MediaQuery.viewPaddingOf(context).bottom,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

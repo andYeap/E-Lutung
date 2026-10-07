@@ -194,6 +194,10 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
           ),
         ),
       ),
+      // Ruang untuk bilah navigasi sistem; tanpa ini tombol terbawah tertutup.
+      bottomNavigationBar: SizedBox(
+        height: MediaQuery.viewPaddingOf(context).bottom,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

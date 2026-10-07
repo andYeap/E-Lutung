@@ -57,6 +57,10 @@ class _ThemeScreenState extends State<ThemeScreen> {
               ),
             ),
           ),
+          // Ruang untuk bilah navigasi sistem; tanpa ini isian terbawah tertutup.
+          bottomNavigationBar: SizedBox(
+            height: MediaQuery.viewPaddingOf(context).bottom,
+          ),
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
