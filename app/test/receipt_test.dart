@@ -694,4 +694,69 @@ PPN: 4,618''';
     final d = parseReceipt('WARUNG A\nBarang A 25.000\nBarang B 25.000');
     expect(d.yakin, isFalse);
   });
+
+  // --- Bukti aritmetika komponen: subtotal - diskon + pajak + biaya --------
+  //
+  // Ketika label total gagal (struk dua kolom, atau label rusak), total masih
+  // bisa dibuktikan dari komponen belanja yang berlabel: subtotal, diskon, dan
+  // pajak. Yang dipakai sebagai nominal tetap angka yang tercetak, bukan hasil
+  // hitungan.
+
+  test('subtotal, diskon, dan pajak membuktikan total yang terpisah', () {
+    final d = parseReceipt('''
+TOKO SERBA ADA
+Subtotal 200.000
+Diskon 20.000
+PPN 18.000
+TOTAL : Rp.
+Kasir: Budi
+Terima kasih
+200.000
+20.000
+18.000
+198.000
+''');
+    expect(d.nominal, 198000);
+    expect(d.sumber, SumberNominal.pembayaranTerverifikasi);
+    expect(d.yakin, isTrue);
+  });
+
+  test('pembulatan ke bawah ikut dihitung', () {
+    final d = parseReceipt('''
+WARUNG MAKAN
+Subtotal 100.000
+PPN 10.000
+Pembulatan -500
+TOTAL : Rp.
+Kasir
+Terima kasih
+110.000
+109.500
+''');
+    expect(d.nominal, 109500);
+    expect(d.sumber, SumberNominal.pembayaranTerverifikasi);
+  });
+
+  test('subtotal saja tanpa penyesuaian bukan bukti', () {
+    // Tanpa diskon/pajak/biaya tidak ada yang bisa diuji, jadi nominal tetap
+    // tebakan — bukan "terbukti".
+    final d = parseReceipt('TOKO A\nSubtotal 100.000\n100.000');
+    expect(d.sumber, SumberNominal.tebakanAngka);
+  });
+
+  test('hitungan komponen yang tidak cocok tidak dipaksakan', () {
+    // 100.000 - 5.000 = 95.000, tidak ada kandidat yang mendekati, jadi bukti
+    // ditolak dan perilaku lama (tebakan + pagar) yang berlaku.
+    final d = parseReceipt('TOKO A\nSubtotal 100.000\nDiskon 5.000\n99.000');
+    expect(d.sumber, SumberNominal.tebakanAngka);
+    expect(d.nominal, 99000);
+  });
+
+  test('baris total berlabel tetap menang atas bukti komponen', () {
+    final d = parseReceipt(
+      'TOKO A\nSubtotal 100.000\nPPN 10.000\nTOTAL 110.000',
+    );
+    expect(d.nominal, 110000);
+    expect(d.sumber, SumberNominal.labelTotal);
+  });
 }

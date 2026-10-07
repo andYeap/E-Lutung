@@ -7,9 +7,11 @@ enum SumberNominal {
   labelTotal,
 
   /// Nominal tidak menempel pada labelnya, tapi terbukti lewat hubungan
-  /// aritmetika di bagian pembayaran: `tunai - kembalian = total`, atau
-  /// nilai pembayaran sama dengan total untuk QRIS/kartu/bayar pas. Karena
-  /// hubungannya bisa diuji, hasilnya lebih dapat dipercaya daripada tebakan.
+  /// aritmetika struk. Dua jalur: identitas pembayaran
+  /// (`tunai - kembalian = total`, atau nilai pembayaran sama dengan total
+  /// untuk QRIS/kartu/bayar pas) dan identitas komponen
+  /// (`subtotal - diskon + pajak + service = total`). Karena hubungannya bisa
+  /// diuji, hasilnya lebih dapat dipercaya daripada tebakan.
   pembayaranTerverifikasi,
 
   /// Angka terbesar pada baris yang bukan telepon/nomor dokumen.
@@ -31,9 +33,9 @@ class ReceiptDraft {
   final String? merchant;
   final SumberNominal sumber;
 
-  /// true bila nominal berasal dari bukti, bukan tebakan. Dua sumber terbukti:
-  /// baris berlabel total, dan identitas `tunai - kembalian = total` yang
-  /// lolos uji aritmetika.
+  /// true bila nominal berasal dari bukti, bukan tebakan. Buktinya bisa berupa
+  /// baris berlabel total, identitas `tunai - kembalian = total`, atau
+  /// identitas komponen `subtotal - diskon + pajak + service = total`.
   bool get yakin =>
       nominal != null && sumber != SumberNominal.tebakanAngka;
 
@@ -68,6 +70,37 @@ const List<String> _kataKunciTotalLemah = [
   'netto',
   'total',
 ];
+
+/// Label komponen belanja: bukan total, tetapi berguna untuk membuktikan total
+/// lewat aritmetika. Struk yang mencetak komponennya secara berlabel membuat
+/// nominal total bisa diuji: `subtotal - diskon + pajak + service = total`.
+const List<String> _labelSubtotal = ['subtotal', 'sub total'];
+const List<String> _labelDiskon = [
+  'diskon',
+  'discount',
+  'disc',
+  'potongan',
+  'voucher',
+  'kupon',
+  'promo',
+];
+const List<String> _labelPajak = ['ppn', 'pajak', 'tax', 'pb1'];
+const List<String> _labelBiaya = [
+  'service',
+  'servis',
+  'biaya',
+  'admin',
+  'charge',
+  // Pembulatan bisa menambah atau mengurangi; tandanya dibaca dari barisnya.
+  'pembulatan',
+  'rounding',
+];
+
+/// Jarak maksimum antara hasil hitungan komponen dan nominal yang tercetak,
+/// agar perbedaan pembulatan kecil tidak membuat bukti ditolak. Sengaja kecil:
+/// bukti dipakai untuk **menunjuk** nominal yang sudah tercetak, bukan untuk
+/// mengarang angka.
+const int _toleransiPembulatan = 2;
 
 /// Kata kunci yang membuat sebuah baris diabaikan sebagai calon total.
 ///
@@ -456,9 +489,9 @@ bool _mengandung(String teks, List<String> kata) {
   return kata.any((k) => t.contains(_lipatHuruf(k.replaceAll(' ', ''))));
 }
 
-/// Pencocokan kata kunci yang Versions gracefully: coba bentuk ketat dulu,
-/// lalu bentuk lenting. Bentuk ketat selalu lebih dulu supaya daftar abaikan
-/// tetap berperilaku lama.
+/// Pencocokan kata kunci yang toleran terhadap salah baca: coba bentuk ketat
+/// dulu, lalu bentuk lenting. Bentuk ketat selalu lebih dulu supaya daftar
+/// abaikan tetap berperilaku lama.
 bool _mengandungKataKunci(String teks, String teksLenting, List<String> kata) =>
     _mengandung(teks, kata) || _mengandung(teksLenting, kata);
 
@@ -467,7 +500,7 @@ bool _mengandungKataKunci(String teks, String teksLenting, List<String> kata) =>
 String _normalisasiHuruf(String teks) =>
     teks.replaceAll('0', 'o').replaceAll('1', 'l');
 
-/// Bentuk lenting untuk yangeksema kata kunci saja.
+/// Bentuk lenting, hanya untuk pencocokan kata kunci.
 String _normalisasiHurufLenting(String teks) => teks
     .replaceAll('0', 'o')
     .replaceAll('1', 'l')
@@ -595,7 +628,7 @@ bool _tidakSamaDenganTotal(String line) =>
     return (nilai: terlemah, sumber: SumberNominal.labelTotal);
   }
 
-  // Strok dua kolom: ML Kit sering mengembalikan label dan nominal sebagai
+  // Struk dua kolom: ML Kit sering mengembalikan label dan nominal sebagai
   // blok terpisah, jadi "TOTAL : Rp." tanpa angka sementara 110.000 berdiri
   // sendiri belasan baris di bawahnya. Karena itu, pencarian label selalu gagal
   // lalu fallback "angka terbesar" mengambil TUNAI.
@@ -609,6 +642,16 @@ bool _tidakSamaDenganTotal(String line) =>
   final dariTunai = _dariIdentitasPembayaran(lines, adaLabelTotal: adaLabelTotal);
   if (dariTunai != null) {
     return (nilai: dariTunai, sumber: SumberNominal.pembayaranTerverifikasi);
+  }
+
+  // Jalur bukti kedua, ditambahkan tanpa mengubah jalur tunai di atas: banyak
+  // struk mencetak subtotal, diskon, dan pajak secara berlabel sehingga total
+  // bisa diuji lewat `subtotal - diskon + pajak + biaya = total`. Kalau tidak
+  // terbukti, perilaku lama (tebakan angka terbesar + pagar + boleh kosong)
+  // tetap berlaku di bawah.
+  final dariKomponen = _dariAritmetikaKomponen(lines);
+  if (dariKomponen != null) {
+    return (nilai: dariKomponen, sumber: SumberNominal.pembayaranTerverifikasi);
   }
   final bayar = _nilaiPembayaranDiterima(lines);
 
@@ -760,6 +803,111 @@ int? _dariIdentitasPembayaran(List<String> lines, {required bool adaLabelTotal})
   }
   return null;
 }
+
+/// Nominal dari identitas komponen struk, atau null bila tidak terbukti.
+///
+/// Banyak struk mencetak komponen belanja secara berlabel — subtotal, diskon,
+/// pajak, dan biaya lain — lalu totalnya. Hubungan
+/// `subtotal - diskon + pajak + biaya = total` bisa diuji, jadi totalnya bukan
+/// tebakan. Dipakai ketika pencarian label total gagal: struk dua kolom, atau
+/// label total yang terbaca rusak.
+///
+/// Yang dikembalikan adalah **nominal yang tercetak** di struk, bukan hasil
+/// hitungan; aritmetika hanya menunjuk kandidat mana yang benar. Kalau tidak
+/// ada kandidat yang cocok dalam [_toleransiPembulatan], hasilnya null supaya
+/// perilaku lama (tebakan + pagar) tetap berlaku.
+int? _dariAritmetikaKomponen(List<String> lines) {
+  int? subtotal;
+  var diskon = 0;
+  var pajak = 0;
+  var biaya = 0;
+  var adaPenyesuaian = false;
+
+  // Nominal yang berdiri sendiri (blok kolom) dan nominal berlabel total.
+  final kolom = <int>[];
+  final berlabel = <int>[];
+
+  for (final line in lines) {
+    final low = _untukCocok(line);
+    final lowLenting = _untukCocokLenting(line);
+
+    // Komponen diperiksa sebelum kata kunci total: "Total Disc." adalah baris
+    // diskon, bukan total yang dibayar.
+    if (_mengandung(low, _labelSubtotal) ||
+        _mengandung(lowLenting, _labelSubtotal)) {
+      final n = _angkaDariLabel(line);
+      if (n != null && n > 0) subtotal = n;
+      continue;
+    }
+    if (_mengandung(low, _labelDiskon) ||
+        _mengandung(lowLenting, _labelDiskon)) {
+      final n = _angkaDariLabel(line);
+      if (n != null && n > 0) {
+        diskon += n;
+        adaPenyesuaian = true;
+      }
+      continue;
+    }
+    if (_mengandung(low, _labelPajak) ||
+        _mengandung(lowLenting, _labelPajak)) {
+      final n = _angkaDariLabel(line);
+      if (n != null && n > 0) {
+        pajak += n;
+        adaPenyesuaian = true;
+      }
+      continue;
+    }
+    if (_mengandung(low, _labelBiaya) ||
+        _mengandung(lowLenting, _labelBiaya)) {
+      final n = _angkaDariLabel(line);
+      if (n != null && n > 0) {
+        biaya += _bertandaMinus(line) ? -n : n;
+        adaPenyesuaian = true;
+      }
+      continue;
+    }
+
+    final akar = _akarKata(line);
+    final kuat = _mengandungKataKunci(low, lowLenting, _kataKunciTotalKuat) ||
+        _mengandungAkar(akar, _kataKunciTotalKuat);
+    final lemah = !kuat &&
+        (_mengandungKataKunci(low, lowLenting, _kataKunciTotalLemah) ||
+            _mengandungAkar(akar, _kataKunciTotalLemah));
+    if (kuat || lemah) {
+      final n = _angkaDariLabel(line);
+      if (n != null && n > 0) berlabel.add(n);
+      continue;
+    }
+
+    // Baris nominal yang berdiri sendiri: inilah blok nilai pada struk dua
+    // kolom. Aritmetika di atas yang memilih mana yang merupakan total.
+    if (_barisNominalBersama(line)) {
+      final n = _angkaTerbesar(line);
+      if (n != null && n > 0) kolom.add(n);
+    }
+  }
+
+  // Tanpa subtotal dan tanpa satu pun penyesuaian, tidak ada yang bisa diuji.
+  if (subtotal == null || !adaPenyesuaian) return null;
+  final harapan = subtotal - diskon + pajak + biaya;
+  if (harapan <= 0) return null;
+
+  int? terbaik;
+  var jarakTerbaik = _toleransiPembulatan + 1;
+  for (final n in [...berlabel, ...kolom]) {
+    final jarak = (n - harapan).abs();
+    if (jarak < jarakTerbaik) {
+      jarakTerbaik = jarak;
+      terbaik = n;
+    }
+  }
+  return terbaik;
+}
+
+/// Apakah baris memuat tanda minus sebelum angka ("Pembulatan -100"), dipakai
+/// agar baris pembulatan yang mengurangi tidak justru menambah.
+bool _bertandaMinus(String line) =>
+    RegExp(r'-\s*[\dOoIlISsBbZz]').hasMatch(line);
 
 /// Nilai terbesar yang tercatat pada baris uang diterima atau kembalian.
 ///
