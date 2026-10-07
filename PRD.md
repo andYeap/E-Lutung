@@ -4,7 +4,7 @@
 - **Platform:** Android (Flutter)
 - **Penyimpanan:** 100% lokal di perangkat (tanpa server, tanpa akun)
 - **Mata uang:** Rupiah (IDR) saja
-- **Status dokumen:** Final v1, diperbarui sampai v1.3 (v1.1 transaksi berulang & tema, v1.2 scan struk & gaya desain, v1.3 cadangan terkunci)
+- **Status dokumen:** Final v1, diperbarui sampai v1.5 (v1.1 transaksi berulang & tema, v1.2 scan struk & gaya desain, v1.3 cadangan terkunci, v1.4 utang & piutang, v1.5 pemetaan pedagang & korpus struk)
 - **Tanggal:** 2026-10-07
 
 ---
@@ -275,6 +275,33 @@ Aturan perhitungan tanggal:
 
 > Alasan promosi: fitur ini semula ada di Backlog v2 (Bagian 19). Dinaikkan ke v1.1 karena pencatatan rutin (gaji, langganan) termasuk kebutuhan pokok, dan penjadwalannya bisa menumpang WorkManager yang sudah dipakai widget sehingga tidak menambah ketergantungan baru.
 
+### 7.7 Debt (Utang & Piutang) — v1.4
+
+Catatan pinjaman sederhana, tanpa bunga dan tanpa jadwal angsuran. Pelunasan **tidak** disimpan sebagai kolom, melainkan dibaca dari transaksi yang ditautkan (`transactions.debtId`), supaya uangnya hanya punya satu catatan (lihat FR-16).
+
+| Field | Tipe | Keterangan |
+|---|---|---|
+| id | text | PK |
+| arah | enum | `utang` (kita berutang) \| `piutang` (orang lain berutang) |
+| pihak | text | Nama orang atau pihak |
+| nominal | int | Pokok pinjaman |
+| tenggat | date? | Opsional |
+| catatan | text? | Note bebas |
+
+### 7.8 MerchantHabit (Pemetaan Pedagang) — v1.5
+
+Pola nama pedagang ternormalisasi dipetakan ke kategori dan akun, supaya pilihan yang pernah dipakai bisa **diusulkan** saat scan struk (FR-17). Isinya hanya pilihan yang memang pernah disimpan pengguna — saran tidak pernah tersimpan sendiri, selalu terlihat, dan bisa dihapus.
+
+| Field | Tipe | Keterangan |
+|---|---|---|
+| pola | text | PK. Nama pedagang ternormalisasi (huruf kecil, tanpa tanda baca), unik |
+| kategoriId | text? | FK → Category |
+| akunId | text? | FK → Account |
+| terakhirDipakai | datetime | Kapan pemetaan ini terakhir dipakai |
+| jumlahPemakaian | int | Berapa kali pemetaan **yang berlaku sekarang** dipakai; mulai lagi dari 1 bila pemetaannya berubah |
+
+> Tabel ini tidak menunjuk berkas apa pun, jadi tidak berkaitan dengan penyimpanan foto struk. Ia ikut cadangan JSON dan ikut terhapus oleh "Hapus semua data".
+
 ---
 
 ## 8. Aturan Bisnis
@@ -408,8 +435,9 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-13.1 Ambil foto dari kamera atau galeri, lalu teksnya dibaca **di perangkat** (ML Kit; modelnya ikut di dalam APK). Tidak ada jaringan yang dibutuhkan.
 - FR-13.2 Hasil baca hanya **mengisi** form pengeluaran (nominal, tanggal, keterangan dari merchant) dan **tidak pernah tersimpan otomatis**: pengguna meninjau, memilih kategori dan akun, baru menyimpan. Kategori maupun akun tidak ditebak.
 - FR-13.3 Foto boleh disimpan di dokumen aplikasi dengan pathnya dicatat pada transaksi (kolom `struk_path`). Layar **Foto struk** menampilkan jumlah dan ukuran foto, penampil, penghapus foto, serta pembersih path yang menunjuk berkas hilang.
-- FR-13.4 Parser memilih total yang sah (bukan uang diterima, kembalian, atau baris diskon), tanggal yang wajar (menolak tanggal di masa depan), dan nama merchant. Struk dua kolom atau kolom tercampur diselesaikan lewat identitas `tunai − kembalian = total`, dan hanya bila label total memang ada.
+- FR-13.4 Parser memilih total yang sah (bukan uang diterima, kembalian, atau baris diskon), tanggal yang wajar (menolak tanggal di masa depan), dan nama merchant. Nominal yang tidak menempel pada labelnya dibuktikan lewat **dua** identitas aritmetika: `tunai − kembalian = total` (hanya bila label total memang ada) dan `subtotal − diskon + pajak + biaya = total` (bila komponen belanja tercetak berlabel). Yang dipakai sebagai nominal selalu **angka yang tercetak** di struk, bukan hasil hitungan; bila tak ada identitas yang terbukti, nominal dibiarkan kosong daripada ditebak.
 - FR-13.5 **Hapus semua data** ikut menghapus berkas foto, supaya tidak tertinggal di dokumen aplikasi tanpa jejak di basis data.
+- FR-13.6 Teks mentah hasil OCR bisa dibuka lewat panel "Lihat teks hasil scan" untuk diperiksa. Teks itu juga menjadi bahan korpus struk di `app/tool/korpus/` yang diuji `test/korpus_struk_test.dart`: **nominal salah harus nol**, sedangkan "kosong" hanya dicatat sebagai angka acuan. Korpus tidak pernah keluar dari perangkat kecuali dipindahkan sendiri oleh pengguna.
 
 ### FR-14 Gaya Desain (v1.2)
 - FR-14.1 Tujuh gaya visual: **Neobrutalism** (bawaan), Flat, Material, Neomorphism, Glass Morphism, Skeuomorphic, Minimalism. Gaya mengatur bentuk: border, sudut, bayangan, isian permukaan, efek tekan, penanda navigasi, dan kepadatan.
@@ -421,7 +449,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-15.2 Terkunci berarti AES-256-GCM dengan kunci turunan PBKDF2-HMAC-SHA256; salt dan nonce acak untuk setiap ekspor, dan kata sandi **tidak pernah disimpan** di mana pun. Jumlah iterasi ikut tercatat di dalam berkasnya, jadi berkas lama tetap terbaca setelah angkanya dinaikkan.
 - FR-15.3 Impor menolak berkas dari **versi format yang lebih baru**, dan menolak berkas asing atau rusak **tanpa menghapus** data yang sudah ada.
 - FR-15.4 Foto struk tidak ikut di dalam cadangan (hanya pathnya), jadi setelah impor di perangkat lain fotonya ditandai hilang dan bisa dibersihkan.
-- FR-15.5 Format cadangan naik ke versi 2 saat catatan utang/piutang ditambahkan: aplikasi versi lama menolak berkas itu alih-alih memulihkannya tanpa catatannya.
+- FR-15.5 Format cadangan naik versi setiap ada tabel baru supaya aplikasi versi lama menolak berkas baru alih-alih memulihkannya tanpa data itu: versi 2 untuk catatan utang/piutang (v1.4), versi 3 untuk kebiasaan pedagang (v1.5).
 - FR-15.6 Sebelum memulihkan, berkasnya dibaca lebih dulu **tanpa mengubah data apa pun** dan dampaknya ditampilkan: berapa baris yang ditambah, ditimpa, dan dihidupkan kembali karena pernah dihapus, serta pada mode Ganti berapa baris yang akan dihapus lebih dulu termasuk kategori dan institusi. Pengguna bisa membatalkan dari dialog itu.
 
 ### FR-16 Utang & Piutang (v1.4)
@@ -430,6 +458,12 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-16.3 Daftar menampilkan sisa tiap catatan dengan bilah kemajuan, yang **belum lunas di atas**, lalu tenggat terdekat; tenggat yang terlewat ditandai. Catatan yang sudah lunas tetap terlihat di bawah.
 - FR-16.4 Hapus catatan bersifat **lunak**: catatannya hilang dari daftar, tetapi transaksi pelunasan yang sudah tercatat tetap ada karena uangnya memang berpindah.
 - FR-16.5 **Bukan** lingkupnya: bunga, denda, dan jadwal angsuran otomatis.
+
+### FR-17 Pemetaan Pedagang ke Kategori & Akun (v1.5)
+- FR-17.1 Saat transaksi pengeluaran disimpan, pola nama pedagang (keterangan ternormalisasi) dipetakan ke kategori dan akun yang dipilih pengguna, disimpan **lokal** di tabel `kebiasaan_merchant` (skema v7). Hanya pilihan pengguna yang dicatat; aplikasi tidak menebak sendiri, dan pemasukan tidak punya pedagang sehingga tidak ikut dicatat.
+- FR-17.2 Saat scan struk, bila polanya cocok dengan catatan sebelumnya, kategori dan akun **diusulkan** dan terlihat di layar sebagai "dari catatan sebelumnya (Nx)" beserta tombol hapus. Saran boleh diubah, tidak pernah menyimpan otomatis, dan validasi wajib (nominal, kategori, akun) tidak dilonggarkan.
+- FR-17.3 Bila pengguna menyimpan dengan pilihan yang berbeda dari saran, pilihan **terakhir** yang menang dan hitungannya diperbarui supaya angka "(Nx)" memaksudkan pemetaan yang sedang berlaku.
+- FR-17.4 Kebiasaan pedagang ikut cadangan JSON dan ikut dihapus oleh "Hapus semua data". Tabel ini tidak menyimpan berkas apa pun, jadi tidak berkaitan dengan penyimpanan foto struk.
 
 ---
 
@@ -504,6 +538,7 @@ Catatan bukti: kotak di atas ditandai hanya bila ada pemeriksaan otomatis yang m
 
 - Alur catat transaksi lewat form sampai tampil di Dashboard: `test/core_flow_test.dart` (termasuk penolakan saat akun belum dipilih, dan `akunId` yang tersimpan). Sebelumnya ini hanya bisa diperiksa di perangkat.
 - Scan struk: `test/receipt_test.dart` (parser: total yang sah, uang diterima dan kembalian ditolak, tanggal salah baca, merchant), `test/receipts_test.dart` (path foto, pembersih path hilang, hapus semua data ikut menghapus berkas), `test/migration_test.dart` (kolom `struk_path`).
+- Ketepatan scan & pemetaan pedagang (v1.5): `test/korpus_struk_test.dart` (ketepatan parser atas teks OCR **nyata** di `tool/korpus/`; nominal salah = 0), `test/receipt_test.dart` (bukti aritmetika pembayaran dan komponen, termasuk diskon, pajak, dan pembulatan), `test/merchant_test.dart` (normalisasi pola pedagang, pencatatan kebiasaan, pilihan terakhir menang), `test/migration_test.dart` (migrasi v6→v7), `test/backup_test.dart` (kebiasaan pedagang ikut terekspor dan terpulihkan).
 - Gaya desain: `test/design_style_test.dart` (tujuh gaya, token Neo yang mengikuti gaya, tipografi yang dibekukan), `test/design_style_screen_test.dart`, dan `test/app_smoke_test.dart`.
 - Cadangan terkunci: `test/backup_test.dart` (berkas tanpa nomor versi ditolak, versi lebih baru ditolak tanpa menghapus data, jumlah iterasi diambil dari berkasnya, sandi salah gagal membuka).
 - Aturan akun wajib dan catatan lama tanpa akun: `test/core_flow_test.dart`, `test/repair_screen_test.dart`.
@@ -545,6 +580,8 @@ Setiap milestone harus lolos `flutter analyze` (0 issue) dan set test-nya sebelu
 | Query rekap lambat saat data besar | Sedang | Index pada (tipe, tanggal, kategori); agregasi di SQL |
 | Bug batas bulan/zona waktu | Sedang | Uji kasus batas bulan & DST/zona |
 | Grafik ramai saat kategori banyak | Rendah | Limit legend + "Lainnya" untuk kategori kecil |
+| Parser pas untuk struk pengguna sendiri (overfitting) | Sedang | Korpus nyata di `tool/korpus/` diuji `test/korpus_struk_test.dart`; korpus diperluas dari toko berbeda, dan nominal salah wajib nol sebelum perilisan |
+| Saran kategori salah lalu menetap | Rendah | Saran selalu terlihat, bisa dihapus, dan tidak pernah menyimpan tanpa konfirmasi pengguna |
 
 ---
 
@@ -587,10 +624,12 @@ Sudah dikerjakan lebih awal dari rencana:
 - **Cadangan terenkripsi** — dikerjakan di v1.3, spesifikasinya ada di FR-15. Yang masih ditunda hanyalah sinkronisasi antar-perangkat.
 - Grafik garis tren saldo kumulatif — sudah ada di layar Rekap.
 - Layar "Sampah" + pemulihan transaksi — sudah ada sejak v1.
+- **Korpus struk + pemetaan pedagang** — dikerjakan di v1.5: pengukuran ketepatan parser atas teks OCR nyata (FR-13.6) dan saran kategori/akun dari kebiasaan (FR-17).
 
 Masih ditunda:
 
 - **Utang/piutang** — dikerjakan di v1.4 sebagai catatan sederhana, spesifikasinya di FR-16. Yang masih ditunda hanyalah **cicilan** (jadwal angsuran otomatis) dan bunga.
+- **Melatih model OCR sendiri** — OCR tetap memakai ML Kit di perangkat. Pelatihan model menambah puluhan MB ke APK, butuh data struk sensitif di mesin sendiri, dan hambatan sesungguhnya ada di pemilihan kategori/akun, bukan di OCR.
 - Rollover anggaran (jatah anggaran yang belum terpakai dibawa ke periode berikutnya). Yang sudah ada hanyalah **sisa uang** dari bulan lalu (FR-6.6), dan itu bicara uang nyata, bukan jatah.
 - Sinkronisasi opsional antar-perangkat.
 - Widget iOS (bila aplikasi diperluas ke iOS).
