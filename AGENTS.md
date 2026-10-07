@@ -67,7 +67,7 @@ cd ~/E-Lutung/app
 flutter pub get
 dart run build_runner build        # WAJIB setelah mengubah skema Drift
 flutter analyze                    # harus 0 issue
-flutter test                       # 236 test
+flutter test                       # seluruh test otomatis
 flutter run
 flutter build apk --release
 flutter build appbundle --release

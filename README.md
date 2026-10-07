@@ -37,7 +37,7 @@ flutter run
 ```bash
 cd app
 flutter analyze   # harus 0 issue
-flutter test      # 236 test
+flutter test      # seluruh test otomatis
 ```
 
 ## Membangun APK dan AAB
@@ -79,9 +79,9 @@ AGENTS.md               catatan teknis untuk kontributor dan agen
 app/                    proyek Flutter (Android saja)
   lib/data/             skema Drift, repositori, dan logika uang yang murni
   lib/features/         layar per fitur
-  lib/services/         kunci aplikasi dan sinkronisasi widget
+  lib/services/         OCR struk, penyimpanan foto, pelari jadwal, sinkronisasi widget
   lib/widgets/          komponen neobrutalism dan grafik
-  test/                 236 test
+  test/                 uji otomatis
   android/              proyek Android beserta widget beranda (RemoteViews)
 ```
 

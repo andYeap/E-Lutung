@@ -4,8 +4,8 @@
 - **Platform:** Android (Flutter)
 - **Penyimpanan:** 100% lokal di perangkat (tanpa server, tanpa akun)
 - **Mata uang:** Rupiah (IDR) saja
-- **Status dokumen:** Final v1
-- **Tanggal:** 2026-09-30
+- **Status dokumen:** Final v1, diperbarui sampai v1.3 (v1.1 transaksi berulang & tema, v1.2 scan struk & gaya desain, v1.3 cadangan terkunci)
+- **Tanggal:** 2026-10-07
 
 ---
 
@@ -51,7 +51,7 @@ Konteks pemakaian: pencatatan cepat sambil jalan (satu tangan), cek sekilas lewa
 
 ## 5. Ruang Lingkup
 
-**Masuk (In):** pencatatan pemasukan/pengeluaran/transfer, master institusi (bank/e-wallet/tunai) & akun yang bisa diatur, kategori yang bisa dikelola (CRUD), rekap bulanan, grafik persentase per kategori, grafik pemasukan vs pengeluaran per bulan, batas anggaran (total + per kategori) dengan rentang tanggal & warna, widget beranda, ekspor/impor cadangan.
+**Masuk (In):** pencatatan pemasukan/pengeluaran/transfer, master institusi (bank/e-wallet/tunai) & akun yang bisa diatur, kategori yang bisa dikelola (CRUD), rekap bulanan, grafik persentase per kategori, grafik pemasukan vs pengeluaran per bulan, batas anggaran (total + per kategori) dengan rentang tanggal & warna, transaksi berulang otomatis (v1.1), tema & gaya desain yang bisa dipilih (v1.1 & v1.2), scan struk lewat OCR di perangkat (v1.2), widget beranda, ekspor/impor cadangan termasuk yang dikunci kata sandi (v1.3).
 
 **Keluar (Out):** semua pada Bagian 3.
 
@@ -360,9 +360,10 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 
 ### FR-7 Institusi & Akun (Dompet)
 - FR-7.1 CRUD **Institusi**: nama + tipe (enum `bank`/`ewallet`/`tunai`/`lain`); seed institusi umum (BCA, Mandiri, OVO, GoPay, Dana, Tunai, …).
-- FR-7.2 CRUD **Akun**: pilih institusi (wajib), tanda "milik saya"/"pihak lain", saldo awal. Tanpa nama/ikon/warna — nama diambil dari institusi.
+- FR-7.2 CRUD **Akun**: pilih institusi (wajib), tanda "milik saya"/"pihak lain", saldo awal. Tanpa nama/ikon/warna — nama diambil dari institusi. **Saldo awal** diisi saldo sebelum transaksi pertama yang dicatat, karena saldo berjalan dihitung dari angka itu ditambah seluruh transaksi.
 - FR-7.3 Menampilkan saldo berjalan per akun (saldo awal + pemasukan − pengeluaran ± transfer).
 - FR-7.4 Institusi/akun nonaktif tidak muncul di pilihan form baru, tapi tetap tampil di riwayat lama.
+- FR-7.5 **Akun sejenis dibedakan** dengan nomor urut pada tampilan (mis. "BCA (2)"), dihitung dari daftar akun yang lengkap supaya nomornya sama di setiap layar. Tanpa ini dua akun di bank yang sama tampil identik, dan saldo bisa dibaca atau akun bisa dipilih secara keliru.
 
 ### FR-8 Kategori
 - FR-8.1 CRUD kategori: nama, ikon, warna (tanpa field `jenis`).
@@ -401,6 +402,24 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-12.6 Daftar aturan menampilkan jatuh tempo berikutnya serta bisa diaktifkan dan dinonaktifkan.
 - FR-12.7 Pembangkitan dibatasi sejumlah catatan per aturan per jalan, agar aturan bertanggal mulai lama tidak membanjiri riwayat; sisanya dilanjutkan pada jalan berikutnya.
 
+### FR-13 Scan Struk (v1.2)
+- FR-13.1 Ambil foto dari kamera atau galeri, lalu teksnya dibaca **di perangkat** (ML Kit; modelnya ikut di dalam APK). Tidak ada jaringan yang dibutuhkan.
+- FR-13.2 Hasil baca hanya **mengisi** form pengeluaran (nominal, tanggal, keterangan dari merchant) dan **tidak pernah tersimpan otomatis**: pengguna meninjau, memilih kategori dan akun, baru menyimpan. Kategori maupun akun tidak ditebak.
+- FR-13.3 Foto boleh disimpan di dokumen aplikasi dengan pathnya dicatat pada transaksi (kolom `struk_path`). Layar **Foto struk** menampilkan jumlah dan ukuran foto, penampil, penghapus foto, serta pembersih path yang menunjuk berkas hilang.
+- FR-13.4 Parser memilih total yang sah (bukan uang diterima, kembalian, atau baris diskon), tanggal yang wajar (menolak tanggal di masa depan), dan nama merchant. Struk dua kolom atau kolom tercampur diselesaikan lewat identitas `tunai − kembalian = total`, dan hanya bila label total memang ada.
+- FR-13.5 **Hapus semua data** ikut menghapus berkas foto, supaya tidak tertinggal di dokumen aplikasi tanpa jejak di basis data.
+
+### FR-14 Gaya Desain (v1.2)
+- FR-14.1 Tujuh gaya visual: **Neobrutalism** (bawaan), Flat, Material, Neomorphism, Glass Morphism, Skeuomorphic, Minimalism. Gaya mengatur bentuk: border, sudut, bayangan, isian permukaan, efek tekan, penanda navigasi, dan kepadatan.
+- FR-14.2 Gaya dan palet (Bagian 6c) berdiri sendiri-sendiri: gaya apa pun bisa dipasangkan dengan palet apa pun, memilih gaya tidak mengubah warna, dan gaya berlaku untuk mode terang maupun gelap sekaligus.
+- FR-14.3 Pilihan gaya disimpan di perangkat dan bertahan setelah aplikasi ditutup. Bawaannya tetap Neobrutalism supaya tampilan pengguna lama tidak berubah setelah pembaruan.
+
+### FR-15 Cadangan Terkunci (v1.3)
+- FR-15.1 Ekspor cadangan JSON yang bisa **dikunci kata sandi** (opsional), dan impor dengan mode **Ganti** atau **Gabung**.
+- FR-15.2 Terkunci berarti AES-256-GCM dengan kunci turunan PBKDF2-HMAC-SHA256; salt dan nonce acak untuk setiap ekspor, dan kata sandi **tidak pernah disimpan** di mana pun. Jumlah iterasi ikut tercatat di dalam berkasnya, jadi berkas lama tetap terbaca setelah angkanya dinaikkan.
+- FR-15.3 Impor menolak berkas dari **versi format yang lebih baru**, dan menolak berkas asing atau rusak **tanpa menghapus** data yang sudah ada.
+- FR-15.4 Foto struk tidak ikut di dalam cadangan (hanya pathnya), jadi setelah impor di perangkat lain fotonya ditandai hilang dan bisa dibersihkan.
+
 ---
 
 ## 10. Kebutuhan Non-Fungsional
@@ -428,6 +447,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 ## 12. Widget Beranda — Detail Teknis
 
 - Data widget disimpan sebagai nilai sederhana (SharedPreferences via `home_widget`) yang di-refresh setiap mutasi data: `widget_latest_*`, `widget_income_month`, `widget_expense_month`, `widget_budget_remaining`, `widget_budget_pct`, plus `widget_budget_color` (tambahan untuk indikator warna FR-9.3).
+- Anggaran yang ditampilkan widget memakai **aturan yang sama dengan Dashboard**: anggaran yang periodenya beririsan dengan bulan berjalan, bukan hanya yang mencakup hari ini. Bila anggaran lingkup total belum disetel, dipakai jumlah anggaran kategori yang berlaku.
 - Render oleh layout XML Android (RemoteViews). Jika memakai Jetpack Glance, logika tetap di sisi native; Dart hanya mengirim data.
 - Pembaruan: (a) langsung saat mutasi (`HomeWidget.updateWidget`), (b) `WorkManager` task periodik min 15 menit untuk memastikan total bulan ikut berubah saat lewat tengah malam/bulan.
 - Batasan yang harus diterima (jangan dijanjikan realtime): sistem Android dapat menunda pembaruan; widget bukan alat notifikasi.
@@ -447,7 +467,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 
 ## 14. Kriteria Penerimaan (contoh, dapat diuji)
 
-- [ ] Menambah pengeluaran Rp25.000 kategori "Makanan" langsung muncul di daftar & mengubah total bulanan juga donut.
+- [x] Menambah pengeluaran Rp25.000 kategori "Makanan" langsung muncul di daftar & mengubah total bulanan juga donut.
 - [x] Rekap bulan menampilkan persentase per kategori yang bila dijumlahkan = 100% (±1% karena pembulatan).
 - [x] Filter kategori pada rekap menyaring tabel **dan** grafik secara konsisten.
 - [x] Transfer antar akun sendiri **tidak** menambah total pengeluaran, tetapi biaya adminnya menambah.
@@ -471,7 +491,15 @@ Catatan bukti: kotak di atas ditandai hanya bila ada pemeriksaan otomatis yang m
 - Transaksi berulang: `test/recurring_test.dart` (matematika jadwal, penjepitan akhir bulan, tahun kabisat), `test/recurring_runner_test.dart` (idempotensi termasuk dua pelari bersamaan, batas per jalan, tanggal selesai, aturan nonaktif), `test/migration_test.dart` (migrasi v1 dan v2 ke v3, indeks unik menolak periode ganda).
 - Tema kustom: `test/theme_controller_test.dart` (pisahan terang/gelap, persistensi, pengaturan rusak tidak menggagalkan pemuatan, token semantik terkunci), `test/contrast_test.dart` (rasio WCAG, `readableOn` yang menyapu seluruh rentang kecerahan, semua preset bawaan bebas peringatan, deteksi rona yang menyerupai warna semantik), `test/theme_screen_test.dart` (layar tema).
 
-Dua kotak yang masih kosong butuh perangkat/emulator: alur catat transaksi sampai tampil di Dashboard, dan pembaruan widget beranda setelah transaksi ditambahkan.
+- Alur catat transaksi lewat form sampai tampil di Dashboard: `test/core_flow_test.dart` (termasuk penolakan saat akun belum dipilih, dan `akunId` yang tersimpan). Sebelumnya ini hanya bisa diperiksa di perangkat.
+- Scan struk: `test/receipt_test.dart` (parser: total yang sah, uang diterima dan kembalian ditolak, tanggal salah baca, merchant), `test/receipts_test.dart` (path foto, pembersih path hilang, hapus semua data ikut menghapus berkas), `test/migration_test.dart` (kolom `struk_path`).
+- Gaya desain: `test/design_style_test.dart` (tujuh gaya, token Neo yang mengikuti gaya, tipografi yang dibekukan), `test/design_style_screen_test.dart`, dan `test/app_smoke_test.dart`.
+- Cadangan terkunci: `test/backup_test.dart` (berkas tanpa nomor versi ditolak, versi lebih baru ditolak tanpa menghapus data, jumlah iterasi diambil dari berkasnya, sandi salah gagal membuka).
+- Aturan akun wajib dan catatan lama tanpa akun: `test/core_flow_test.dart`, `test/repair_screen_test.dart`.
+- Label akun sejenis: `test/accounts_test.dart`.
+- Aturan periode anggaran dan sisa uang: `test/budget_test.dart`, `test/dashboard_budget_test.dart`, `test/sisa_uang_test.dart`.
+
+Satu kotak yang masih kosong butuh perangkat: pembaruan widget beranda setelah transaksi ditambahkan.
 
 ---
 
@@ -529,7 +557,13 @@ Pertanyaan terbuka sebelumnya sudah ditetapkan (boleh ditinjau ulang bila kebutu
 
 ## 18. Dependensi yang Diusulkan (Flutter)
 
-`drift` + `sqlite3_flutter_libs` + `drift_dev` (dev), `fl_chart`, `home_widget`, `workmanager`, `shared_preferences`, `uuid`, `intl`, `path_provider`, `share_plus` (ekspor), `riverpod`/`provider`, `flutter_lints`.
+`drift` + `sqlite3_flutter_libs` + `drift_dev` (dev), `fl_chart`, `home_widget`, `workmanager`, `shared_preferences`, `uuid`, `intl`, `path_provider`, `share_plus` (ekspor), `file_picker` (pilih berkas cadangan), `riverpod`/`provider`, `flutter_lints`.
+
+Ditambahkan sejak v1.2:
+
+- `google_mlkit_text_recognition` — OCR di perangkat untuk scan struk (model dibundel di APK).
+- `image_picker` — ambil foto dari kamera atau galeri.
+- `cryptography` — AES-256-GCM dan PBKDF2 untuk cadangan terkunci.
 
 ---
 
@@ -538,14 +572,15 @@ Pertanyaan terbuka sebelumnya sudah ditetapkan (boleh ditinjau ulang bila kebutu
 Sudah dikerjakan lebih awal dari rencana:
 
 - **Transaksi berulang otomatis** (langganan, gaji bulanan) — dinaikkan ke v1.1, spesifikasinya ada di Bagian 7.6 dan FR-12.
+- **Cadangan terenkripsi** — dikerjakan di v1.3, spesifikasinya ada di FR-15. Yang masih ditunda hanyalah sinkronisasi antar-perangkat.
 - Grafik garis tren saldo kumulatif — sudah ada di layar Rekap.
 - Layar "Sampah" + pemulihan transaksi — sudah ada sejak v1.
 
 Masih ditunda:
 
 - Utang/piutang dan cicilan.
-- Rollover anggaran (sisa dibawa ke bulan berikutnya).
-- Sinkronisasi opsional antar-perangkat / cadangan terenkripsi.
+- Rollover anggaran (jatah anggaran yang belum terpakai dibawa ke periode berikutnya). Yang sudah ada hanyalah **sisa uang** dari bulan lalu (FR-6.6), dan itu bicara uang nyata, bukan jatah.
+- Sinkronisasi opsional antar-perangkat.
 - Widget iOS (bila aplikasi diperluas ke iOS).
-- Label pembeda akun (bila perlu lebih dari satu akun per institusi).
+- Nama akun yang bisa diisi pengguna. Yang ada sekarang hanya nomor urut otomatis untuk akun sejenis (FR-7.6).
 - Font display kustom (mis. Space Grotesk) bila ingin tampilan neobrutalism lebih khas.
