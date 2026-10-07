@@ -42,6 +42,51 @@ void main() {
     expect(rows.single.nominal, 150000);
   });
 
+  group('pratinjau impor', () {
+    test('menghitung yang ditambah, ditimpa, dan dihidupkan', () async {
+      final tx = TransactionRepository(db);
+      final id = await tx.create(
+        tipe: TxType.pengeluaran,
+        nominal: 25000,
+        tanggal: DateTime(2026, 3, 5),
+        kategoriId: 'makanan',
+      );
+      final dump = await backup.dump();
+
+      // Diimpor ke basis data yang sama: semuanya sudah ada, tidak ada tambahan.
+      final sama = await backup.previewRestore(dump, replace: false);
+      expect(sama.tambah, 0);
+      expect(sama.timpa, greaterThan(0));
+      expect(sama.hidupkan, 0);
+      expect(sama.dihapus, 0);
+
+      // Setelah transaksinya dihapus, berkas yang sama akan menghidupkannya lagi.
+      await tx.softDelete(id);
+      final kembali = await backup.previewRestore(dump, replace: false);
+      expect(kembali.hidupkan, 1);
+    });
+
+    test('mode ganti menghitung yang akan terhapus', () async {
+      await TransactionRepository(db).create(
+        tipe: TxType.pengeluaran,
+        nominal: 25000,
+        tanggal: DateTime(2026, 3, 5),
+        kategoriId: 'makanan',
+      );
+
+      final p = await backup.previewRestore(cadanganKosong(), replace: true);
+
+      // Berkas kosong: seluruh data lokal akan terhapus lebih dulu.
+      expect(p.dihapus, greaterThan(0));
+      expect(p.tambah, 0);
+    });
+
+    test('berkas asing tidak menghasilkan hitungan apa pun', () async {
+      final p = await backup.previewRestore({'foo': 'bar'}, replace: false);
+      expect(p.kosong, isTrue);
+    });
+  });
+
   group('versi cadangan', () {
     test('dump menuliskan versi yang berlaku sekarang', () async {
       expect((await backup.dump())['version'], kBackupVersion);

@@ -187,6 +187,83 @@ class BackupService {
     }
   }
 
+  /// Ringkasan dampak pemulihan sebuah berkas, dihitung tanpa mengubah apa pun.
+  ///
+  /// Dipakai layar impor untuk memberi tahu lebih dulu apa yang akan terjadi,
+  /// karena mode "Gabung" menimpa baris yang id-nya sama dan menghidupkan
+  /// kembali yang sudah dihapus, sementara mode "Ganti" menghapus lebih dulu.
+  Future<RestorePreview> previewRestore(
+    Map<String, dynamic> map, {
+    required bool replace,
+  }) async {
+    if (!isSupportedBackup(map)) {
+      return RestorePreview(tambah: 0, timpa: 0, hidupkan: 0, dihapus: 0);
+    }
+    List<Map<String, dynamic>> rows(String key) =>
+        ((map[key] as List?) ?? const []).cast<Map<String, dynamic>>();
+
+    var tambah = 0, timpa = 0, hidupkan = 0, dihapus = 0;
+
+    /// [berkas] dan [lokal] memetakan id ke "masih hidup" (belum dihapus lunak).
+    void hitung(Map<String, bool> berkas, Map<String, bool> lokal) {
+      for (final e in berkas.entries) {
+        final ada = lokal[e.key];
+        if (ada == null) {
+          tambah++;
+          continue;
+        }
+        timpa++;
+        // Di perangkat sudah dihapus, tetapi di berkas masih hidup: setelah
+        // dipulihkan, barisnya muncul kembali.
+        if (!ada && e.value) hidupkan++;
+      }
+      if (replace) {
+        dihapus += lokal.keys.where((id) => !berkas.containsKey(id)).length;
+      }
+    }
+
+    Map<String, bool> dariBerkas(String key) => {
+      for (final m in rows(key))
+        if (m['id'] is String) m['id'] as String: m['deletedAt'] == null,
+    };
+
+    hitung(dariBerkas('institutions'), {
+      for (final r in await _db.select(_db.institutions).get())
+        r.id: r.deletedAt == null,
+    });
+    hitung(dariBerkas('categories'), {
+      for (final r in await _db.select(_db.categories).get())
+        r.id: r.deletedAt == null,
+    });
+    hitung(dariBerkas('accounts'), {
+      for (final r in await _db.select(_db.accounts).get())
+        r.id: r.deletedAt == null,
+    });
+    hitung(dariBerkas('recurringRules'), {
+      for (final r in await _db.select(_db.recurringRules).get())
+        r.id: r.deletedAt == null,
+    });
+    hitung(dariBerkas('debts'), {
+      for (final r in await _db.select(_db.debts).get())
+        r.id: r.deletedAt == null,
+    });
+    hitung(dariBerkas('transactions'), {
+      for (final r in await _db.select(_db.transactions).get())
+        r.id: r.deletedAt == null,
+    });
+    hitung(dariBerkas('budgets'), {
+      for (final r in await _db.select(_db.budgets).get())
+        r.id: r.deletedAt == null,
+    });
+
+    return RestorePreview(
+      tambah: tambah,
+      timpa: timpa,
+      hidupkan: hidupkan,
+      dihapus: dihapus,
+    );
+  }
+
   Future<int> restore(
     Map<String, dynamic> map, {
     required bool replace,
@@ -270,6 +347,32 @@ class BackupService {
 
     await ReceiptStorage.hapusSemua(paths);
   }
+}
+
+/// Ringkasan dampak pemulihan, dihitung sebelum data apa pun diubah.
+class RestorePreview {
+  RestorePreview({
+    required this.tambah,
+    required this.timpa,
+    required this.hidupkan,
+    required this.dihapus,
+  });
+
+  /// Baris di berkas yang belum ada di perangkat ini.
+  final int tambah;
+
+  /// Baris yang id-nya sudah ada, sehingga nilainya ditimpa versi dari berkas.
+  final int timpa;
+
+  /// Baris yang di perangkat sudah dihapus tetapi di berkas masih hidup, jadi
+  /// akan muncul kembali setelah dipulihkan.
+  final int hidupkan;
+
+  /// Baris di perangkat yang akan dihapus karena mode "Ganti".
+  final int dihapus;
+
+  bool get kosong =>
+      tambah == 0 && timpa == 0 && hidupkan == 0 && dihapus == 0;
 }
 
 /// Nomor versi format cadangan yang ditulis sekarang. Naikkan bila bentuk
