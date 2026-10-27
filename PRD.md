@@ -4,8 +4,8 @@
 - **Platform:** Android (Flutter)
 - **Penyimpanan:** 100% lokal di perangkat (tanpa server, tanpa akun)
 - **Mata uang:** Rupiah (IDR) saja
-- **Status dokumen:** Final v1, diperbarui sampai v1.5 (v1.1 transaksi berulang & tema, v1.2 scan struk & gaya desain, v1.3 cadangan terkunci, v1.4 utang & piutang, v1.5 pemetaan pedagang & korpus struk) + perbaikan inkonsistensi hasil review (Bagian 3/5/7/8/12/14/15/17)
-- **Tanggal:** 2026-10-26
+- **Status dokumen:** Final v1, diperbarui sampai v1.6 (v1.1 transaksi berulang & tema, v1.2 scan struk & gaya desain, v1.3 cadangan terkunci, v1.4 utang & piutang, v1.5 pemetaan pedagang & korpus struk, v1.6 ketepatan sisi gambar) + perbaikan inkonsistensi hasil review (Bagian 3/5/7/8/12/14/15/17) + perbaikan audit putaran kedua (histori stabil saat akun dihapus, Sampah utang, hapus permanen kebiasaan, validasi repo)
+- **Tanggal:** 2026-10-27
 
 ---
 
@@ -322,6 +322,8 @@ Transfer dipecah menjadi dua makna agar rekap tidak salah:
 Ketiga kasus tetap muncul di riwayat transfer dengan detail dari→ke, nominal, kategori, admin, note.
 
 > **Konsekuensi pembukuan:** untuk transfer antar akun sendiri, satu-satunya pengeluaran adalah biaya admin, dan biaya itu **selalu** dibukukan ke kategori "Transfer & Admin" — kategori yang dipilih di form hanya tersimpan sebagai catatan, bukan tempat pengeluarannya. Kalau kategori "Transfer & Admin" dihapus, transaksi lama tetap terbaca karena label historis tetap dipakai (Bagian 7.2).
+>
+> **Stabil terhadap penghapusan akun:** himpunan "akun milik sendiri" mencakup akun yang sudah dinonaktifkan maupun dihapus lunak. Menghapus atau menonaktifkan akun **tidak mengubah** klasifikasi transfer yang sudah tercatat maupun Sisa uang historis — Sisa dihitung dari saldo seluruh akun milik sendiri termasuk yang tidak aktif (FR-1.6).
 
 ### 8.2 Warna Anggaran (hijau → merah)
 Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
@@ -422,14 +424,14 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-11.1 Setel batas anggaran (pintasan ke FR-6).
 - FR-11.2 Format & lokalisasi (IDR, `id_ID`).
 - FR-11.3 Kunci aplikasi (PIN/biometrik): **dihapus** atas permintaan pengguna (v1.1). Aplikasi tidak lagi meminta autentikasi saat dibuka, dan kebergantungan `local_auth` ikut dibuang.
-- FR-11.4 Hapus semua data (dengan konfirmasi ganda).
+- FR-11.4 Hapus semua data (dengan konfirmasi ganda): menghapus transaksi, utang/piutang, anggaran, aturan berulang, kebiasaan pedagang, dan akun; master institusi & kategori dipertahankan agar aplikasi tetap bisa dipakai.
 - FR-11.5 Tema terang/gelap/mengikuti sistem.
 - FR-11.6 Tema yang dapat disesuaikan (Bagian 6c): pilih preset palet, lalu setel latar, permukaan, border/teks, bilah atas, dan aksen secara terpisah untuk mode terang dan gelap; warna semantik terkunci; ada peringatan kontras dan peringatan warna yang terlalu mirip makna pemasukan/pengeluaran; ada tombol kembali ke preset.
 
 ### FR-12 Transaksi Berulang (v1.1)
 - FR-12.1 CRUD aturan berulang: tipe (pemasukan/pengeluaran), nominal, kategori, **akun (wajib)**, catatan, frekuensi (harian/mingguan/bulanan/tahunan), tanggal mulai, tanggal sampai (opsional), dan status aktif.
 - FR-12.2 Transaksi dibuat **otomatis** saat jatuh tempo: dibangkitkan ketika aplikasi dibuka, dan tugas WorkManager yang sudah ada ikut menyusul periode yang terlewat. Tidak ada langkah persetujuan.
-- FR-12.3 Satu periode tidak pernah tercatat dua kali (idempotent), termasuk bila aplikasi dan WorkManager berjalan bersamaan.
+- FR-12.3 Satu periode tidak pernah tercatat dua kali (idempotent, per tanggal kalender — mengubah jam aturan tidak menggandakan hari yang sudah terbuat), termasuk bila aplikasi dan WorkManager berjalan bersamaan.
 - FR-12.4 Transaksi hasil jadwal diberi penanda yang terlihat di riwayat, dan dapat diedit atau dihapus seperti transaksi biasa tanpa mengubah aturannya.
 - FR-12.5 Aturan yang dinonaktifkan atau sudah melewati tanggal selesai berhenti menghasilkan transaksi; transaksi yang sudah ada tetap tersimpan.
 - FR-12.6 Daftar aturan menampilkan jatuh tempo berikutnya serta bisa diaktifkan dan dinonaktifkan.
@@ -442,6 +444,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-13.4 Parser memilih total yang sah (bukan uang diterima, kembalian, atau baris diskon), tanggal yang wajar (menolak tanggal di masa depan), dan nama merchant. Nominal yang tidak menempel pada labelnya dibuktikan lewat **dua** identitas aritmetika: `tunai − kembalian = total` (hanya bila label total memang ada) dan `subtotal − diskon + pajak + biaya = total` (bila komponen belanja tercetak berlabel). Yang dipakai sebagai nominal selalu **angka yang tercetak** di struk, bukan hasil hitungan; bila tak ada identitas yang terbukti, nominal dibiarkan kosong daripada ditebak.
 - FR-13.5 **Hapus semua data** ikut menghapus berkas foto, supaya tidak tertinggal di dokumen aplikasi tanpa jejak di basis data.
 - FR-13.6 Teks mentah hasil OCR bisa dibuka lewat panel "Lihat teks hasil scan" untuk diperiksa. Teks itu juga menjadi bahan korpus struk di `app/tool/korpus/` yang diuji `test/korpus_struk_test.dart`: **nominal salah harus nol**, sedangkan "kosong" hanya dicatat sebagai angka acuan. Korpus tidak pernah keluar dari perangkat kecuali dipindahkan sendiri oleh pengguna.
+- FR-13.7 Ketepatan sisi gambar (v1.6, tetap offline): sebelum OCR, foto diproses di perangkat (`ReceiptPreprocessor.kt`, hanya `android.graphics`) menjadi tiga varian — asli (downscale sisi panjang 1600 px), kontras (grayscale + auto-kontras), biner (ambang Otsu) — lalu ML Kit dijalankan per varian dan pemenangnya dipilih dari skor parse (`data/receipt_score.dart`: bukti aritmetika > label > tebakan, lalu kelengkapan field; seri dimenangkan varian asli). Bila belum ada yang yakin dan waktu masih ada (batas ±3 detik), orientasi 90/180/270 dicoba satu per satu. Label tanpa angka dipasangkan dengan angka segaris di kanannya lewat bounding box ML Kit (`data/receipt_layout.dart`) sebelum parsing. Bila OCR terlalu sedikit bahan, layar menampilkan anjuran foto ulang (quality gate), bukan form kosong. Harness korpus gambar ada di layar tersembunyi "Uji ketepatan scan" (ketuk 5× judul Pengaturan): menjalankan pipeline penuh per foto dan membandingkannya dengan `harapan.json`, dengan syarat lolos yang sama (nominal SALAH = 0).
 
 ### FR-14 Gaya Desain (v1.2)
 - FR-14.1 Tujuh gaya visual: **Neobrutalism** (bawaan), Flat, Material, Neomorphism, Glass Morphism, Skeuomorphic, Minimalism. Gaya mengatur bentuk: border, sudut, bayangan, isian permukaan, efek tekan, penanda navigasi, dan kepadatan.
@@ -460,7 +463,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - FR-16.1 Satu catatan menyimpan **arah** (`utang` = kita yang berutang, `piutang` = orang lain berutang kepada kita), **nama pihak**, **nominal pokok**, **tenggat** (opsional), dan catatan. Tersimpan di tabel `debts`, skema v6.
 - FR-16.2 **Pelunasan sebagian** dicatat sebagai transaksi biasa yang **tertaut** ke catatan itu: utang dilunasi dengan pengeluaran, piutang dengan pemasukan. Jumlah terbayar **dihitung dari transaksi yang tertaut**, bukan disimpan sebagai kolom — jadi uangnya hanya punya satu catatan, ikut terhitung di saldo, riwayat, dan rekap, dan tidak ada angka yang perlu dijaga di dua tempat.
 - FR-16.3 Daftar menampilkan sisa tiap catatan dengan bilah kemajuan, yang **belum lunas di atas**, lalu tenggat terdekat; tenggat yang terlewat ditandai. Catatan yang sudah lunas tetap terlihat di bawah.
-- FR-16.4 Hapus catatan bersifat **lunak**: catatannya hilang dari daftar, tetapi transaksi pelunasan yang sudah tercatat tetap ada karena uangnya memang berpindah.
+- FR-16.4 Hapus catatan bersifat **lunak**: catatannya hilang dari daftar, tetapi transaksi pelunasan yang sudah tercatat tetap ada karena uangnya memang berpindah. Catatan terhapus bisa dipulihkan dari layar Sampah.
 - FR-16.5 **Bukan** lingkupnya: bunga, denda, dan jadwal angsuran otomatis.
 
 ### FR-17 Pemetaan Pedagang ke Kategori & Akun (v1.5)
@@ -546,6 +549,7 @@ Catatan bukti: kotak di atas ditandai hanya bila ada pemeriksaan otomatis yang m
 - Alur catat transaksi lewat form sampai tampil di Dashboard: `test/core_flow_test.dart` (termasuk penolakan saat akun belum dipilih, dan `akunId` yang tersimpan). Sebelumnya ini hanya bisa diperiksa di perangkat.
 - Scan struk: `test/receipt_test.dart` (parser: total yang sah, uang diterima dan kembalian ditolak, tanggal salah baca, merchant), `test/receipts_test.dart` (path foto, pembersih path hilang, hapus semua data ikut menghapus berkas), `test/migration_test.dart` (kolom `struk_path`).
 - Ketepatan scan & pemetaan pedagang (v1.5): `test/korpus_struk_test.dart` (ketepatan parser atas teks OCR **nyata** di `tool/korpus/`; nominal salah = 0), `test/receipt_test.dart` (bukti aritmetika pembayaran dan komponen, termasuk diskon, pajak, dan pembulatan), `test/merchant_test.dart` (normalisasi pola pedagang, pencatatan kebiasaan, pilihan terakhir menang), `test/migration_test.dart` (migrasi v6→v7), `test/backup_test.dart` (kebiasaan pedagang ikut terekspor dan terpulihkan).
+- Ketepatan sisi gambar (v1.6): `test/receipt_score_test.dart` (urutan skor bukti, seri dimenangkan varian asli, ambang quality gate), `test/receipt_layout_test.dart` (pasangan label ↔ angka dua kolom, satu angka satu pasangan, ketidakcocokan jumlah baris tidak memasang silang). Harness korpus gambar (`ScanAccuracyScreen`, tersembunyi) mengukur pipeline penuh di HP dengan syarat lolos yang sama (nominal SALAH = 0).
 - Gaya desain: `test/design_style_test.dart` (tujuh gaya, token Neo yang mengikuti gaya, tipografi yang dibekukan), `test/design_style_screen_test.dart`, dan `test/app_smoke_test.dart`.
 - Cadangan terkunci: `test/backup_test.dart` (berkas tanpa nomor versi ditolak, versi lebih baru ditolak tanpa menghapus data, jumlah iterasi diambil dari berkasnya, sandi salah gagal membuka).
 - Aturan akun wajib dan catatan lama tanpa akun: `test/core_flow_test.dart`, `test/repair_screen_test.dart`.
@@ -583,6 +587,9 @@ Satu kotak yang masih kosong butuh perangkat: pembaruan widget beranda setelah t
 
 **v1.5:**
 - **M13 — Pemetaan Pedagang & Korpus:** tabel `kebiasaan_merchant` (skema v7), saran kategori/akun dari catatan sebelumnya, pengukuran ketepatan parser atas teks OCR nyata (nominal salah wajib nol).
+
+**v1.6:**
+- **M14 — Ketepatan sisi gambar:** pra-pemrosesan Kotlin (asli/kontras/biner Otsu) + OCR multi-varian dengan skor parse, pasangan label ↔ nominal via bounding box, quality gate + tips foto, harness korpus gambar di layar tersembunyi (nominal SALAH tetap 0).
 
 Setiap milestone harus lolos `flutter analyze` (0 issue) dan set test-nya sebelum lanjut.
 

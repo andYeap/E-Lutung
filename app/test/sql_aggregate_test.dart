@@ -80,7 +80,8 @@ void main() {
       akunAsalId: own1,
       akunTujuanId: ext,
     );
-    // Tujuan akun yang sudah dihapus → tidak lagi "milik sendiri".
+    // Tujuan akun milik sendiri yang sudah dihapus → tetap dianggap milik
+    // sendiri, supaya klasifikasi historis tidak berubah (Bagian 8.1).
     await txs.create(
       tipe: TxType.transfer,
       nominal: 400000,
@@ -105,12 +106,11 @@ void main() {
     );
   }
 
+  /// Himpunan milik-sendiri termasuk akun terhapus — sama seperti
+  /// `ownAccountIdsProvider` di aplikasi.
   Future<Set<String>> ownIds() async {
-    final rows = await accounts.watchAll().first;
-    return rows
-        .where((a) => a.account.milikSendiri)
-        .map((a) => a.account.id)
-        .toSet();
+    final rows = await db.select(db.accounts).get();
+    return rows.where((a) => a.milikSendiri).map((a) => a.id).toSet();
   }
 
   /// Transaksi Maret 2026 menurut Dart (pembanding yang setara dengan query
@@ -128,10 +128,20 @@ void main() {
 
     expect(sqlTotals.income, dartTotals.income);
     expect(sqlTotals.expense, dartTotals.expense);
-    // Nilai eksplisit: pengeluaran 25.000 + admin 2.500 + (100.000+1.000)
-    // + 400.000 (tujuan akun terhapus) = 528.500.
-    expect(sqlTotals.expense, 528500);
+    // Nilai eksplisit: pengeluaran 25.000 + admin 2.500 + (100.000+1.000).
+    // Transfer ke akun-sendiri-yang-dihapus tetap internal (admin 0).
+    expect(sqlTotals.expense, 128500);
     expect(sqlTotals.income, 1000000);
+  });
+
+  test('menghapus akun tidak mengubah total historis', () async {
+    await seed();
+    final before = await txs.watchMonthTotals(2026, 3).first;
+    await accounts.softDelete(own2);
+    final after = await txs.watchMonthTotals(2026, 3).first;
+    expect(after.income, before.income);
+    expect(after.expense, before.expense);
+    expect(after.expense, 128500);
   });
 
   test('transfer dari pihak lain: SQL == Dart (pemasukan + admin)', () async {
@@ -158,7 +168,7 @@ void main() {
     final march = await txs.watchMonthTotals(2026, 3).first;
     final april = await txs.watchMonthTotals(2026, 4).first;
     expect(april.expense, 7000);
-    expect(march.expense, 528500);
+    expect(march.expense, 128500);
   });
 
   test('pengeluaran per kategori (SQL) == expenseByCategory (Dart)', () async {
@@ -190,8 +200,9 @@ void main() {
   test('biaya admin transfer antar akun sendiri masuk "Transfer & Admin"', () async {
     await seed();
     final all = await txs.watchMonthExpenseByCategory(2026, 3).first;
-    // makanan 25.000 · Transfer & Admin 2.500 (admin internal) ·
-    // Tanpa kategori 501.000 (transfer ke pihak lain + tujuan akun terhapus).
+    // makanan 25.000 · Transfer & Admin 2.500 (admin internal; transfer ke
+    // akun-sendiri-yang-dihapus ikut internal dengan admin 0) ·
+    // Tanpa kategori 101.000 (transfer ke pihak lain).
     expect(all.length, 3);
     final admin = all.firstWhere(
       (c) => c.kategoriId == kTransferAdminCategoryId,
@@ -249,7 +260,7 @@ void main() {
       expect(sql[i].expense, dart[i].expense);
     }
     expect(sql.last.expense, 7000); // April
-    expect(sql[10].expense, 528500); // Maret
+    expect(sql[10].expense, 128500); // Maret (transfer ke akun terhapus = internal)
   });
 
   test('bulan tanpa transaksi tetap muncul sebagai titik nol', () async {

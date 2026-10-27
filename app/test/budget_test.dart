@@ -1,5 +1,7 @@
+import 'package:drift/native.dart';
 import 'package:elutung/data/database.dart';
 import 'package:elutung/data/finance.dart';
+import 'package:elutung/data/repositories/budget_repository.dart';
 import 'package:elutung/util/budget.dart';
 import 'package:elutung/util/format.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -284,6 +286,55 @@ void main() {
       expect(r.nominal, 0);
       expect(r.remaining, 0);
       expect(r.fraction, 0);
+    });
+  });
+
+  group('validasi repository anggaran', () {
+    late AppDatabase db;
+    late BudgetRepository repo;
+
+    DateTime tgl(int d) => DateTime(2026, 5, d);
+
+    setUp(() {
+      db = AppDatabase(NativeDatabase.memory());
+      repo = BudgetRepository(db);
+    });
+    tearDown(() => db.close());
+
+    test('nominal nol atau negatif ditolak', () async {
+      expect(
+        () => repo.create(
+          lingkup: BudgetScope.total,
+          nominal: 0,
+          periodeMulai: tgl(1),
+          periodeSelesai: tgl(10),
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('lingkup kategori tanpa kategori ditolak', () async {
+      expect(
+        () => repo.create(
+          lingkup: BudgetScope.kategori,
+          nominal: 100000,
+          periodeMulai: tgl(1),
+          periodeSelesai: tgl(10),
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('rentang terbalik ditolak', () async {
+      expect(
+        () => repo.create(
+          lingkup: BudgetScope.total,
+          nominal: 100000,
+          periodeMulai: tgl(10),
+          periodeSelesai: tgl(1),
+        ),
+        throwsArgumentError,
+      );
     });
   });
 }

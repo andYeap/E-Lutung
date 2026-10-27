@@ -23,6 +23,13 @@ class BudgetRepository {
     required DateTime periodeSelesai,
     required int nominal,
   }) async {
+    _validasi(
+      lingkup: lingkup,
+      kategoriId: kategoriId,
+      periodeMulai: periodeMulai,
+      periodeSelesai: periodeSelesai,
+      nominal: nominal,
+    );
     final id = _uuid.v4();
     await _db.into(_db.budgets).insert(
       BudgetsCompanion.insert(
@@ -46,6 +53,13 @@ class BudgetRepository {
     required int nominal,
     required bool aktif,
   }) {
+    _validasi(
+      lingkup: lingkup,
+      kategoriId: kategoriId,
+      periodeMulai: periodeMulai,
+      periodeSelesai: periodeSelesai,
+      nominal: nominal,
+    );
     return (_db.update(_db.budgets)..where((t) => t.id.equals(id))).write(
       BudgetsCompanion(
         lingkup: Value(lingkup),
@@ -57,6 +71,27 @@ class BudgetRepository {
         updatedAt: Value(DateTime.now()),
       ),
     );
+  }
+
+  /// Aturan validasi terpusat supaya anggaran bisu (dipakai tapi `used`
+  /// selalu 0) tidak bisa dibuat lewat repo mana pun; form juga memeriksa
+  /// hal yang sama sebelum memanggil.
+  static void _validasi({
+    required BudgetScope lingkup,
+    required String? kategoriId,
+    required DateTime periodeMulai,
+    required DateTime periodeSelesai,
+    required int nominal,
+  }) {
+    if (nominal <= 0) {
+      throw ArgumentError('nominal anggaran harus lebih dari 0');
+    }
+    if (lingkup == BudgetScope.kategori && kategoriId == null) {
+      throw ArgumentError('anggaran lingkup kategori wajib punya kategoriId');
+    }
+    if (periodeSelesai.isBefore(periodeMulai)) {
+      throw ArgumentError('periodeSelesai tidak boleh sebelum periodeMulai');
+    }
   }
 
   Future<void> softDelete(String id) {

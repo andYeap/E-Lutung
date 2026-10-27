@@ -45,7 +45,10 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     final budgetsAsync = ref.watch(budgetsProvider);
     final txs = ref.watch(allTransactionsProvider).value ?? const <Transaction>[];
     final ownIds = ref.watch(ownAccountIdsProvider);
-    final accounts = ref.watch(accountsProvider).value ?? const [];
+    // Sisa periode lalu memakai semua akun termasuk yang terhapus supaya
+    // tidak berubah saat akun dihapus (FR-6.6/FR-1.6).
+    final semuaAkun =
+        ref.watch(allAccountsIncludingDeletedProvider).value ?? const [];
     final categories = ref.watch(categoriesProvider).value ?? const <Category>[];
     // Judul anggaran tetap benar walau kategorinya sudah dihapus.
     final allCategories =
@@ -98,7 +101,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           // Sisa periode lalu bicara uang, bukan jatah anggaran: saldo akhir
           // bulan sebelumnya, yaitu bekal yang dibawa masuk ke bulan ini.
           final sisaPeriodeLalu = sisaUangSampai(
-            accounts.map((a) => a.account).toList(),
+            semuaAkun.map((a) => a.account).toList(),
             txs,
             DateTime(DateTime.now().year, DateTime.now().month, 0),
           );

@@ -10,7 +10,7 @@ import '../util/format.dart';
 import '../widgets/neo.dart';
 
 /// Sampah — semua item yang dihapus (transaksi, kategori, akun, institusi,
-/// anggaran) bisa dipulihkan dari sini.
+/// anggaran, aturan berulang, utang/piutang) bisa dipulihkan dari sini.
 class TrashScreen extends ConsumerStatefulWidget {
   const TrashScreen({super.key});
 
@@ -25,6 +25,7 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
   late final _instRepo = ref.read(institutionRepositoryProvider);
   late final _budRepo = ref.read(budgetRepositoryProvider);
   late final _recRepo = ref.read(recurringRepositoryProvider);
+  late final _debtRepo = ref.read(debtRepositoryProvider);
 
   // Stream diambil sekali supaya tidak berlangganan ulang tiap rebuild.
   late final _txDeleted = _txRepo.watchDeleted();
@@ -33,6 +34,7 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
   late final _instDeleted = _instRepo.watchDeleted();
   late final _budDeleted = _budRepo.watchDeleted();
   late final _recDeleted = _recRepo.watchDeleted();
+  late final _debtDeleted = _debtRepo.watchDeleted();
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +109,13 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
             label: (b) => '${b.lingkup == BudgetScope.total ? 'Total' : 'Kategori'} • '
                 '${rupiah(b.nominal)}',
             onRestore: (b) => _budRepo.restore(b.id),
+          ),
+          _Section<Debt>(
+            title: 'Utang & piutang',
+            stream: _debtDeleted,
+            label: (d) => '${d.arah == DebtDirection.utang ? 'Utang' : 'Piutang'}'
+                ' • ${d.pihak} • ${rupiah(d.nominal)}',
+            onRestore: (d) => _debtRepo.restore(d.id),
           ),
         ],
       ),

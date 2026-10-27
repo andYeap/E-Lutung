@@ -87,6 +87,19 @@ void main() {
     expect((await db.select(db.transactions).get()).length, 1);
   });
 
+  test('catatan terhapus bisa dipulihkan dari Sampah', () async {
+    final id = await catat();
+    await debts.softDelete(id);
+    expect(await debts.watchAll().first, isEmpty);
+
+    expect(await debts.watchDeleted().first, hasLength(1));
+    await debts.restore(id);
+
+    final kembali = (await debts.watchAll().first).single;
+    expect(kembali.debt.id, id);
+    expect(kembali.sisa, 500000);
+  });
+
   test('piutang dibayar dengan pemasukan, utang dengan pengeluaran', () async {
     await catat(arah: DebtDirection.piutang);
     expect((await debts.watchAll().first).single.tipeBayar, TxType.pemasukan);

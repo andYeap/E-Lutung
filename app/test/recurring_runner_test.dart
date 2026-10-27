@@ -59,6 +59,36 @@ void main() {
     expect((await txs()).length, 3); // 25 Jan, 25 Feb, 25 Mar
   });
 
+  test('ubah jam mulai tidak menggandakan hari yang sudah terbuat', () async {
+    final id = await rules.create(
+      tipe: TxType.pemasukan,
+      nominal: 5000000,
+      kategoriId: 'gaji',
+      frekuensi: Frequency.bulanan,
+      mulai: DateTime(2026, 1, 25, 9),
+    );
+    await RecurringRunner.runDue(db, now: DateTime(2026, 3, 31));
+    expect((await txs()).length, 3);
+
+    final r = await db.select(db.recurringRules).getSingle();
+    await rules.update(
+      id: id,
+      tipe: r.tipe,
+      nominal: r.nominal,
+      kategoriId: r.kategoriId,
+      akunId: r.akunId,
+      catatan: r.catatan,
+      frekuensi: r.frekuensi,
+      mulai: DateTime(2026, 1, 25, 15),
+      sampai: r.sampai,
+      aktif: r.aktif,
+    );
+
+    final again = await RecurringRunner.runDue(db, now: DateTime(2026, 3, 31));
+    expect(again, 0);
+    expect((await txs()).length, 3);
+  });
+
   test('tidak ada transaksi ganda walau benar-benar dijalankan bersamaan', () async {
     await rules.create(
       tipe: TxType.pengeluaran,

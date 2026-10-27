@@ -76,6 +76,28 @@ class AccountRepository {
     );
   }
 
+  /// Semua akun termasuk yang terhapus — dipakai untuk himpunan "milik
+  /// sendiri" (aturan transfer Bagian 8.1) dan Sisa uang, supaya menghapus
+  /// atau menonaktifkan akun tidak mengubah klasifikasi dan saldo historis.
+  Stream<List<AccountWithInstitution>> watchAllIncludingDeleted() {
+    final q = _db.select(_db.accounts).join([
+      innerJoin(
+        _db.institutions,
+        _db.institutions.id.equalsExp(_db.accounts.institusiId),
+      ),
+    ]);
+    return q.watch().map(
+      (rows) => rows
+          .map(
+            (r) => AccountWithInstitution(
+              account: r.readTable(_db.accounts),
+              institusi: r.readTable(_db.institutions),
+            ),
+          )
+          .toList(),
+    );
+  }
+
   Future<String> create({
     required String institusiId,
     required bool milikSendiri,

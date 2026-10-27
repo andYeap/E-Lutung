@@ -116,6 +116,25 @@ ORDER BY (COALESCE(SUM(t.nominal), 0) >= d.nominal) ASC,
         ),
       );
 
+  /// Catatan terhapus — untuk layar Sampah (pemulihan, FR-16.4).
+  Stream<List<Debt>> watchDeleted() {
+    final q = _db.select(_db.debts)
+      ..where((d) => d.deletedAt.isNotNull())
+      ..orderBy([
+        (d) => OrderingTerm(expression: d.updatedAt, mode: OrderingMode.desc),
+      ]);
+    return q.watch();
+  }
+
+  /// Kembalikan catatan terhapus dari Sampah.
+  Future<void> restore(String id) =>
+      (_db.update(_db.debts)..where((d) => d.id.equals(id))).write(
+        DebtsCompanion(
+          deletedAt: const Value(null),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+
   static String? _bersih(String? teks) {
     final s = teks?.trim() ?? '';
     return s.isEmpty ? null : s;

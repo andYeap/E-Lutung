@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/database.dart';
 import '../../data/receipt.dart';
+import '../../data/receipt_score.dart';
 import '../../providers.dart';
 import '../../services/receipt_scanner.dart';
 import '../../services/receipt_storage.dart';
@@ -37,6 +38,8 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   bool _menyimpan = false;
   bool _simpanGambar = true;
   bool _izinkanKeluar = false;
+  // Quality gate (Fase 3): alasan kenapa OCR meragukan, bila ada.
+  String? _alasanMutu;
   DateTime _tanggal = DateTime.now();
   String? _kategoriId;
   String? _akunId;
@@ -90,14 +93,22 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
       setState(() {
         _imagePath = x.path;
         _memproses = true;
+        _alasanMutu = null;
       });
-      final teks = await ReceiptScanner.recognizeText(x.path);
-      final draft = parseReceipt(teks);
+      // Multi-varian offline: pra-proses → OCR tiap varian → pilih parse
+      // terbaik. Fallback ke foto asli bila channel tidak tersedia.
+      final hasil = await ReceiptScanner.scanTerbaik(x.path);
+      final draft = hasil.draft;
+      final mutu = nilaiKualitasOcr(hasil.teks);
       if (!mounted) return;
       setState(() {
         _memproses = false;
-        _teksOcr = teks;
+        _teksOcr = hasil.teks;
         _draft = draft;
+        _alasanMutu = switch (mutu.tingkat) {
+          KualitasOcr.baik => null,
+          KualitasOcr.meragukan || KualitasOcr.kosong => mutu.alasan,
+        };
         if (draft.nominal != null) _nominal.text = formatThousands(draft.nominal!);
         if (draft.tanggal != null) _tanggal = draft.tanggal!;
         if (_keterangan.text.trim().isEmpty && draft.merchant != null) {
@@ -248,6 +259,29 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
             ),
             const SizedBox(height: 12),
           ],
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: Neo.box(
+              color: Color.alphaBlend(
+                Neo.accent.withValues(alpha: 0.10),
+                Neo.surface,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.photo_camera_outlined, size: 18, color: Neo.muted),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Tips foto: isi bingkai dengan struk, tegak lurus, '
+                    'hindari silau dan bayangan.',
+                    style: TextStyle(color: Neo.muted, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -294,6 +328,32 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                   style: const TextStyle(fontSize: 11),
                 ),
               ],
+            ),
+          if (_alasanMutu != null && !_memproses)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: Neo.box(
+                  color: Color.alphaBlend(
+                    Neo.expense.withValues(alpha: 0.12),
+                    Neo.surface,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh, size: 18, color: Neo.expense),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Sulit terbaca ($_alasanMutu). Coba foto ulang dengan '
+                        'cahaya lebih terang, atau ketik nominalnya manual.',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           if (_draft != null && !_memproses && !_draft!.yakin)
             Padding(
@@ -342,50 +402,67 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                 ],
               ),
             ),
-          if (_saran != null &&
-              _kategoriId == _saran!.kategoriId &&
-              (_saran!.akunId == null || _akunId == _saran!.akunId))
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-                decoration: Neo.box(
-                  color: Color.alphaBlend(
-                    Neo.income.withValues(alpha: 0.10),
-                    Neo.surface,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.history, size: 18, color: Neo.muted),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Kategori & akun diisi dari catatan sebelumnya '
-                        '(${_saran!.jumlahPemakaian}x untuk pedagang ini). '
-                        'Bisa kamu ubah atau hapus.',
-                        style: const TextStyle(fontSize: 12),
+          if (_saran != null)
+            Builder(
+              builder: (context) {
+                final saran = _saran!;
+                // Banner tetap tampil walau pilihan sudah diubah: tombol Hapus
+                // adalah satu-satunya jalan menghapus pemetaan tersimpan.
+                final cocok = _kategoriId == saran.kategoriId &&
+                    (saran.akunId == null || _akunId == saran.akunId);
+                final namaKat = {
+                  for (final c in categories) c.id: c.nama,
+                }[saran.kategoriId] ?? 'kategori yang sudah dihapus';
+                final labelAkun = saran.akunId == null
+                    ? null
+                    : akunLabels(accounts)[saran.akunId] ?? 'akun tidak aktif';
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+                    decoration: Neo.box(
+                      color: Color.alphaBlend(
+                        Neo.income.withValues(alpha: 0.10),
+                        Neo.surface,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () async {
-                        final pola = _saran!.pola;
-                        await ref
-                            .read(transactionRepositoryProvider)
-                            .hapusKebiasaan(pola);
-                        if (!mounted) return;
-                        setState(() {
-                          _saran = null;
-                          _kategoriId = null;
-                          _akunId = null;
-                        });
-                        _snack('Catatan untuk pedagang ini dihapus.');
-                      },
-                      child: const Text('Hapus'),
+                    child: Row(
+                      children: [
+                        Icon(Icons.history, size: 18, color: Neo.muted),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            cocok
+                                ? 'Kategori & akun diisi dari catatan sebelumnya '
+                                    '(${saran.jumlahPemakaian}x untuk pedagang ini). '
+                                    'Bisa kamu ubah atau hapus.'
+                                : 'Catatan tersimpan: $namaKat'
+                                    '${labelAkun == null ? '' : ' • $labelAkun'} '
+                                    '(pilihanmu berbeda). Hapus bila catatan ini salah.',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            final pola = saran.pola;
+                            await ref
+                                .read(transactionRepositoryProvider)
+                                .hapusKebiasaan(pola);
+                            if (!mounted) return;
+                            setState(() {
+                              _saran = null;
+                              _kategoriId = null;
+                              _akunId = null;
+                            });
+                            _snack('Catatan untuk pedagang ini dihapus.');
+                          },
+                          child: const Text('Hapus'),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           const SizedBox(height: 16),
           NeoTextField(
@@ -520,7 +597,7 @@ class _AkunChips extends StatelessWidget {
   final List<AccountWithInstitution> items;
   final Map<String, String> labels;
   final String? selectedId;
-  final ValueChanged<String> onSelected;
+  final ValueChanged<String?> onSelected;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -545,7 +622,7 @@ class _AkunChips extends StatelessWidget {
             return ChoiceChip(
               label: Text(labels[a.account.id] ?? a.institusi.nama),
               selected: selected,
-              onSelected: (_) => onSelected(a.account.id),
+              onSelected: (_) => onSelected(selected ? null : a.account.id),
               selectedColor: Neo.accent,
               backgroundColor: Neo.surface,
               side: BorderSide(color: Neo.ink, width: Neo.borderW),

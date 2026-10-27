@@ -34,6 +34,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final categories = ref.watch(allCategoriesProvider).value ?? const <Category>[];
     final accounts = ref.watch(accountsProvider).value ?? const [];
     final ownIds = ref.watch(ownAccountIdsProvider);
+    // Sisa memakai semua akun termasuk yang terhapus/dinonaktifkan supaya
+    // tidak berubah saat akun dihapus (FR-1.6).
+    final semuaAkun =
+        ref.watch(allAccountsIncludingDeletedProvider).value ?? const [];
 
     final catName = {for (final c in categories) c.id: c.nama};
     final catById = {for (final c in categories) c.id: c};
@@ -78,7 +82,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           // Sisa uang: saldo seluruh akun sendiri sampai akhir bulan terpilih,
           // jadi untuk bulan yang sudah lewat angkanya adalah sisa saat itu.
           final sisa = sisaUangSampai(
-            accounts.map((a) => a.account).toList(),
+            semuaAkun.map((a) => a.account).toList(),
             all,
             DateTime(_month.year, _month.month + 1, 0),
           );

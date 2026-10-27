@@ -164,7 +164,10 @@ int sisaUangSampai(
   final sampaiSini = txs.where((t) => !t.tanggal.isAfter(batas)).toList();
   var total = 0;
   for (final a in accounts) {
-    if (!a.aktif || !a.milikSendiri) continue;
+    // Hanya milik sendiri yang dihitung; akun nonaktif/terhapus tetap
+    // membawa saldonya supaya Sisa tidak berubah saat akun dinonaktifkan
+    // atau dihapus (FR-1.6: saldo seluruh akun milik sendiri).
+    if (!a.milikSendiri) continue;
     total += accountBalance(a.id, a.saldoAwal, sampaiSini);
   }
   return total;

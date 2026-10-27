@@ -25,6 +25,9 @@ class RecurringRunner {
 
     var created = 0;
     for (final rule in rules) {
+      // Aturan ber-nominal tidak positif dilewati: tidak ada uang yang
+      // berpindah, dan baris 0 hanya mengotori riwayat.
+      if (rule.nominal <= 0) continue;
       final due = occurrences(
         mulai: rule.mulai,
         frekuensi: rule.frekuensi,
@@ -41,11 +44,18 @@ class RecurringRunner {
         for (final tanggal in due) {
           // Lewati yang sudah ada supaya jumlah yang dilaporkan akurat, dan
           // supaya tabrakan indeks unik tidak menggagalkan seluruh proses.
+          // Perbandingan per tanggal kalender (bukan timestamp persis):
+          // jam `mulai` boleh diubah pengguna, dan periode yang sudah
+          // terbuat tidak boleh terbit dua kali hanya karena jamnya beda.
+          final hariMulai =
+              DateTime(tanggal.year, tanggal.month, tanggal.day);
+          final hariBerikut = hariMulai.add(const Duration(days: 1));
           final existing =
               await (db.select(db.transactions)..where(
                     (t) =>
                         t.recurringRuleId.equals(rule.id) &
-                        t.tanggal.equals(tanggal),
+                        t.tanggal.isBiggerOrEqualValue(hariMulai) &
+                        t.tanggal.isSmallerThanValue(hariBerikut),
                   ))
                   .getSingleOrNull();
           if (existing != null) continue;

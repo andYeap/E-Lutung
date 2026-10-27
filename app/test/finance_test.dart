@@ -107,13 +107,13 @@ void main() {
       expect(sisa, 500000);
     });
 
-    test('akun nonaktif tidak dihitung', () {
+    test('akun nonaktif tetap membawa saldonya di Sisa', () {
       final sisa = sisaUangSampai([
         acc(id: 'a1', saldoAwal: 500000),
         acc(id: 'a2', saldoAwal: 9000000, aktif: false),
       ], [], DateTime(2026, 1, 31));
 
-      expect(sisa, 500000);
+      expect(sisa, 9500000);
     });
 
     test('transfer antar akun sendiri hanya mengurangi biaya admin', () {

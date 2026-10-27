@@ -25,6 +25,7 @@ import 'recurring/recurring_screen.dart';
 import 'debts/debt_screen.dart';
 import 'receipts/receipts_screen.dart';
 import 'repair_screen.dart';
+import 'scan_accuracy_screen.dart';
 import 'theme/theme_screen.dart';
 import 'transactions/add_transaction_sheet.dart';
 import 'transactions/transaction_form_screen.dart';
@@ -254,7 +255,11 @@ class SettingsScreen extends ConsumerWidget {
     final theme = ThemeController.instance;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pengaturan'),
+        title: _JudulRahasia(
+          onBukaUji: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ScanAccuracyScreen()),
+          ),
+        ),
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(Neo.borderW),
           child: SizedBox(height: Neo.borderW, child: ColoredBox(color: Neo.ink)),
@@ -432,7 +437,12 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Ekspor cadangan',
             subtitle: 'Simpan/bagikan seluruh data (JSON, bisa dikunci)',
             onTap: () async {
-              final sandi = await _tanyaSandi(context);
+              final sandi = await _tanyaSandi(
+                context,
+                petunjuk: 'Kosongkan untuk cadangan tanpa enkripsi. '
+                    'Tanpa kata sandi, siapa pun yang menerima file bisa '
+                    'membaca seluruh keuanganmu.',
+              );
               if (sandi == null || !context.mounted) return;
               final ok = await backup.shareBackup(passphrase: sandi);
               if (!context.mounted) return;
@@ -460,7 +470,7 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.delete_outline,
             title: 'Sampah',
-            subtitle: 'Pulihkan transaksi yang dihapus',
+            subtitle: 'Pulihkan item yang dihapus',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const TrashScreen()),
             ),
@@ -491,7 +501,8 @@ Future<void> _wipeDialog(BuildContext context, BackupService backup) async {
     builder: (ctx) => AlertDialog(
       title: const Text('Hapus semua data?'),
       content: const Text(
-        'Semua transaksi, anggaran, aturan berulang, dan akun akan dihapus. '
+        'Semua transaksi, utang/piutang, anggaran, aturan berulang, kebiasaan '
+        'pedagang, dan akun akan dihapus. '
         'Master institusi & kategori tetap. Tindakan ini tidak bisa dibatalkan.',
       ),
       actions: [
@@ -605,7 +616,7 @@ Future<bool?> _konfirmasiImpor(
           Text(
             'Cadangan ini akan:\n'
             '• menambah ${p.tambah} baris\n'
-            '• menimpa ${p.timpa} baris yang id-nya sama'
+            '• menimpa ${p.timpa} baris yang isinya berbeda'
             '${p.hidupkan > 0 ? '\n• menghidupkan lagi ${p.hidupkan} baris yang pernah dihapus' : ''}'
             '${ganti ? '\n• menghapus ${p.dihapus} baris di perangkat ini lebih dulu, termasuk kategori dan institusi yang tidak ada di cadangan' : ''}',
             style: const TextStyle(fontSize: 13),
@@ -672,6 +683,43 @@ Future<String?> _tanyaSandi(
   );
   ctrl.dispose();
   return hasil;
+}
+
+class _JudulRahasia extends StatefulWidget {
+  const _JudulRahasia({required this.onBukaUji});
+
+  final VoidCallback onBukaUji;
+
+  @override
+  State<_JudulRahasia> createState() => _JudulRahasiaState();
+}
+
+/// Judul Pengaturan yang menghitung ketukan: 5× ketuk membuka layar uji
+/// ketepatan scan (harness korpus gambar, Fase 4). Penghitung diatur ulang
+/// bila jeda antar ketuk lebih dari 2 detik, supaya ketuk harian yang
+/// tersebar tidak sengaja membukanya.
+class _JudulRahasiaState extends State<_JudulRahasia> {
+  var _ketuk = 0;
+  DateTime? _terakhir;
+
+  void _hitung() {
+    final sekarang = DateTime.now();
+    if (_terakhir != null &&
+        sekarang.difference(_terakhir!) > const Duration(seconds: 2)) {
+      _ketuk = 0;
+    }
+    _terakhir = sekarang;
+    _ketuk++;
+    if (_ketuk >= 5) {
+      _ketuk = 0;
+      widget.onBukaUji();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(onTap: _hitung, child: const Text('Pengaturan'));
+  }
 }
 
 class _SettingsTile extends StatelessWidget {

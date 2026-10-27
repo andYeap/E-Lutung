@@ -93,9 +93,12 @@ class BackupService {
   }
 
   /// Ekspor lalu buka lembar berbagi sistem. true bila sheet terbuka.
+  ///
+  /// Berkas sementara dihapus seusai dibagikan supaya salinan plaintext
+  /// tidak tertinggal di cache.
   Future<bool> shareBackup({String? passphrase}) async {
+    final f = await exportFile(passphrase: passphrase);
     try {
-      final f = await exportFile(passphrase: passphrase);
       await SharePlus.instance.share(
         ShareParams(files: [XFile(f.path)], subject: 'Cadangan E-Lutung'),
       );
@@ -103,6 +106,8 @@ class BackupService {
       return true;
     } catch (_) {
       return false;
+    } finally {
+      await _hapusAman(f);
     }
   }
 
@@ -148,17 +153,27 @@ class BackupService {
     return file;
   }
 
-  /// Ekspor CSV lalu bagikan.
+  /// Ekspor CSV lalu bagikan. Berkas sementara dihapus seusai dibagikan.
   Future<bool> shareCsv() async {
+    final f = await exportCsvFile();
     try {
-      final f = await exportCsvFile();
       await SharePlus.instance.share(
         ShareParams(files: [XFile(f.path)], subject: 'Transaksi E-Lutung (CSV)'),
       );
       return true;
     } catch (_) {
       return false;
+    } finally {
+      await _hapusAman(f);
     }
+  }
+
+  /// Hapus berkas sementara; kegagalan diabaikan supaya tidak menutupi
+  /// hasil berbagi yang sebenarnya.
+  Future<void> _hapusAman(File f) async {
+    try {
+      if (await f.exists()) await f.delete();
+    } catch (_) {}
   }
 
   /// Impor dari file yang dipilih pengguna.
@@ -223,6 +238,9 @@ class BackupService {
   /// Dipakai layar impor untuk memberi tahu lebih dulu apa yang akan terjadi,
   /// karena mode "Gabung" menimpa baris yang id-nya sama dan menghidupkan
   /// kembali yang sudah dihapus, sementara mode "Ganti" menghapus lebih dulu.
+  /// Baris yang isinya sudah identik tidak dihitung sebagai "timpa", dan
+  /// baris lokal yang sudah dihapus tidak dihitung sebagai "dihapus" —
+  /// keduanya tidak mengubah apa pun yang terlihat pengguna.
   Future<RestorePreview> previewRestore(
     Map<String, dynamic> map, {
     required bool replace,
@@ -235,56 +253,64 @@ class BackupService {
 
     var tambah = 0, timpa = 0, hidupkan = 0, dihapus = 0;
 
-    /// [berkas] dan [lokal] memetakan id ke "masih hidup" (belum dihapus lunak).
-    void hitung(Map<String, bool> berkas, Map<String, bool> lokal) {
+    /// [berkas] memetakan id ke baris file; [lokal] memetakan id ke
+    /// (masihHidup, jsonBaris).
+    void hitung(
+      Map<String, Map<String, dynamic>> berkas,
+      Map<String, (bool, String)> lokal,
+    ) {
       for (final e in berkas.entries) {
-        final ada = lokal[e.key];
-        if (ada == null) {
+        final l = lokal[e.key];
+        if (l == null) {
           tambah++;
           continue;
         }
-        timpa++;
+        final (hidup, json) = l;
+        if (json != jsonEncode(e.value)) timpa++;
         // Di perangkat sudah dihapus, tetapi di berkas masih hidup: setelah
         // dipulihkan, barisnya muncul kembali.
-        if (!ada && e.value) hidupkan++;
+        if (!hidup && e.value['deletedAt'] == null) hidupkan++;
       }
       if (replace) {
-        dihapus += lokal.keys.where((id) => !berkas.containsKey(id)).length;
+        // Hanya yang masih terlihat pengguna yang dihitung terhapus.
+        dihapus += lokal.entries
+            .where((e) => e.value.$1 && !berkas.containsKey(e.key))
+            .length;
       }
     }
 
-    Map<String, bool> dariBerkas(String key) => {
+    Map<String, Map<String, dynamic>> dariBerkas(String key) => {
       for (final m in rows(key))
-        if (m['id'] is String) m['id'] as String: m['deletedAt'] == null,
+        if (m['id'] is String) m['id'] as String: m,
     };
 
     hitung(dariBerkas('institutions'), {
       for (final r in await _db.select(_db.institutions).get())
-        r.id: r.deletedAt == null,
+        r.id: (r.deletedAt == null, jsonEncode(r.toJson())),
     });
     hitung(dariBerkas('categories'), {
       for (final r in await _db.select(_db.categories).get())
-        r.id: r.deletedAt == null,
+        r.id: (r.deletedAt == null, jsonEncode(r.toJson())),
     });
     hitung(dariBerkas('accounts'), {
       for (final r in await _db.select(_db.accounts).get())
-        r.id: r.deletedAt == null,
+        r.id: (r.deletedAt == null, jsonEncode(r.toJson())),
     });
     hitung(dariBerkas('recurringRules'), {
       for (final r in await _db.select(_db.recurringRules).get())
-        r.id: r.deletedAt == null,
+        r.id: (r.deletedAt == null, jsonEncode(r.toJson())),
     });
     hitung(dariBerkas('debts'), {
       for (final r in await _db.select(_db.debts).get())
-        r.id: r.deletedAt == null,
+        r.id: (r.deletedAt == null, jsonEncode(r.toJson())),
     });
     hitung(dariBerkas('transactions'), {
       for (final r in await _db.select(_db.transactions).get())
-        r.id: r.deletedAt == null,
+        r.id: (r.deletedAt == null, jsonEncode(r.toJson())),
     });
     hitung(dariBerkas('budgets'), {
       for (final r in await _db.select(_db.budgets).get())
-        r.id: r.deletedAt == null,
+        r.id: (r.deletedAt == null, jsonEncode(r.toJson())),
     });
 
     // Kebiasaan pedagang tidak punya `deletedAt`; ia selalu dianggap hidup dan
@@ -292,11 +318,11 @@ class BackupService {
     hitung(
       {
         for (final m in rows('merchantHabits'))
-          if (m['pola'] is String) m['pola'] as String: true,
+          if (m['pola'] is String) m['pola'] as String: m,
       },
       {
         for (final r in await _db.select(_db.merchantHabits).get())
-          r.pola: true,
+          r.pola: (true, jsonEncode(r.toJson())),
       },
     );
 

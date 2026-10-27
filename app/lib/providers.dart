@@ -82,6 +82,13 @@ final accountsProvider = StreamProvider<List<AccountWithInstitution>>(
   (ref) => ref.watch(accountRepositoryProvider).watchAll(),
 );
 
+/// Semua akun termasuk yang terhapus — untuk Sisa uang dan himpunan milik
+/// sendiri, supaya histori tidak berubah saat akun dihapus/dinonaktifkan.
+final allAccountsIncludingDeletedProvider =
+    StreamProvider<List<AccountWithInstitution>>(
+  (ref) => ref.watch(accountRepositoryProvider).watchAllIncludingDeleted(),
+);
+
 /// Semua transaksi aktif (dipakai jalur yang butuh data per baris: anggaran,
 /// saldo akun, dan widget).
 final allTransactionsProvider = StreamProvider<List<Transaction>>(
@@ -155,8 +162,12 @@ final debtRepositoryProvider = Provider<DebtRepository>(
 );
 
 /// Id akun milik sendiri (untuk aturan transfer Bagian 8.1).
+///
+/// Memakai daftar termasuk yang terhapus: klasifikasi transfer historis tidak
+/// boleh berubah hanya karena akunnya dihapus belakangan.
 final ownAccountIdsProvider = Provider<Set<String>>((ref) {
-  final accounts = ref.watch(accountsProvider).value ?? const [];
+  final accounts =
+      ref.watch(allAccountsIncludingDeletedProvider).value ?? const [];
   return accounts
       .where((a) => a.account.milikSendiri)
       .map((a) => a.account.id)

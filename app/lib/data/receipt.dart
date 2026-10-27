@@ -946,7 +946,9 @@ int? _keInt(String raw) {
 /// jadi tanggalnya tidak mungkin di masa depan dan tidak sebelum 2000.
 bool _wajar(DateTime d, DateTime now) {
   if (d.year < 2000) return false;
-  return !d.isAfter(DateTime(now.year, now.month, now.day + 1));
+  final hariIni = DateTime(now.year, now.month, now.day);
+  final hariD = DateTime(d.year, d.month, d.day);
+  return !hariD.isAfter(hariIni);
 }
 
 DateTime? _cariTanggal(List<String> lines) {

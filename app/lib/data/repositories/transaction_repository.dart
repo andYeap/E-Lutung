@@ -70,12 +70,11 @@ class TransactionRepository {
   /// Bagian 8.1 ayat 3).
   Expression<int> _incomeAmountExpr() {
     final t = _db.transactions;
+    // Tanpa filter deletedAt: klasifikasi historis tidak boleh berubah hanya
+    // karena akunnya dihapus belakangan (sama seperti ownAccountIdsProvider).
     final ownAccounts = _db.selectOnly(_db.accounts)
       ..addColumns([_db.accounts.id])
-      ..where(
-        _db.accounts.milikSendiri.equals(true) &
-            _db.accounts.deletedAt.isNull(),
-      );
+      ..where(_db.accounts.milikSendiri.equals(true));
     final isTransfer = t.tipe.equalsValue(TxType.transfer);
     // `NULL NOT IN (...)` bernilai NULL (dianggap salah oleh CASE), jadi
     // transfer yang akunnya tidak lengkap tidak ikut terhitung — sama
@@ -95,12 +94,11 @@ class TransactionRepository {
   /// "Akun sendiri" = `accounts.milik_sendiri = 1` dan belum dihapus.
   Expression<int> _expenseAmountExpr() {
     final t = _db.transactions;
+    // Tanpa filter deletedAt: klasifikasi historis tidak boleh berubah hanya
+    // karena akunnya dihapus belakangan (sama seperti ownAccountIdsProvider).
     final ownAccounts = _db.selectOnly(_db.accounts)
       ..addColumns([_db.accounts.id])
-      ..where(
-        _db.accounts.milikSendiri.equals(true) &
-            _db.accounts.deletedAt.isNull(),
-      );
+      ..where(_db.accounts.milikSendiri.equals(true));
     final isTransfer = t.tipe.equalsValue(TxType.transfer);
     final toOwnAccount = t.akunTujuanId.isInQuery(ownAccounts);
     return CaseWhenExpression<int>(
@@ -117,12 +115,11 @@ class TransactionRepository {
   /// antar akun sendiri dibukukan ke kategori "Transfer & Admin".
   Expression<String> _expenseCategoryExpr() {
     final t = _db.transactions;
+    // Tanpa filter deletedAt: klasifikasi historis tidak boleh berubah hanya
+    // karena akunnya dihapus belakangan (sama seperti ownAccountIdsProvider).
     final ownAccounts = _db.selectOnly(_db.accounts)
       ..addColumns([_db.accounts.id])
-      ..where(
-        _db.accounts.milikSendiri.equals(true) &
-            _db.accounts.deletedAt.isNull(),
-      );
+      ..where(_db.accounts.milikSendiri.equals(true));
     final toOwnAccount = t.akunTujuanId.isInQuery(ownAccounts);
     return CaseWhenExpression<String>(
       cases: [
@@ -350,29 +347,37 @@ class TransactionRepository {
     String? strukPath,
     String? debtId,
   }) async {
+    if (nominal <= 0) {
+      throw ArgumentError('nominal transaksi harus lebih dari 0');
+    }
+    if (biayaAdmin < 0) {
+      throw ArgumentError('biaya admin tidak boleh negatif');
+    }
     final id = _uuid.v4();
-    await _db.into(_db.transactions).insert(
-      TransactionsCompanion.insert(
-        id: id,
+    await _db.transaction(() async {
+      await _db.into(_db.transactions).insert(
+        TransactionsCompanion.insert(
+          id: id,
+          tipe: tipe,
+          nominal: nominal,
+          tanggal: tanggal,
+          kategoriId: Value(kategoriId),
+          akunId: Value(akunId),
+          catatan: Value(catatan),
+          akunAsalId: Value(akunAsalId),
+          akunTujuanId: Value(akunTujuanId),
+          biayaAdmin: Value(biayaAdmin),
+          strukPath: Value(strukPath),
+          debtId: Value(debtId),
+        ),
+      );
+      await _catatKebiasaan(
         tipe: tipe,
-        nominal: nominal,
-        tanggal: tanggal,
-        kategoriId: Value(kategoriId),
-        akunId: Value(akunId),
-        catatan: Value(catatan),
-        akunAsalId: Value(akunAsalId),
-        akunTujuanId: Value(akunTujuanId),
-        biayaAdmin: Value(biayaAdmin),
-        strukPath: Value(strukPath),
-        debtId: Value(debtId),
-      ),
-    );
-    await _catatKebiasaan(
-      tipe: tipe,
-      catatan: catatan,
-      kategoriId: kategoriId,
-      akunId: akunId,
-    );
+        catatan: catatan,
+        kategoriId: kategoriId,
+        akunId: akunId,
+      );
+    });
     return id;
   }
 
@@ -459,8 +464,14 @@ class TransactionRepository {
     int biayaAdmin = 0,
     String? strukPath,
     String? debtId,
-  }) {
-    return (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
+  }) async {
+    if (nominal <= 0) {
+      throw ArgumentError('nominal transaksi harus lebih dari 0');
+    }
+    if (biayaAdmin < 0) {
+      throw ArgumentError('biaya admin tidak boleh negatif');
+    }
+    await (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
       TransactionsCompanion(
         tipe: Value(tipe),
         nominal: Value(nominal),
@@ -479,6 +490,15 @@ class TransactionRepository {
         debtId: debtId == null ? const Value.absent() : Value(debtId),
         updatedAt: Value(DateTime.now()),
       ),
+    );
+    // Edit juga memperbarui kebiasaan pedagang (FR-17.3: pilihan terakhir
+    // menang). Bukan pengeluaran / tanpa kategori / tanpa keterangan =
+    // bukan kebiasaan, sama seperti saat create.
+    await _catatKebiasaan(
+      tipe: tipe,
+      catatan: catatan,
+      kategoriId: kategoriId,
+      akunId: akunId,
     );
   }
 

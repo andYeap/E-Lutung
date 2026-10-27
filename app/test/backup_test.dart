@@ -66,17 +66,20 @@ void main() {
       );
       final dump = await backup.dump();
 
-      // Diimpor ke basis data yang sama: semuanya sudah ada, tidak ada tambahan.
+      // Diimpor ke basis data yang sama dan isinya identik: tidak ada
+      // tambahan, tidak ada yang perlu ditimpa.
       final sama = await backup.previewRestore(dump, replace: false);
       expect(sama.tambah, 0);
-      expect(sama.timpa, greaterThan(0));
+      expect(sama.timpa, 0);
       expect(sama.hidupkan, 0);
       expect(sama.dihapus, 0);
 
-      // Setelah transaksinya dihapus, berkas yang sama akan menghidupkannya lagi.
+      // Setelah transaksinya dihapus, berkas yang sama akan menghidupkannya lagi
+      // (isinya kini berbeda pada penanda hapus, jadi ikut terhitung timpa).
       await tx.softDelete(id);
       final kembali = await backup.previewRestore(dump, replace: false);
       expect(kembali.hidupkan, 1);
+      expect(kembali.timpa, 1);
     });
 
     test('mode ganti menghitung yang akan terhapus', () async {
