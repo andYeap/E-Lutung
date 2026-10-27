@@ -20,3 +20,6 @@ app/android/key.properties
 
 # Foto/dokumen yang masuk dari jembatan Telegram
 .telegram-inbox/
+
+# Sampel struk asli (data transaksi pribadi) — tidak dipush
+Sampel-Struk/
