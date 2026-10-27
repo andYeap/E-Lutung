@@ -5,7 +5,9 @@ import 'database.dart';
 /// - `pengeluaran`  -> dihitung pengeluaran sebesar nominal
 /// - `pemasukan`    -> dihitung pemasukan sebesar nominal
 /// - `transfer`     -> ke akun sendiri: hanya biaya admin yang jadi pengeluaran;
-///                     ke pihak lain: nominal + biaya admin jadi pengeluaran
+///                     ke pihak lain: nominal + biaya admin jadi pengeluaran;
+///                     dari pihak lain: nominal jadi pemasukan, biaya admin
+///                     tetap jadi pengeluaran
 int expenseAmount(Transaction t, Set<String> ownAccountIds) {
   switch (t.tipe) {
     case TxType.pemasukan:
@@ -19,8 +21,20 @@ int expenseAmount(Transaction t, Set<String> ownAccountIds) {
   }
 }
 
-int incomeAmount(Transaction t) =>
-    t.tipe == TxType.pemasukan ? t.nominal : 0;
+int incomeAmount(Transaction t, Set<String> ownAccountIds) {
+  if (t.tipe == TxType.pemasukan) return t.nominal;
+  // Transfer dari pihak lain (Bagian 8.1 ayat 3): uang masuk ke akun sendiri.
+  // Syarat asal bukan akun sendiri dibuat eksplisit supaya transfer yang
+  // catatannya tidak lengkap (akunAsalId null) tidak mengarang pemasukan.
+  if (t.tipe == TxType.transfer &&
+      t.akunAsalId != null &&
+      !ownAccountIds.contains(t.akunAsalId) &&
+      t.akunTujuanId != null &&
+      ownAccountIds.contains(t.akunTujuanId)) {
+    return t.nominal;
+  }
+  return 0;
+}
 
 /// Kategori bawaan untuk biaya admin transfer antar akun sendiri (Bagian 8.1):
 /// pengeluarannya dibukukan ke "Transfer & Admin", bukan ke kategori yang
@@ -52,7 +66,7 @@ Totals computeTotals(List<Transaction> txs, Set<String> ownAccountIds) {
   var inc = 0;
   var exp = 0;
   for (final t in txs) {
-    inc += incomeAmount(t);
+    inc += incomeAmount(t, ownAccountIds);
     exp += expenseAmount(t, ownAccountIds);
   }
   return Totals(inc, exp);

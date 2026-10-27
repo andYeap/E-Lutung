@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Latar kuning lembut Krem; lapisan belakang ikon adaptif. -->
+  <rect width="512" height="512" fill="#F2CE6B"/>
+
+  <!-- Koin: dua lingkaran, tepi tebal dan cincin dalam. -->
+  <circle cx="256" cy="268" r="146" fill="#F6F5F1" stroke="#23211C" stroke-width="22"/>
+  <circle cx="256" cy="268" r="116" fill="none" stroke="#23211C" stroke-width="7" opacity="0.45"/>
+
+  <!-- Jambul lutung menembus tepi atas koin, jadi koinnya sekaligus berkepala. -->
+  <path d="M256 74c30 0 52 22 52 50 0 16-8 30-20 38h-64c-12-8-20-22-20-38 0-28 22-50 52-50z"
+        fill="#23211C"/>
+
+  <!-- Muka lutung: bulu gelap, moncong terang, mata terang. -->
+  <ellipse cx="256" cy="272" rx="92" ry="88" fill="#23211C"/>
+  <path d="M256 176c-52 0-92 42-92 96s40 96 92 96 92-42 92-96-40-96-92-96z"
+        fill="none" stroke="#F6F5F1" stroke-width="14"/>
+  <ellipse cx="256" cy="308" rx="56" ry="46" fill="#F6F5F1"/>
+  <circle cx="222" cy="252" r="21" fill="#F6F5F1"/>
+  <circle cx="290" cy="252" r="21" fill="#F6F5F1"/>
+  <circle cx="222" cy="252" r="9" fill="#23211C"/>
+  <circle cx="290" cy="252" r="9" fill="#23211C"/>
+  <ellipse cx="256" cy="296" rx="15" ry="10" fill="#23211C"/>
+  <path d="M238 322q18 16 36 0" fill="none" stroke="#23211C" stroke-width="9"
+        stroke-linecap="round"/>
+  <path d="M186 268q-34 4-38 30" fill="none" stroke="#23211C" stroke-width="12"
+        stroke-linecap="round"/>
+  <path d="M326 268q34 4 38 30" fill="none" stroke="#23211C" stroke-width="12"
+        stroke-linecap="round"/>
+</svg>

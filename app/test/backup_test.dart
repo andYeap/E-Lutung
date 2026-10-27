@@ -43,6 +43,18 @@ void main() {
     expect(rows.single.nominal, 150000);
   });
 
+  test('hapus semua data ikut menghapus catatan utang', () async {
+    await DebtRepository(db).create(
+      arah: DebtDirection.utang,
+      pihak: 'Budi',
+      nominal: 200000,
+    );
+
+    await backup.wipeUserData();
+
+    expect(await db.select(db.debts).get(), isEmpty);
+  });
+
   group('pratinjau impor', () {
     test('menghitung yang ditambah, ditimpa, dan dihidupkan', () async {
       final tx = TransactionRepository(db);

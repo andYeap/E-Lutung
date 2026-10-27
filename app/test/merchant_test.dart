@@ -139,5 +139,30 @@ void main() {
         'belanja',
       );
     });
+
+    test('hapusKebiasaan menghapus permanen pola itu saja', () async {
+      await repo.create(
+        tipe: TxType.pengeluaran,
+        nominal: 10000,
+        tanggal: DateTime(2026, 5, 1),
+        kategoriId: 'makanan',
+        catatan: 'Warung Bu Ani',
+      );
+      await repo.create(
+        tipe: TxType.pengeluaran,
+        nominal: 20000,
+        tanggal: DateTime(2026, 5, 2),
+        kategoriId: 'belanja',
+        catatan: 'Toko Serba Ada',
+      );
+
+      await repo.hapusKebiasaan('warung bu ani');
+
+      expect(await repo.cariKebiasaan('Warung Bu Ani'), isNull);
+      expect(
+        (await repo.cariKebiasaan('toko serba ada'))!.kategoriId,
+        'belanja',
+      );
+    });
   });
 }

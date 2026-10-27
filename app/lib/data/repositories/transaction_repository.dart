@@ -37,7 +37,10 @@ class TransactionRepository {
       q.where((t) => t.tipe.equals(tipe.name));
     }
     if (kategoriId != null) {
-      q.where((t) => t.kategoriId.equals(kategoriId));
+      // Filter memakai kategori pembukuan (sama seperti rekap), bukan
+      // `transactions.kategori_id` mentah, supaya transfer antar akun sendiri
+      // ikut terjaring saat menyaring "Transfer & Admin".
+      q.where((t) => _expenseCategoryExpr().equals(kategoriId));
     }
     if (akunId != null) {
       q.where(
@@ -63,12 +66,26 @@ class TransactionRepository {
   // Kedua ekspresi di bawah adalah padanan SQL dari `finance.incomeAmount` /
   // `expenseAmount`; kesetaraannya dijaga `test/sql_aggregate_test.dart`.
 
-  /// Padanan SQL `finance.incomeAmount`.
+  /// Padanan SQL `finance.incomeAmount` (termasuk transfer dari pihak lain,
+  /// Bagian 8.1 ayat 3).
   Expression<int> _incomeAmountExpr() {
     final t = _db.transactions;
+    final ownAccounts = _db.selectOnly(_db.accounts)
+      ..addColumns([_db.accounts.id])
+      ..where(
+        _db.accounts.milikSendiri.equals(true) &
+            _db.accounts.deletedAt.isNull(),
+      );
+    final isTransfer = t.tipe.equalsValue(TxType.transfer);
+    // `NULL NOT IN (...)` bernilai NULL (dianggap salah oleh CASE), jadi
+    // transfer yang akunnya tidak lengkap tidak ikut terhitung — sama
+    // seperti padanan Dart-nya.
+    final fromExternal = t.akunAsalId.isNotInQuery(ownAccounts);
+    final toOwnAccount = t.akunTujuanId.isInQuery(ownAccounts);
     return CaseWhenExpression<int>(
       cases: [
         CaseWhen(t.tipe.equalsValue(TxType.pemasukan), then: t.nominal),
+        CaseWhen(isTransfer & fromExternal & toOwnAccount, then: t.nominal),
       ],
       orElse: const Constant(0),
     );
@@ -149,6 +166,25 @@ class TransactionRepository {
     return q.watchSingle().map(
       (row) => Totals(row.read(income) ?? 0, row.read(expense) ?? 0),
     );
+  }
+
+  /// FR-4.1 — jumlah transaksi satu bulan (ikut filter kategori yang sama
+  /// dengan total, supaya selaras dengan angka Masuk/Keluar/Selisih).
+  Stream<int> watchMonthCount(
+    int year,
+    int month, {
+    String? kategoriId,
+  }) {
+    final t = _db.transactions;
+    final count = t.id.count();
+    var predicate = _rangeFilter(DateTime(year, month, 1), DateTime(year, month + 1, 1));
+    if (kategoriId != null) {
+      predicate = predicate & _expenseCategoryExpr().equals(kategoriId);
+    }
+    final q = _db.selectOnly(t)
+      ..addColumns([count])
+      ..where(predicate);
+    return q.watchSingle().map((row) => row.read(count) ?? 0);
   }
 
   /// FR-4.2 & FR-5.1 — pengeluaran per kategori satu bulan (SQL `GROUP BY`).
@@ -399,6 +435,15 @@ class TransactionRepository {
     if (pola == null) return Future.value(null);
     return (_db.select(_db.merchantHabits)..where((h) => h.pola.equals(pola)))
         .getSingleOrNull();
+  }
+
+  /// Hapus permanen pemetaan satu pedagang (FR-17.2, tombol "Hapus" di layar
+  /// scan). Dipakai saat pengguna menolak saran: pemetaannya tidak dipakai
+  /// lagi pada scan berikutnya, bukan sekadar dikosongkan dari form.
+  Future<void> hapusKebiasaan(String pola) {
+    return (_db.delete(_db.merchantHabits)
+          ..where((h) => h.pola.equals(pola)))
+        .go();
   }
 
   Future<void> update({

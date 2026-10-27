@@ -108,6 +108,16 @@ final monthTotalsProvider =
   ),
 );
 
+/// Jumlah transaksi satu bulan (ikut filter kategori yang sama dengan total).
+final monthCountProvider =
+    StreamProvider.family<int, ({int year, int month, String? kategoriId})>(
+  (ref, key) => ref.watch(transactionRepositoryProvider).watchMonthCount(
+    key.year,
+    key.month,
+    kategoriId: key.kategoriId,
+  ),
+);
+
 /// Pengeluaran per kategori satu bulan — `SUM … GROUP BY` di SQL. Ikut
 /// terfilter kategori supaya tabel & grafik konsisten (FR-4.3/FR-5.5).
 final monthExpenseByCategoryProvider = StreamProvider.family<

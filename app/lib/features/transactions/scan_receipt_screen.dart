@@ -115,8 +115,9 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
   /// Isi kategori & akun dari kebiasaan pedagang, bila ada.
   ///
   /// Hanya **saran**: nilai tetap lewat validasi yang sama, selalu terlihat di
-  /// layar, dan tombol hapus mengembalikannya ke pilihan manual. Kalau
-  /// kategorinya sudah tidak ada atau akunnya tidak aktif, saran tidak dipakai.
+  /// layar, dan tombol hapus menghapus pemetaan tersimpan lalu mengembalikan
+  /// ke pilihan manual. Kalau kategorinya sudah tidak ada atau akunnya tidak
+  /// aktif, saran tidak dipakai.
   Future<void> _terapkanSaran(String? merchant) async {
     final habit =
         await ref.read(transactionRepositoryProvider).cariKebiasaan(merchant);
@@ -367,11 +368,19 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => setState(() {
-                        _saran = null;
-                        _kategoriId = null;
-                        _akunId = null;
-                      }),
+                      onPressed: () async {
+                        final pola = _saran!.pola;
+                        await ref
+                            .read(transactionRepositoryProvider)
+                            .hapusKebiasaan(pola);
+                        if (!mounted) return;
+                        setState(() {
+                          _saran = null;
+                          _kategoriId = null;
+                          _akunId = null;
+                        });
+                        _snack('Catatan untuk pedagang ini dihapus.');
+                      },
                       child: const Text('Hapus'),
                     ),
                   ],

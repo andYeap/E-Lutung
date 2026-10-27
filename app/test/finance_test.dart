@@ -146,7 +146,7 @@ void main() {
 
     test('pemasukan tidak masuk pengeluaran', () {
       expect(expenseAmount(tx(tipe: TxType.pemasukan, nominal: 1000000), own), 0);
-      expect(incomeAmount(tx(tipe: TxType.pemasukan, nominal: 1000000)), 1000000);
+      expect(incomeAmount(tx(tipe: TxType.pemasukan, nominal: 1000000), own), 1000000);
     });
 
     test('transfer ke akun sendiri: hanya biaya admin yang jadi pengeluaran', () {
@@ -204,6 +204,33 @@ void main() {
         akunTujuanId: 'luar',
       );
       expect(expenseAmount(t, own), 502500);
+    });
+
+    test('transfer dari pihak lain: nominal jadi pemasukan, admin jadi pengeluaran', () {
+      final t = tx(
+        tipe: TxType.transfer,
+        nominal: 500000,
+        biayaAdmin: 2500,
+        kategoriId: 'gaji',
+        akunAsalId: 'luar',
+        akunTujuanId: 'a1',
+      );
+      expect(incomeAmount(t, own), 500000);
+      expect(expenseAmount(t, own), 2500);
+      // Biaya admin transfer masuk ikut dibukukan ke "Transfer & Admin".
+      expect(expenseCategoryId(t, own), kTransferAdminCategoryId);
+      final totals = computeTotals([t], own);
+      expect(totals.income, 500000);
+      expect(totals.expense, 2500);
+    });
+
+    test('transfer tanpa akun asal yang jelas tidak mengarang pemasukan', () {
+      final t = tx(
+        tipe: TxType.transfer,
+        nominal: 500000,
+        akunTujuanId: 'a1',
+      );
+      expect(incomeAmount(t, own), 0);
     });
   });
 

@@ -4,8 +4,8 @@
 - **Platform:** Android (Flutter)
 - **Penyimpanan:** 100% lokal di perangkat (tanpa server, tanpa akun)
 - **Mata uang:** Rupiah (IDR) saja
-- **Status dokumen:** Final v1, diperbarui sampai v1.5 (v1.1 transaksi berulang & tema, v1.2 scan struk & gaya desain, v1.3 cadangan terkunci, v1.4 utang & piutang, v1.5 pemetaan pedagang & korpus struk)
-- **Tanggal:** 2026-10-07
+- **Status dokumen:** Final v1, diperbarui sampai v1.5 (v1.1 transaksi berulang & tema, v1.2 scan struk & gaya desain, v1.3 cadangan terkunci, v1.4 utang & piutang, v1.5 pemetaan pedagang & korpus struk) + perbaikan inkonsistensi hasil review (Bagian 3/5/7/8/12/14/15/17)
+- **Tanggal:** 2026-10-26
 
 ---
 
@@ -31,7 +31,7 @@ Semua data disimpan lokal di HP pengguna — aplikasi tidak butuh jaringan dan t
 - Multi-mata uang dan kurs.
 - Pembukuan bisnis, pajak, akuntansi double-entry.
 - Integrasi otomatis ke bank/e-wallet (tidak ada penarikan otomatis maupun scraping data bank).
-- Utang/piutang, aset/investasi, cicilan dengan bunga (kandidat v2).
+- Aset/investasi, cicilan dengan bunga dan jadwal angsuran otomatis, bunga/denda (kandidat v2; catatan utang/piutang sederhana sudah masuk v1.4, lihat FR-16).
 - Widget iOS (aplikasi Android-only).
 - Perhitungan bunga/administrasi otomatis dari pihak ketiga.
 
@@ -51,7 +51,7 @@ Konteks pemakaian: pencatatan cepat sambil jalan (satu tangan), cek sekilas lewa
 
 ## 5. Ruang Lingkup
 
-**Masuk (In):** pencatatan pemasukan/pengeluaran/transfer, master institusi (bank/e-wallet/tunai) & akun yang bisa diatur, kategori yang bisa dikelola (CRUD), rekap bulanan, grafik persentase per kategori, grafik pemasukan vs pengeluaran per bulan, batas anggaran (total + per kategori) dengan rentang tanggal & warna, transaksi berulang otomatis (v1.1), tema & gaya desain yang bisa dipilih (v1.1 & v1.2), scan struk lewat OCR di perangkat (v1.2), widget beranda, ekspor/impor cadangan termasuk yang dikunci kata sandi (v1.3).
+**Masuk (In):** pencatatan pemasukan/pengeluaran/transfer, master institusi (bank/e-wallet/tunai) & akun yang bisa diatur, kategori yang bisa dikelola (CRUD), rekap bulanan, grafik persentase per kategori, grafik pemasukan vs pengeluaran per bulan, batas anggaran (total + per kategori) dengan rentang tanggal & warna, transaksi berulang otomatis (v1.1), tema & gaya desain yang bisa dipilih (v1.1 & v1.2), scan struk lewat OCR di perangkat (v1.2), layar Foto struk, widget beranda, ekspor/impor cadangan termasuk yang dikunci kata sandi (v1.3), utang & piutang sederhana tanpa bunga (v1.4), pemetaan pedagang & korpus struk (v1.5).
 
 **Keluar (Out):** semua pada Bagian 3.
 
@@ -69,7 +69,7 @@ Konteks pemakaian: pencatatan cepat sambil jalan (satu tangan), cek sekilas lewa
 | Widget Android | paket `home_widget` + provider native **RemoteViews** | Flutter tak bisa merender widget beranda; wajib native |
 | Kategori | Tabel `Category` yang bisa di-CRUD (tanpa field `jenis` & `archived`) | Pengguna mengelola kategorinya; grafik per kategori tetap konsisten |
 | Update widget | `home_widget` saat data berubah + `workmanager` periodik (min 15 mnt) | AppWidget `updatePeriodMillis` minimum 30 mnt dan tidak realtime |
-| State management | Riverpod (atau Provider) | Ringan, mudah diuji |
+| State management | Riverpod | Ringan, mudah diuji |
 | Format | `intl` (locale `id_ID`) | `Rp1.250.000`, `Sep 2026` |
 | Zona waktu | Zona lokal perangkat; periode bulan = 00:00 tgl 1 s/d 23:59 akhir bulan | Sesuai persepsi pengguna |
 | ID | `uuid` v4 | Tidak bergantung auto-increment saat impor/merge |
@@ -169,7 +169,7 @@ Pengguna boleh mengganti warna tampilan, tidak lagi terpaku pada palet Bagian 6b
 
 ## 7. Model Data
 
-Semua nominal `int` (rupiah). Semua entitas punya `id` (uuid), `createdAt`, `updatedAt`, `deletedAt` (soft delete, null = aktif).
+Semua nominal `int` (rupiah). Kecuali tabel `kebiasaan_merchant` (Bagian 7.8) yang memakai `pola` sebagai PK tanpa timestamp karena ia pemetaan turunan, semua entitas punya `id` (uuid), `createdAt`, `updatedAt`, `deletedAt` (soft delete, null = aktif).
 
 ### 7.1 Institution (Master Institusi) — tabel baru
 
@@ -204,11 +204,12 @@ Data awal (seed): Makanan & Minuman, Belanja Kebutuhan Pribadi, Transport, Tagih
 
 ### 7.3 Account (Akun/Dompet)
 
-Nama akun **direlasikan** ke `Institution` (tidak lagi menyimpan nama bebas). Field `ikon` dan `warna` **dihapus** karena tidak dipakai. Tanpa `label` pembeda (satu institusi = satu akun).
+Nama akun **direlasikan** ke `Institution` dan boleh memakai **nama bebas (opsional)** — kosong berarti memakai nama institusi. Field `ikon` dan `warna` **dihapus** karena tidak dipakai. Satu institusi boleh dipakai beberapa akun; label yang sama dibedakan dengan nomor urut (lihat FR-7.5).
 
 | Field | Tipe | Keterangan |
 |---|---|---|
 | id | text | PK |
+| nama | text? | Nama bebas pengguna (opsional); kosong = memakai nama institusi (ditambahkan skema v5) |
 | institusiId | text | FK → Institution (wajib) |
 | milikSendiri | bool | `true` = akun pengguna; `false` = tujuan pihak lain/eksternal |
 | saldoAwal | int | Saldo awal (opsional) |
@@ -247,7 +248,7 @@ Periode memakai **rentang tanggal eksplisit dan sekali pakai** — mis. membatas
 | nominal | int | Batas maksimum |
 | aktif | bool | |
 
-Anggaran berlaku bila tanggal transaksi berada dalam rentang `[periodeMulai, periodeSelesai]`. **Tidak ada reset otomatis bulanan** — pengguna menentukan rentangnya sendiri. Untuk warna chart utama, dipakai anggaran `lingkup = total` yang periodenya mencakup tanggal hari ini.
+Anggaran berlaku bila tanggal transaksi berada dalam rentang `[periodeMulai, periodeSelesai]`. **Tidak ada reset otomatis bulanan** — pengguna menentukan rentangnya sendiri. Untuk warna chart utama, dipakai anggaran `lingkup = total` yang periodenya mencakup tanggal hari ini. Dua anggaran dengan `lingkup` dan `kategoriId` yang sama dan rentang yang beririsan **tidak dilarang**, tetapi pemakaiannya dihitung **terpisah** (masing-masing memakai rumusnya sendiri di Bagian 13); UI menampilkan keduanya sebagai baris terpisah tanpa menggabungkan nominalnya.
 
 ### 7.6 RecurringRule (Transaksi Berulang) — v1.1
 
@@ -300,7 +301,7 @@ Pola nama pedagang ternormalisasi dipetakan ke kategori dan akun, supaya pilihan
 | terakhirDipakai | datetime | Kapan pemetaan ini terakhir dipakai |
 | jumlahPemakaian | int | Berapa kali pemetaan **yang berlaku sekarang** dipakai; mulai lagi dari 1 bila pemetaannya berubah |
 
-> Tabel ini tidak menunjuk berkas apa pun, jadi tidak berkaitan dengan penyimpanan foto struk. Ia ikut cadangan JSON dan ikut terhapus oleh "Hapus semua data".
+> Tabel ini tidak menunjuk berkas apa pun, jadi tidak berkaitan dengan penyimpanan foto struk. Ia ikut cadangan JSON dan ikut terhapus oleh "Hapus semua data". Nama tabel (`kebiasaan_merchant`) memakai bahasa Indonesia mengikuti istilah produk; lihat keputusan 13 di Bagian 17.
 
 ---
 
@@ -312,10 +313,13 @@ Transfer dipecah menjadi dua makna agar rekap tidak salah:
 1. **Transfer antar akun sendiri** (`akunAsal.milikSendiri == true` dan `akunTujuan.milikSendiri == true`):
    - **Bukan** pengeluaran dan **bukan** pemasukan (hanya memindah uang: saldo asal −nominal, saldo tujuan +nominal).
    - **`biayaAdmin` tetap dicatat sebagai pengeluaran** (kategori "Transfer & Admin").
-2. **Transfer ke pihak lain** (`akunTujuan.milikSendiri == false`):
+2. **Transfer ke pihak lain** (`akunAsal.milikSendiri == true` dan `akunTujuan.milikSendiri == false`):
    - Dianggap **pengeluaran** sebesar `nominal + biayaAdmin` pada kategori yang dipilih.
+   - Bila kategori tidak dipilih, pengeluaran dicatat sebagai "Tanpa kategori" (kategoriId null) supaya tetap masuk total pengeluaran dan grafik.
+3. **Transfer dari pihak lain** (`akunAsal.milikSendiri == false` dan `akunTujuan.milikSendiri == true`):
+   - Dianggap **pemasukan** sebesar `nominal` pada kategori yang dipilih (atau "Tanpa kategori" bila kosong); **`biayaAdmin` tetap dicatat sebagai pengeluaran** (kategori "Transfer & Admin").
 
-Kedua kasus tetap muncul di riwayat transfer dengan detail dari→ke, nominal, kategori, admin, note.
+Ketiga kasus tetap muncul di riwayat transfer dengan detail dari→ke, nominal, kategori, admin, note.
 
 > **Konsekuensi pembukuan:** untuk transfer antar akun sendiri, satu-satunya pengeluaran adalah biaya admin, dan biaya itu **selalu** dibukukan ke kategori "Transfer & Admin" — kategori yang dipilih di form hanya tersimpan sebagai catatan, bukan tempat pengeluarannya. Kalau kategori "Transfer & Admin" dihapus, transaksi lama tetap terbaca karena label historis tetap dipakai (Bagian 7.2).
 
@@ -325,8 +329,8 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 | Terpakai | Warna | Makna |
 |---|---|---|
 | 0–59% | Hijau | Aman |
-| 60–84% | Kuning/Amber | Waspada |
-| 85–99% | Oranye | Menipis |
+| 60% s/d kurang dari 85% | Kuning/Amber | Waspada |
+| 85% s/d kurang dari 100% | Oranye | Menipis |
 | ≥100% | Merah | Lewat batas |
 
 - Warna ini dipakai pada: donut/chart anggaran, progress bar per kategori, kartu rekap bulanan, **dan widget beranda** (indikator sisa anggaran).
@@ -433,7 +437,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 
 ### FR-13 Scan Struk (v1.2)
 - FR-13.1 Ambil foto dari kamera atau galeri, lalu teksnya dibaca **di perangkat** (ML Kit; modelnya ikut di dalam APK). Tidak ada jaringan yang dibutuhkan.
-- FR-13.2 Hasil baca hanya **mengisi** form pengeluaran (nominal, tanggal, keterangan dari merchant) dan **tidak pernah tersimpan otomatis**: pengguna meninjau, memilih kategori dan akun, baru menyimpan. Kategori maupun akun tidak ditebak.
+- FR-13.2 Hasil baca hanya **mengisi** form pengeluaran (nominal, tanggal, keterangan dari merchant) dan **tidak pernah tersimpan otomatis**: pengguna meninjau, memilih kategori dan akun, baru menyimpan. Kategori maupun akun tidak ditebak saat itu; saran dari catatan sebelumnya hanya muncul bila polanya sudah pernah disimpan pengguna (lihat FR-17) dan tetap butuh konfirmasi.
 - FR-13.3 Foto boleh disimpan di dokumen aplikasi dengan pathnya dicatat pada transaksi (kolom `struk_path`). Layar **Foto struk** menampilkan jumlah dan ukuran foto, penampil, penghapus foto, serta pembersih path yang menunjuk berkas hilang.
 - FR-13.4 Parser memilih total yang sah (bukan uang diterima, kembalian, atau baris diskon), tanggal yang wajar (menolak tanggal di masa depan), dan nama merchant. Nominal yang tidak menempel pada labelnya dibuktikan lewat **dua** identitas aritmetika: `tunai − kembalian = total` (hanya bila label total memang ada) dan `subtotal − diskon + pajak + biaya = total` (bila komponen belanja tercetak berlabel). Yang dipakai sebagai nominal selalu **angka yang tercetak** di struk, bukan hasil hitungan; bila tak ada identitas yang terbukti, nominal dibiarkan kosong daripada ditebak.
 - FR-13.5 **Hapus semua data** ikut menghapus berkas foto, supaya tidak tertinggal di dokumen aplikasi tanpa jejak di basis data.
@@ -461,7 +465,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 
 ### FR-17 Pemetaan Pedagang ke Kategori & Akun (v1.5)
 - FR-17.1 Saat transaksi pengeluaran disimpan, pola nama pedagang (keterangan ternormalisasi) dipetakan ke kategori dan akun yang dipilih pengguna, disimpan **lokal** di tabel `kebiasaan_merchant` (skema v7). Hanya pilihan pengguna yang dicatat; aplikasi tidak menebak sendiri, dan pemasukan tidak punya pedagang sehingga tidak ikut dicatat.
-- FR-17.2 Saat scan struk, bila polanya cocok dengan catatan sebelumnya, kategori dan akun **diusulkan** dan terlihat di layar sebagai "dari catatan sebelumnya (Nx)" beserta tombol hapus. Saran boleh diubah, tidak pernah menyimpan otomatis, dan validasi wajib (nominal, kategori, akun) tidak dilonggarkan.
+- FR-17.2 Saat scan struk, bila polanya cocok dengan catatan sebelumnya, kategori dan akun **diusulkan** dan terlihat di layar sebagai "dari catatan sebelumnya (Nx)" beserta tombol hapus. Tombol hapus **menghapus pemetaan tersimpan** (tidak dipakai lagi pada scan berikutnya), bukan sekadar mengosongkan form. Saran boleh diubah, tidak pernah menyimpan otomatis, dan validasi wajib (nominal, kategori, akun) tidak dilonggarkan.
 - FR-17.3 Bila pengguna menyimpan dengan pilihan yang berbeda dari saran, pilihan **terakhir** yang menang dan hitungannya diperbarui supaya angka "(Nx)" memaksudkan pemetaan yang sedang berlaku.
 - FR-17.4 Kebiasaan pedagang ikut cadangan JSON dan ikut dihapus oleh "Hapus semua data". Tabel ini tidak menyimpan berkas apa pun, jadi tidak berkaitan dengan penyimpanan foto struk.
 
@@ -493,7 +497,7 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 
 - Data widget disimpan sebagai nilai sederhana (SharedPreferences via `home_widget`) yang di-refresh setiap mutasi data: `widget_latest_*`, `widget_income_month`, `widget_expense_month`, `widget_budget_remaining`, `widget_budget_pct`, plus `widget_budget_color` (tambahan untuk indikator warna FR-9.3).
 - Anggaran yang ditampilkan widget memakai **aturan yang sama dengan Dashboard**: anggaran yang periodenya beririsan dengan bulan berjalan, bukan hanya yang mencakup hari ini. Bila anggaran lingkup total belum disetel, dipakai jumlah anggaran kategori yang berlaku.
-- Render oleh layout XML Android (RemoteViews). Jika memakai Jetpack Glance, logika tetap di sisi native; Dart hanya mengirim data.
+- Render oleh layout XML Android (RemoteViews). Dart hanya mengirim data.
 - Pembaruan: (a) langsung saat mutasi (`HomeWidget.updateWidget`), (b) `WorkManager` task periodik min 15 menit untuk memastikan total bulan ikut berubah saat lewat tengah malam/bulan.
 - Batasan yang harus diterima (jangan dijanjikan realtime): sistem Android dapat menunda pembaruan; widget bukan alat notifikasi.
 
@@ -501,8 +505,8 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 
 ## 13. Rumus & Definisi
 
-- `totalPengeluaranBulan(YYYY-MM) = Σ nominal transaksi pengeluaran + Σ (nominal + biayaAdmin) untuk transfer ke pihak lain + Σ biayaAdmin transfer antar akun sendiri`.
-- `totalPemasukanBulan = Σ nominal transaksi pemasukan`.
+- `totalPengeluaranBulan(YYYY-MM) = Σ nominal transaksi pengeluaran + Σ (nominal + biayaAdmin) untuk transfer ke pihak lain + Σ biayaAdmin transfer antar akun sendiri dan transfer dari pihak lain`.
+- `totalPemasukanBulan = Σ nominal transaksi pemasukan + Σ nominal transfer dari pihak lain`.
 - `persentaseKategori = nominalKategori / totalPengeluaranBulan × 100`.
 - `terpakaiAnggaran = totalPengeluaranDalamPeriode / nominalBudget` (periode = rentang `[periodeMulai, periodeSelesai]`).
 - `saldoAkun = saldoAwal + Σ masuk − Σ keluar ± transferMasuk/Keluar`.
@@ -517,13 +521,16 @@ Dasar warna = **persentase terpakai** = `pengeluaran_periode / nominal_budget`.
 - [x] Filter kategori pada rekap menyaring tabel **dan** grafik secara konsisten.
 - [x] Transfer antar akun sendiri **tidak** menambah total pengeluaran, tetapi biaya adminnya menambah.
 - [x] Transfer ke akun pihak lain menambah pengeluaran sebesar nominal + admin.
-- [x] Anggaran 0–59% hijau; ≥100% merah, pada aplikasi dan widget.
+- [x] Anggaran 0–59% hijau, 60% s/d kurang dari 85% waspada, 85% s/d kurang dari 100% menipis, ≥100% merah, pada aplikasi dan widget.
 - [ ] Widget menampilkan aktivitas terbaru + total bulan setelah transaksi ditambahkan (dalam ≤1 siklus refresh).
 - [x] Ekspor → hapus data → impor menghasilkan data identik (jumlah & nominal cocok).
 - [x] Aplikasi berjalan penuh dalam mode pesawat (airplane mode).
 - [x] Batas bulan benar: transaksi 23:59 tgl terakhir bulan vs 00:00 tgl 1 bulan berikut jatuh ke periode masing-masing.
 - [x] Transaksi berulang: aturan "bulanan tanggal 31" jatuh ke 28/29 Februari lalu kembali ke 31 Maret, dan satu periode tidak pernah tercatat dua kali.
 - [x] Tema kustom: mengubah warna latar mode terang tidak mengubah mode gelap, pengaturan bertahan setelah aplikasi ditutup, warna semantik tetap tidak bisa diubah, dan kontras rendah memunculkan peringatan tanpa menghalangi penyimpanan.
+- [x] Utang & piutang: pelunasan tercatat sebagai transaksi tertaut dan ikut saldo/rekap, sisa dihitung dari transaksi tertaut, hapus lunak tidak menghapus transaksinya.
+- [x] Pemetaan pedagang: saran kategori/akun muncul dengan label "dari catatan sebelumnya (Nx)", bisa dihapus, pilihan terakhir menang, tidak pernah menyimpan otomatis.
+- [x] Gaya desain: tujuh gaya bisa dipilih dan dipasangkan dengan palet apa pun tanpa mengubah warna, pilihan bertahan setelah aplikasi ditutup.
 
 Catatan bukti: kotak di atas ditandai hanya bila ada pemeriksaan otomatis yang menjalankannya.
 
@@ -565,6 +572,18 @@ Satu kotak yang masih kosong butuh perangkat: pembaruan widget beranda setelah t
 - **M8 — Transaksi Berulang:** aturan berulang harian/mingguan/bulanan/tahunan, pembangkitan otomatis saat jatuh tempo, dan penanda "dari jadwal" di riwayat.
 - **M9 — Tema Kustom:** preset palet, penyesuaian warna per mode, warna semantik terkunci, dan peringatan kontras.
 
+**v1.2:**
+- **M10 — Scan Struk & Gaya Desain:** OCR di perangkat (ML Kit), form review, penyimpanan foto opsional + layar Foto struk, korpus pengujian; tujuh gaya visual yang bisa dipilih dan dipasangkan dengan palet apa pun.
+
+**v1.3:**
+- **M11 — Cadangan Terkunci:** ekspor/impor JSON berkunci kata sandi (AES-256-GCM + PBKDF2), penolakan versi lebih baru/berkas rusak tanpa menghapus data, pratinjau dampak impor (Ganti/Gabung).
+
+**v1.4:**
+- **M12 — Utang & Piutang:** catatan pokok tanpa bunga, pelunasan sebagai transaksi tertaut, daftar sisa + bilah kemajuan, hapus lunak.
+
+**v1.5:**
+- **M13 — Pemetaan Pedagang & Korpus:** tabel `kebiasaan_merchant` (skema v7), saran kategori/akun dari catatan sebelumnya, pengukuran ketepatan parser atas teks OCR nyata (nominal salah wajib nol).
+
 Setiap milestone harus lolos `flutter analyze` (0 issue) dan set test-nya sebelum lanjut.
 
 ---
@@ -582,6 +601,7 @@ Setiap milestone harus lolos `flutter analyze` (0 issue) dan set test-nya sebelu
 | Grafik ramai saat kategori banyak | Rendah | Limit legend + "Lainnya" untuk kategori kecil |
 | Parser pas untuk struk pengguna sendiri (overfitting) | Sedang | Korpus nyata di `tool/korpus/` diuji `test/korpus_struk_test.dart`; korpus diperluas dari toko berbeda, dan nominal salah wajib nol sebelum perilisan |
 | Saran kategori salah lalu menetap | Rendah | Saran selalu terlihat, bisa dihapus, dan tidak pernah menyimpan tanpa konfirmasi pengguna |
+| Basis data tidak terenkripsi di perangkat | Sedang | Keputusan sadar: paket `sqlcipher_flutter_libs` sudah EOL, enkripsi menunggu jalur `sqlite3` 3.x + uji perangkat. Jangan mencatat data sensitif selain yang perlu; perlindungan mengandalkan kunci layar HP + cadangan terkunci (FR-15) |
 
 ---
 
@@ -601,12 +621,14 @@ Pertanyaan terbuka sebelumnya sudah ditetapkan (boleh ditinjau ulang bila kebutu
 10. **Navigasi:** **bottom navigation 4 tab** (Dashboard, Riwayat, Rekap, Anggaran) + Pengaturan di AppBar — ditetapkan dan sudah dipakai.
 11. **Transaksi berulang (v1.1):** dibuat **otomatis** saat jatuh tempo, bukan usulan yang perlu disetujui; dibangkitkan saat aplikasi dibuka dan oleh tugas WorkManager yang sudah ada; hanya untuk pemasukan dan pengeluaran; frekuensi harian, mingguan, bulanan, tahunan.
 12. **Tema yang dapat disesuaikan (v1.1):** pengguna boleh mengubah `bg`, `surface`, `ink`, `appBar`, dan `accent`, terpisah untuk mode terang dan gelap; `income`, `expense`, dan `transfer` terkunci; peringatan kontras dan kemiripan makna bersifat tidak memblokir (Bagian 6c).
+13. **Penamaan tabel campuran disengaja:** `kebiasaan_merchant` memakai bahasa Indonesia mengikuti istilah produk "Pemetaan Pedagang" (FR-17), sementara tabel lain memakai bahasa Inggris. Jangan "dirapikan" menjadi satu bahasa tanpa migrasi.
+14. **State management:** Riverpod (ditetapkan; pilihan "atau Provider" di versi lama sudah dipensiunkan).
 
 ---
 
 ## 18. Dependensi yang Diusulkan (Flutter)
 
-`drift` + `sqlite3_flutter_libs` + `drift_dev` (dev), `fl_chart`, `home_widget`, `workmanager`, `shared_preferences`, `uuid`, `intl`, `path_provider`, `share_plus` (ekspor), `file_picker` (pilih berkas cadangan), `riverpod`/`provider`, `flutter_lints`.
+`drift` + `sqlite3_flutter_libs` + `drift_dev` (dev), `fl_chart`, `home_widget`, `workmanager`, `shared_preferences`, `uuid`, `intl`, `path_provider`, `share_plus` (ekspor), `file_picker` (pilih berkas cadangan), `flutter_riverpod`, `flutter_lints`.
 
 Ditambahkan sejak v1.2:
 

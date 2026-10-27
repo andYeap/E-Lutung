@@ -376,8 +376,9 @@ class BackupService {
     return count;
   }
 
-  /// Hapus data pengguna (transaksi, anggaran, akun). Master institusi &
-  /// kategori dipertahankan agar aplikasi tetap bisa dipakai (FR-11.4).
+  /// Hapus data pengguna (transaksi, utang/piutang, anggaran, akun, aturan
+  /// berulang, kebiasaan pedagang). Master institusi & kategori dipertahankan
+  /// agar aplikasi tetap bisa dipakai (FR-11.4).
   ///
   /// Foto struk ikut dihapus. Baris database-nya hilang saja, sementara
   /// berkasnya ada di dokumen aplikasi — tanpa pembersihan ini, "Hapus semua
@@ -391,6 +392,7 @@ class BackupService {
 
     await _db.transaction(() async {
       await _db.delete(_db.transactions).go();
+      await _db.delete(_db.debts).go();
       await _db.delete(_db.budgets).go();
       await _db.delete(_db.recurringRules).go();
       await _db.delete(_db.merchantHabits).go();

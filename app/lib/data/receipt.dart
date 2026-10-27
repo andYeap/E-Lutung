@@ -1004,14 +1004,23 @@ DateTime? _cariTanggal(List<String> lines) {
     if (sekarang == null) coba(_tanggal(c2, b, a));
   }
 
-  // dd <nama bulan> yyyy
-  final m2 = RegExp(r'(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{2,4})').firstMatch(teks);
-  if (m2 != null) {
-    final d = int.parse(m2.group(1)!);
-    final mo = _bulanDari(m2.group(2)!);
-    var y = int.parse(m2.group(3)!);
+  // dd <nama bulan> yyyy. Nama bulan dibatasi ke daftar yang sah, dan semua
+  // kecocokan dipindai. Dua-duanya perlu: tanpa daftar bulan, "KM3 Waktu 02"
+  // cocok lebih dulu dan menelan token "02" milik "02 Jul 2026" sehingga
+  // tanggal aslinya tidak pernah terbaca.
+  final polaBulan = RegExp(
+    r'(\d{1,2})\s+'
+    r'(jan|feb|mar|apr|mei|may|jun|jul|agu|aug|sep|okt|oct|nov|des|dec)[a-z]*'
+    r'\s+(\d{2,4})',
+    caseSensitive: false,
+  );
+  for (final m in polaBulan.allMatches(teks)) {
+    final d = int.parse(m.group(1)!);
+    final mo = _bulanDari(m.group(2)!);
+    var y = int.parse(m.group(3)!);
     if (y < 100) y += 2000;
     if (mo != null) coba(_tanggal(y, mo, d));
+    if (sekarang != null) break;
   }
   return sekarang;
 }

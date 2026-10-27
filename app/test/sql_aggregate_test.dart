@@ -134,6 +134,25 @@ void main() {
     expect(sqlTotals.income, 1000000);
   });
 
+  test('transfer dari pihak lain: SQL == Dart (pemasukan + admin)', () async {
+    await txs.create(
+      tipe: TxType.transfer,
+      nominal: 300000,
+      biayaAdmin: 1500,
+      tanggal: DateTime(2026, 3, 22, 10),
+      kategoriId: 'gaji',
+      akunAsalId: ext,
+      akunTujuanId: own1,
+    );
+    final own = await ownIds();
+    final sql = await txs.watchMonthTotals(2026, 3).first;
+    final dart = computeTotals(await marchRows(), own);
+    expect(sql.income, 300000);
+    expect(sql.income, dart.income);
+    expect(sql.expense, 1500);
+    expect(sql.expense, dart.expense);
+  });
+
   test('batas bulan: transaksi 1 April tidak masuk total Maret', () async {
     await seed();
     final march = await txs.watchMonthTotals(2026, 3).first;

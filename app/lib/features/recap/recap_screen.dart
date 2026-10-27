@@ -86,6 +86,17 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
                 )
                 .value ??
             const <MonthPoint>[];
+        // Jumlah transaksi bulan ini (FR-4.1), ikut filter yang sama.
+        final count = ref
+                .watch(
+                  monthCountProvider((
+                    year: _month.year,
+                    month: _month.month,
+                    kategoriId: _kategoriId,
+                  )),
+                )
+                .value ??
+            0;
 
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -101,6 +112,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
                       Expanded(child: _stat('Masuk', rupiah(totals.income), Neo.income)),
                       Expanded(child: _stat('Keluar', rupiah(totals.expense), Neo.expense)),
                       Expanded(child: _stat('Selisih', rupiah(totals.net), Neo.transfer)),
+                      Expanded(child: _stat('Transaksi', '$count', Neo.ink)),
                     ],
                   ),
                   const SizedBox(height: 8),

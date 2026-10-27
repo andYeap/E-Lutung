@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Latar kuning lembut Krem (lapisan belakang ikon adaptif). -->
+  <rect width="512" height="512" fill="#F2CE6B"/>
+
+  <!-- Koin sebagai bingkai tipis; fokusnya pada lutung. -->
+  <circle cx="256" cy="272" r="170" fill="none" stroke="#23211C" stroke-width="16"/>
+
+  <!-- Kepala lutung: lebih memanjang, mengisi bingkai. -->
+  <ellipse cx="256" cy="278" rx="106" ry="120" fill="#23211C"/>
+
+  <!-- Jambul menyapu ke kanan, bukan kubah. -->
+  <path d="M232 168c-8-32 4-62 30-78 26-16 58-12 76 8-24 2-42 12-54 30-12 18-16 40-12 62z"
+        fill="#23211C"/>
+
+  <!-- Pati muka terang, seperti lutung sungguhan. -->
+  <ellipse cx="256" cy="308" rx="70" ry="76" fill="#F6F5F1"/>
+
+  <!-- Mata kecil dan berdekatan, bukan mata bulat besar. -->
+  <circle cx="228" cy="272" r="12" fill="#23211C"/>
+  <circle cx="284" cy="272" r="12" fill="#23211C"/>
+  <path d="M208 252q20-12 40-4" fill="none" stroke="#23211C" stroke-width="8" stroke-linecap="round"/>
+  <path d="M304 252q-20-12-40-4" fill="none" stroke="#23211C" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Hidung dan mulut sempit. -->
+  <ellipse cx="256" cy="304" rx="13" ry="9" fill="#23211C"/>
+  <path d="M240 332q16 14 32 0" fill="none" stroke="#23211C" stroke-width="9" stroke-linecap="round"/>
+</svg>

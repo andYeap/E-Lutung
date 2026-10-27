@@ -91,7 +91,10 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           );
           // Satu angka total dari seluruh anggaran yang tampil, supaya pengguna
           // yang hanya menetapkan batas per kategori tetap melihat totalnya.
-          final ringkas = totalAnggaranOf(budgets, txs, ownIds);
+          // Sengaja memakai allBudgets (bukan hasil saringan): kedua kartu ini
+          // bicara uang dan jatah keseluruhan, jadi tidak ikut berubah saat
+          // disaring (FR-6.6).
+          final ringkas = totalAnggaranOf(allBudgets, txs, ownIds);
           // Sisa periode lalu bicara uang, bukan jatah anggaran: saldo akhir
           // bulan sebelumnya, yaitu bekal yang dibawa masuk ke bulan ini.
           final sisaPeriodeLalu = sisaUangSampai(

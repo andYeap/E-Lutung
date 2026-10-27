@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Ikon gabungan: lutung sebagai tokoh utama, ekornya membentuk koin. -->
+  <rect width="512" height="512" rx="76" fill="#F2CE6B"/>
+
+  <!-- Ekor panjang lutung membentuk satu lingkaran koin di belakang kepala. -->
+  <path d="M176 365C72 337 57 221 123 143c63-75 188-91 277-31 64 43 79 126 46 184-33 58-104 75-154 43"
+        fill="none" stroke="#23211C" stroke-width="28" stroke-linecap="round"/>
+  <path d="M176 365C72 337 57 221 123 143c63-75 188-91 277-31 64 43 79 126 46 184-33 58-104 75-154 43"
+        fill="none" stroke="#F6F5F1" stroke-width="7" stroke-linecap="round" opacity="0.65"/>
+
+  <!-- Kepala lutung memanjang, dengan bahu kecil agar siluetnya tidak tampak seperti buah. -->
+  <path d="M161 347c-9-25-13-52-10-81 6-68 49-118 105-118s99 50 105 118c3 29-1 56-10 81-21 27-55 43-95 43s-74-16-95-43z"
+        fill="#23211C"/>
+
+  <!-- Jambul miring menyatu dengan kepala. -->
+  <path d="M213 170c-17-28-13-63 11-86 25-24 62-29 92-12-28 8-47 25-55 50-7 20-4 37 5 54z"
+        fill="#23211C"/>
+  <path d="M250 103c25-25 57-29 78-18" fill="none" stroke="#23211C" stroke-width="17" stroke-linecap="round"/>
+
+  <!-- Pati muka terang khas lutung. -->
+  <ellipse cx="256" cy="295" rx="67" ry="77" fill="#F6F5F1"/>
+
+  <!-- Detail minimal agar tetap terbaca pada ukuran kecil. -->
+  <ellipse cx="232" cy="266" rx="10" ry="13" fill="#23211C"/>
+  <ellipse cx="280" cy="266" rx="10" ry="13" fill="#23211C"/>
+  <path d="M214 246q18-13 36-4M262 242q18-9 36 4"
+        fill="none" stroke="#23211C" stroke-width="7" stroke-linecap="round"/>
+  <ellipse cx="256" cy="301" rx="12" ry="8" fill="#23211C"/>
+  <path d="M239 326q17 15 34 0" fill="none" stroke="#23211C" stroke-width="8" stroke-linecap="round"/>
+</svg>
